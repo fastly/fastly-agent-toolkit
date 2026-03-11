@@ -1,0 +1,17 @@
+{
+  "name": "fastly-agent-skills",
+  "metadata": {
+    "description": "Fastly development tools and platform skills"
+  },
+  "owner": {
+    "name": "Fastly"
+  },
+  "plugins": [
+    {
+      "name": "fastly-agent-skills",
+      "source": "./",
+      "description": "Fastly development tools and platform skills",
+      "keywords": ["fastly", "edge", "compute", "vcl", "cdn"]
+    }
+  ]
+}

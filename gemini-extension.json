@@ -1,0 +1,6 @@
+{
+  "name": "fastly-agent-skills",
+  "version": "0.1.0",
+  "description": "Fastly development tools and platform skills",
+  "contextFileName": "README.md"
+}
