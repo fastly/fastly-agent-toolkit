@@ -64,6 +64,8 @@ Each workspace has a mode, attack signal thresholds, and a default blocking resp
 
 No other mode values exist. Do not try `monitor`, `disabled`, `detection`, etc.
 
+**CLI note**: When using the Fastly CLI, the subcommand to retrieve a workspace is `get` (e.g., `fastly ngwaf workspace get`). There is NO `describe` subcommand for NGWAF resources.
+
 | Action           | Method   | Endpoint                                          |
 | ---------------- | -------- | ------------------------------------------------- |
 | List workspaces  | `GET`    | `/ngwaf/v1/workspaces`                            |

@@ -10,6 +10,8 @@ There are two separate concepts:
 
 To fully **enable** NGWAF on a service, you need both a workspace AND the product enabled on the service. To fully **disable** NGWAF on a service (stop all inspection), use the product disablement API — just setting the workspace mode to `log` or `off` is not the same as disabling.
 
+**When the user says "enable/disable WAF"**: Ask whether they want to change the workspace blocking mode (`block`/`log`/`off`) or fully enable/disable the NGWAF product on the service. These are different operations with different impact. If the workspace already exists and is linked, changing the mode is usually what they want. If NGWAF has never been set up on the service, full enablement is needed.
+
 ### Enable NGWAF on a service
 
 ```bash
@@ -49,6 +51,8 @@ fastly ngwaf workspace update --workspace-id WORKSPACE_ID --blockingMode log
 ## Workspaces
 
 Workspaces contain NGWAF configurations for a service.
+
+**IMPORTANT — subcommand names**: NGWAF workspace uses `get`, NOT `describe`. There is NO `describe` subcommand. The correct command is `fastly ngwaf workspace get --workspace-id ID`. Do not guess subcommand names — refer to the examples below.
 
 ### Workspace Modes (--blockingMode values)
 
@@ -506,6 +510,13 @@ fastly ngwaf workspace country-list create \
   --name=blocked-countries \
   [--workspace-id]
 ```
+
+## Common Mistakes
+
+- **`describe` does not exist**: Use `fastly ngwaf workspace get`, not `describe`. No NGWAF subcommand uses `describe`.
+- **Wrong API URL for enablement**: The correct path is `/enabled-products/v1/ngwaf/services/{service_id}`, NOT `/enabled-products/v1/services/{service_id}`. The `/ngwaf/` segment is required.
+- **Don't run `--help` for commands documented here**: This reference already contains the correct flags and syntax. Running `--help` wastes turns. Only use `--help` for commands NOT covered in this document.
+- **Don't search the repo for service IDs**: For operational tasks (enable/disable WAF, change settings), use `fastly service list --json` or `fastly service describe --service-name NAME` to find service IDs. The repo may not contain them.
 
 ## Dangerous Operations
 
