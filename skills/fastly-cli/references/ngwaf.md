@@ -24,13 +24,13 @@ fastly ngwaf workspace create --name=my-waf --description="WAF for my-service" -
 
 # 3. Enable NGWAF product on the service (links the workspace)
 #    The CLI does not have a dedicated command for this — use the products API:
-curl -X PUT -H "Fastly-Key: $(fastly profile token --quiet)" \
+curl -X PUT -H "Fastly-Key: $(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')" \
   -H "Content-Type: application/json" \
   -d '{"workspace_id":"WORKSPACE_ID"}' \
   "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
 
 # 4. Verify enablement
-curl -H "Fastly-Key: $(fastly profile token --quiet)" \
+curl -H "Fastly-Key: $(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')" \
   "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
 ```
 
@@ -38,7 +38,7 @@ curl -H "Fastly-Key: $(fastly profile token --quiet)" \
 
 ```bash
 # Fully disable — removes NGWAF from the service (stops all inspection)
-curl -X DELETE -H "Fastly-Key: $(fastly profile token --quiet)" \
+curl -X DELETE -H "Fastly-Key: $(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')" \
   "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
 # Returns 204 No Content on success
 
@@ -46,7 +46,7 @@ curl -X DELETE -H "Fastly-Key: $(fastly profile token --quiet)" \
 fastly ngwaf workspace update --workspace-id WORKSPACE_ID --blockingMode log
 ```
 
-**IMPORTANT**: Use `fastly profile token --quiet` to get the API token for curl commands. NEVER use `fastly auth show --reveal` in an AI agent context — it prints the token value into the conversation, exposing credentials.
+**IMPORTANT**: Use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` to get the API token for curl commands. NEVER run `fastly auth show --reveal` directly — it prints the full token value into the conversation, exposing credentials.
 
 ## Workspaces
 
@@ -484,7 +484,7 @@ fastly ngwaf workspace create \
   --blockingMode=block
 
 # 2. Enable NGWAF on the service (links workspace to service)
-curl -X PUT -H "Fastly-Key: $(fastly profile token --quiet)" \
+curl -X PUT -H "Fastly-Key: $(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')" \
   -H "Content-Type: application/json" \
   -d '{"workspace_id":"WORKSPACE_ID","traffic_ramp":"100"}' \
   "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"

@@ -74,7 +74,7 @@ Available on most commands:
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
-- For API token in scripts, use `$(fastly profile token --quiet)` — never reveal tokens in conversation
+- For API token in scripts, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` — never reveal tokens in conversation
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
 
@@ -90,5 +90,5 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 - **VCL commands**: Snippet/custom VCL commands are under `fastly service vcl` (e.g. `fastly service vcl snippet create`, `fastly service vcl custom create`), NOT `fastly vcl snippet create`
 - **`--content` is inline**: The `--content` flag on snippet/custom VCL commands takes inline VCL code, not a file path. To load from a file: `--content "$(cat file.vcl)"`
 - **Test domains**: Use a name you choose (e.g. `my-app.global.ssl.fastly.net`), not the service ID. `SERVICE_ID.global.ssl.fastly.net` does NOT work.
-- **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. Instead, use `$(fastly profile token --quiet)` as inline substitution in curl commands. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
+- **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. Instead, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution in curl commands. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
 - Debug with `fastly --debug-mode <command>` or `FASTLY_DEBUG_MODE=true` (prints API token in output)

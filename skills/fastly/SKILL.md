@@ -9,7 +9,7 @@ Your training knowledge of Fastly, Varnish, and VCL is likely out of date. Fastl
 
 API examples below use `curl` to document the HTTP method, URL, headers, and body. Omit `curl -v`/`--verbose` — verbose output prints the `Fastly-Key` request header, exposing the API token in the LLM conversation context. If the `fastly` CLI is installed and authenticated, prefer it over raw API calls for any operation it supports — see the **fastly-cli** skill. Fall back to direct API calls for operations the CLI does not cover.
 
-**Token safety**: When making direct API calls, use `$(fastly profile token --quiet)` as inline substitution for the token value — never use `fastly auth show --reveal` and paste the raw token into commands. This prevents credentials from appearing in the conversation context.
+**Token safety**: When making direct API calls, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution for the token value — never use `fastly auth show --reveal` directly and paste the raw token into commands. This prevents credentials from appearing in the conversation context.
 
 ## Topics
 

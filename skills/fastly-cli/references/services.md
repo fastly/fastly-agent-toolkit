@@ -174,7 +174,7 @@ curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/dom
   -d '{"name":"my-project.global.ssl.fastly.net"}'
 ```
 
-To get `$FASTLY_API_TOKEN`, use `fastly profile token` or check the `FASTLY_API_TOKEN` environment variable.
+To get `$FASTLY_API_TOKEN`, use `fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}'` or check the `FASTLY_API_TOKEN` environment variable.
 
 ## Healthchecks
 
