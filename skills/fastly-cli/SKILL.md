@@ -72,7 +72,9 @@ Available on most commands:
 - Version targeting: `--version active`, `--version latest`, or `--version N`
 - Use `--autoclone` to auto-clone locked versions
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
+- **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
+- For API token in scripts, use `$(fastly profile token --quiet)` — never reveal tokens in conversation
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
 
@@ -84,5 +86,5 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 
 - **403 on domain create**: Use `fastly service domain create` (version-scoped API), not `fastly domain create`
 - **"version is locked"**: Use `--autoclone` or clone first with `fastly service version clone`
-- **Token for REST API calls**: Commands like `fastly auth show --reveal` and `--debug-mode` print secrets to stdout. In an AI agent context, confirm with the user before revealing tokens.
-- Debug with `fastly --debug-mode <command>` or `FASTLY_DEBUG_MODE=true`
+- **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. Instead, use `$(fastly profile token --quiet)` as inline substitution in curl commands. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
+- Debug with `fastly --debug-mode <command>` or `FASTLY_DEBUG_MODE=true` (prints API token in output)

@@ -11,6 +11,28 @@ Manage Fastly CDN services and their configurations.
 
 For tasks like "create a caching frontend" or "set up a reverse proxy," always use VCL.
 
+## JSON Output Field Names
+
+**IMPORTANT**: When using `--json` with Fastly CLI commands, field names are **PascalCase**, not lowercase. Common fields:
+
+| JSON field      | Example value              |
+| --------------- | -------------------------- |
+| `Name`          | `"my-service"`             |
+| `ServiceID`     | `"5qNP5VBgxNzTm24XcYLW4j"` |
+| `ActiveVersion` | `3`                        |
+| `Type`          | `"vcl"`                    |
+| `Comment`       | `"Production service"`     |
+| `CreatedAt`     | `"2025-01-15T10:30:00Z"`   |
+
+Use `.Name` (not `.name`) in jq filters:
+```bash
+# Correct
+fastly service list --json | jq -r '.[] | select(.Name=="my-service") | .ServiceID'
+
+# WRONG — returns nothing
+fastly service list --json | jq -r '.[] | select(.name=="my-service") | .id'
+```
+
 ## Service CRUD Operations
 
 ```bash

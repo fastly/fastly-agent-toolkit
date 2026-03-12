@@ -36,6 +36,8 @@ Login creates a token and stores it locally.
 
 Stored tokens let you keep multiple credentials for different accounts or environments.
 
+**SECURITY WARNING for AI agents**: NEVER use `fastly auth show --reveal` — it prints the raw API token into the conversation context, exposing credentials. If you need a token for a `curl` command, use `$(fastly profile token --quiet)` as inline substitution so the token value is never visible in the conversation.
+
 ```bash
 # List all stored tokens
 fastly auth list
@@ -46,10 +48,10 @@ fastly auth add --api-token=API-TOKEN mytoken
 # Set the default token
 fastly auth use staging
 
-# Show details for a stored token
+# Show details for a stored token (metadata only, no secret)
 fastly auth show staging
 
-# Show the token value
+# Show the token value — AVOID in AI agent contexts
 fastly auth show --reveal staging
 
 # Show the default token

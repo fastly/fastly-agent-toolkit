@@ -2,9 +2,61 @@
 
 Configure Next-Gen Web Application Firewall protection.
 
+## Enabling / Disabling NGWAF on a Service
+
+There are two separate concepts:
+1. **Workspace mode** (`block`, `log`, `off`) — controls what the WAF does with traffic it inspects.
+2. **Service enablement** — whether NGWAF is active on a specific Fastly service at all.
+
+To fully **enable** NGWAF on a service, you need both a workspace AND the product enabled on the service. To fully **disable** NGWAF on a service (stop all inspection), use the product disablement API — just setting the workspace mode to `log` or `off` is not the same as disabling.
+
+### Enable NGWAF on a service
+
+```bash
+# 1. Find the service ID
+fastly service list --json | jq -r '.[] | select(.Name=="my-service") | .ServiceID'
+
+# 2. Find or create a workspace
+fastly ngwaf workspace list --json
+fastly ngwaf workspace create --name=my-waf --description="WAF for my-service" --blockingMode=block
+
+# 3. Enable NGWAF product on the service (links the workspace)
+#    The CLI does not have a dedicated command for this — use the products API:
+curl -X PUT -H "Fastly-Key: $(fastly profile token --quiet)" \
+  -H "Content-Type: application/json" \
+  -d '{"workspace_id":"WORKSPACE_ID"}' \
+  "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
+
+# 4. Verify enablement
+curl -H "Fastly-Key: $(fastly profile token --quiet)" \
+  "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
+```
+
+### Disable NGWAF on a service
+
+```bash
+# Fully disable — removes NGWAF from the service (stops all inspection)
+curl -X DELETE -H "Fastly-Key: $(fastly profile token --quiet)" \
+  "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
+# Returns 204 No Content on success
+
+# Alternative: keep NGWAF enabled but stop blocking (observe-only mode)
+fastly ngwaf workspace update --workspace-id WORKSPACE_ID --blockingMode log
+```
+
+**IMPORTANT**: Use `fastly profile token --quiet` to get the API token for curl commands. NEVER use `fastly auth show --reveal` in an AI agent context — it prints the token value into the conversation, exposing credentials.
+
 ## Workspaces
 
 Workspaces contain NGWAF configurations for a service.
+
+### Workspace Modes (--blockingMode values)
+
+| Mode    | Behavior                                            |
+| ------- | --------------------------------------------------- |
+| `block` | Actively blocks malicious requests                  |
+| `log`   | Inspects and logs but does not block (observe-only) |
+| `off`   | Disables WAF processing in the workspace            |
 
 ```bash
 # List workspaces
@@ -14,7 +66,7 @@ fastly ngwaf workspace list
 fastly ngwaf workspace create \
   --name=NAME \
   --description=DESCRIPTION \
-  --blockingMode=BLOCKINGMODE
+  --blockingMode=block
 
 # Optional create flags: --attackThresholds, --clientIPHeaders,
 # --defaultBlockingCode, --defaultRedirectURL, --ipAnonimization, --json
@@ -24,6 +76,9 @@ fastly ngwaf workspace get --workspace-id WORKSPACE_ID
 
 # Update workspace (same optional flags as create)
 fastly ngwaf workspace update --workspace-id WORKSPACE_ID --name updated-name
+
+# Change blocking mode
+fastly ngwaf workspace update --workspace-id WORKSPACE_ID --blockingMode log
 
 # Delete workspace
 fastly ngwaf workspace delete --workspace-id WORKSPACE_ID
@@ -418,19 +473,25 @@ fastly ngwaf wildcard-list create/delete/get/list/update
 ### Setup Basic WAF Protection
 
 ```bash
-# 1. Create workspace
+# 1. Create workspace (use 'block' not 'blocking')
 fastly ngwaf workspace create \
   --name=my-service-waf \
   --description="Production WAF" \
-  --blockingMode=blocking
+  --blockingMode=block
 
-# 2. Create IP blocklist
+# 2. Enable NGWAF on the service (links workspace to service)
+curl -X PUT -H "Fastly-Key: $(fastly profile token --quiet)" \
+  -H "Content-Type: application/json" \
+  -d '{"workspace_id":"WORKSPACE_ID","traffic_ramp":"100"}' \
+  "https://api.fastly.com/enabled-products/v1/ngwaf/services/SERVICE_ID"
+
+# 3. Create IP blocklist
 fastly ngwaf workspace ip-list create \
   --entries="192.0.2.1,198.51.100.0/24" \
   --name=blocklist \
   [--workspace-id]
 
-# 3. Configure alert
+# 4. Configure alert
 fastly ngwaf workspace alert slack create \
   --webhook="https://hooks.slack.com/..." \
   [--workspace-id]
@@ -450,12 +511,14 @@ fastly ngwaf workspace country-list create \
 
 Ask the user for explicit confirmation before running these commands:
 
+- **Disabling NGWAF on a service** (`DELETE /enabled-products/v1/ngwaf/services/{id}`) - Stops all WAF inspection
+- **Changing blockingMode to `off` or `log`** - Stops blocking attacks (log still inspects but won't block)
 - `fastly ngwaf workspace delete` - Deletes WAF workspace and all its rules
 - `fastly ngwaf ip-list delete` - Removes an IP blocklist/allowlist
 - `fastly ngwaf workspace country-list delete` - Removes country-based blocking
 - `fastly ngwaf workspace threshold delete` - Removes rate limiting protection
 
-Deleting security rules may expose the service to attacks.
+Disabling or weakening security rules may expose the service to attacks.
 
 ## Propagation Delays
 

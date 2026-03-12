@@ -18,10 +18,12 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 Enable, disable, and configure NGWAF on individual services. Requires a `workspace_id` linking the service to an NGWAF workspace.
 
+**Important distinction**: Enablement (this section) controls whether NGWAF is active on a service at all. Workspace mode (`block`/`log`/`off`) controls what NGWAF does with inspected traffic. To fully disable WAF on a service, use the `DELETE` endpoint below — changing workspace mode to `log` or `off` is NOT the same as disabling.
+
 | Action                | Method   | Endpoint                                                         |
 | --------------------- | -------- | ---------------------------------------------------------------- |
 | Enable                | `PUT`    | `/enabled-products/v1/ngwaf/services/{service_id}`               |
-| Disable               | `DELETE` | `/enabled-products/v1/ngwaf/services/{service_id}`               |
+| Disable (full remove) | `DELETE` | `/enabled-products/v1/ngwaf/services/{service_id}`               |
 | Get status            | `GET`    | `/enabled-products/v1/ngwaf/services/{service_id}`               |
 | Get configuration     | `GET`    | `/enabled-products/v1/ngwaf/services/{service_id}/configuration` |
 | Update configuration  | `PATCH`  | `/enabled-products/v1/ngwaf/services/{service_id}/configuration` |
@@ -38,6 +40,10 @@ curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/enabled-products/v1/ngwaf/services/$SERVICE_ID"
 
+# Disable NGWAF on a service (stops all inspection, returns 204)
+curl -X DELETE -H "Fastly-Key: $FASTLY_API_TOKEN" \
+  "https://api.fastly.com/enabled-products/v1/ngwaf/services/$SERVICE_ID"
+
 # Update configuration (e.g., change traffic ramp percentage)
 curl -X PATCH -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" \
@@ -49,7 +55,14 @@ Enable request body requires `workspace_id` (required) and optionally `traffic_r
 
 ## Workspaces
 
-Each workspace has a mode (`off`, `log`, `block`), attack signal thresholds, and a default blocking response code. Workspaces are also known as sites.
+Each workspace has a mode, attack signal thresholds, and a default blocking response code. Workspaces are also known as sites.
+
+**Valid workspace modes** (exactly three values):
+- `block` — actively blocks malicious requests
+- `log` — inspects and logs but does not block (observe-only)
+- `off` — disables WAF processing in the workspace
+
+No other mode values exist. Do not try `monitor`, `disabled`, `detection`, etc.
 
 | Action           | Method   | Endpoint                                          |
 | ---------------- | -------- | ------------------------------------------------- |
