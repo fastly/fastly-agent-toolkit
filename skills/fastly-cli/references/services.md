@@ -49,6 +49,8 @@ fastly service delete --service-id SERVICE_ID
 
 Every service has versions. Only one version can be active at a time. Active versions are automatically locked and cannot be modified — you must clone them first.
 
+**New services start with version 1, which is unlocked.** Configure everything (domain, backend, snippets) on version 1 using `--version 1`, then activate once. Do NOT use `--autoclone` or `--version latest` on a brand new service — `--autoclone` is only needed when modifying an already-active (locked) version, and `--version latest` combined with `--autoclone` in chained commands causes each command to clone a new version, scattering your configuration across multiple versions.
+
 ```bash
 fastly service version list --service-id SERVICE_ID
 fastly service version clone --service-id SERVICE_ID --version 1
@@ -138,6 +140,8 @@ my-project.global.ssl.fastly.net
 ```
 
 This gives you a working HTTPS URL immediately — no DNS or TLS setup needed. Do not use `*.edgecompute.app` (Compute/wasm only, rejected for VCL services).
+
+**WARNING**: The test domain is the name **you choose** (e.g. `my-project.global.ssl.fastly.net`), NOT the service ID. Using `SERVICE_ID.global.ssl.fastly.net` does not work — that hostname does not route to your service.
 
 ### CLI (Recommended)
 
@@ -275,24 +279,26 @@ VCL snippets inject small blocks of VCL logic into your service without writing 
 
 ### CLI
 
-```bash
-fastly vcl custom list --service-id SERVICE_ID --version 1
+**Command paths**: VCL snippet and custom VCL commands live under `fastly service vcl`:
 
-fastly vcl custom create \
+```bash
+fastly service vcl custom list --service-id SERVICE_ID --version 1
+
+fastly service vcl custom create \
   --service-id SERVICE_ID \
   --version 1 \
   --name main \
   --content "$(cat main.vcl)" \
   --main
 
-fastly vcl snippet create \
+fastly service vcl snippet create \
   --service-id SERVICE_ID \
   --version 1 \
   --name redirect-old \
   --type recv \
   --content 'if (req.url ~ "^/old") { set req.url = "/new"; }'
 
-fastly vcl snippet create \
+fastly service vcl snippet create \
   --service-id SERVICE_ID \
   --version 1 \
   --name cache-30min \
@@ -301,8 +307,10 @@ fastly vcl snippet create \
   --dynamic \
   --priority 100
 
-fastly vcl condition list --service-id SERVICE_ID --version 1
+fastly service vcl condition list --service-id SERVICE_ID --version 1
 ```
+
+**IMPORTANT — `--content` takes inline VCL, not a file path.** Passing a file path like `--content /tmp/snippet.vcl` sets the snippet content to the literal string "/tmp/snippet.vcl". To load from a file, use shell substitution: `--content "$(cat /tmp/snippet.vcl)"`.
 
 The `--dynamic` flag creates a dynamic snippet that can be updated without activating a new version. The `-p`/`--priority` flag controls the execution order of snippets (lower values run first).
 
@@ -392,12 +400,14 @@ Returns `{"status":"ok"}` on success, or a list of errors explaining what's miss
 
 ### Create a Caching Proxy
 
-Set up a VCL service that caches all responses from an HTTPS origin for 30 minutes:
+Set up a VCL service that caches all responses from an HTTPS origin for 30 minutes. **Configure everything on version 1 before activating — do not use `--autoclone` or `--version latest` for new services.**
 
 ```bash
+# Step 1: Create the service
 fastly service create --name "my-proxy" --non-interactive
 # note the service ID from the output
 
+# Step 2: Add domain, backend, and snippet — ALL on version 1
 fastly service domain create \
   --service-id $SERVICE_ID \
   --version 1 \
@@ -414,13 +424,14 @@ fastly service backend create \
   --ssl-cert-hostname origin.example.com \
   --ssl-sni-hostname origin.example.com
 
-fastly vcl snippet create \
+fastly service vcl snippet create \
   --service-id $SERVICE_ID \
   --version 1 \
   --name cache-30min \
   --type fetch \
   --content 'set beresp.ttl = 1800s; set beresp.grace = 300s;'
 
+# Step 3: Activate once — all configuration is on version 1
 fastly service version activate --service-id $SERVICE_ID --version 1
 
 # wait ~15s for propagation, then test
@@ -429,6 +440,8 @@ curl -sI https://my-proxy.global.ssl.fastly.net/  # should show X-Cache: HIT
 ```
 
 ### Create New Service with Backend
+
+Configure domain and backend on version 1, then activate once:
 
 ```bash
 fastly service create --name "My CDN" --non-interactive
