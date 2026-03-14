@@ -13,6 +13,8 @@ A collection of skills for AI coding agents to work with the Fastly platform and
 
 Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/` directory containing detailed topic files.
 
+**Important:** SKILL.md files reference companion files in their `references/` directory. Make sure your agent is allowed to read from these directories, otherwise it won't be able to follow the references and will miss important context.
+
 ## Usage
 
 Copy the skills you need into your agent's skills directory. You probably don't need all of them. Pick what's relevant to your project.
