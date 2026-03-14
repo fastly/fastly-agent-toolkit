@@ -1,6 +1,6 @@
 # Fastly Bot Management
 
-Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/products/bot-management.md
+Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/products/bot-management
 
 ## How It Works
 
@@ -42,7 +42,7 @@ Product slug: `bot_management`. Requires an NGWAF subscription. No product-speci
 
 ## Documentation
 
-Fetch these for current details beyond what this skill covers. Strip trailing `/` and append `.md` to get markdown.
+URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
 
 | Source                                           | URL                                                                                                         |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |

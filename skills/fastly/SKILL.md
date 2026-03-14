@@ -37,9 +37,7 @@ API examples below use `curl` to document the HTTP method, URL, headers, and bod
 
 ## Fetching Documentation
 
-Fastly docs are available as markdown. Strip any trailing `/` from the URL and append `.md`:
-
-`https://docs.fastly.com/products/fastly-ddos-protection` → fetch `https://docs.fastly.com/products/fastly-ddos-protection.md`
+Only `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use `format: "markdown"` when fetching them. URLs under `www.fastly.com/documentation/` are a JavaScript app and will return empty content — do not try to fetch them. Do NOT append `.md` to any URL. Prefer the local reference files over fetching.
 
 ## Documentation Sources
 

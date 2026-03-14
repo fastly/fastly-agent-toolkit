@@ -160,7 +160,7 @@ Generates a CSR with specified SANs. Key types: `RSA2048`, `ECDSA256`. Optionall
 
 ## Documentation
 
-Fetch these for current details beyond what this skill covers. Strip trailing `/` and append `.md` to get markdown.
+URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
 
 | Source                                  | URL                                                                                                                      |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |

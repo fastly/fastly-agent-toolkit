@@ -1,6 +1,6 @@
 # Fastly DDoS Protection
 
-Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/ddos-protection.md
+Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/ddos-protection
 
 ## Enablement
 
@@ -71,7 +71,7 @@ Rule actions: `default` (follow service mode), `block`, `log`, `off`
 
 ## Documentation
 
-Fetch these for current details beyond what this skill covers. Strip trailing `/` and append `.md` to get markdown.
+URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
 
 | Source                                               | URL                                                                                                       |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
