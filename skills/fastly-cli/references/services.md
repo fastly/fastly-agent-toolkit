@@ -120,6 +120,48 @@ fastly service backend create \
   --ssl-sni-hostname origin.example.com
 ```
 
+#### Known-good reverse proxy recipe: Host override + HTTPS cert mismatch
+
+Use this exact pattern when the origin answers for one `Host` header, but its TLS certificate only covers a different hostname. This is the most common source of Fastly `503 hostname doesn't match against certificate` errors.
+
+Generic example:
+
+- Public URL to cache: `https://cache.example.com`
+- Origin address to connect to: `origin.example.net`
+- `Host` header required by origin: `cache.example.com`
+- Hostname covered by the origin certificate: `origin.example.net`
+
+```bash
+# Pre-flight: confirm the origin responds when sent the desired Host header.
+curl -sI -H 'Host: cache.example.com' https://origin.example.net/
+
+# Pre-flight: confirm which hostname the cert actually covers.
+echo | openssl s_client -connect origin.example.net:443 -servername origin.example.net 2>/dev/null | \
+  openssl x509 -noout -text | grep -A1 'Subject Alternative Name'
+
+# Backend: connect to origin.example.net, but send Host: cache.example.com.
+# TLS validation and SNI stay on origin.example.net because that is what the cert covers.
+fastly service backend create \
+  --service-id SERVICE_ID \
+  --version 1 \
+  --name origin \
+  --address origin.example.net \
+  --port 443 \
+  --use-ssl \
+  --override-host cache.example.com \
+  --ssl-cert-hostname origin.example.net \
+  --ssl-sni-hostname origin.example.net
+```
+
+Rule of thumb:
+
+- `--address`: where Fastly connects
+- `--override-host`: HTTP `Host` header sent to origin
+- `--ssl-cert-hostname`: hostname Fastly uses for certificate validation
+- `--ssl-sni-hostname`: hostname Fastly sends in TLS SNI
+
+If the cert covers `origin.example.net` but you set either SSL hostname flag to `cache.example.com`, Fastly will return `503 hostname doesn't match against certificate`.
+
 For simple HTTP origins that don't require TLS, omit SSL flags and use `--port 80`:
 
 ```bash
