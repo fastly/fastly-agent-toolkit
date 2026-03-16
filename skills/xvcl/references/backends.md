@@ -47,18 +47,18 @@ backend my_origin {
 
 ## Backend Properties
 
-| Property                 | Type    | Description                        |
-| ------------------------ | ------- | ---------------------------------- |
-| `.host`                  | STRING  | Origin hostname or IP              |
-| `.port`                  | STRING  | Origin port (default "80")         |
-| `.ssl`                   | BOOL    | Enable HTTPS to origin             |
-| `.ssl_cert_hostname`     | STRING  | Expected cert hostname             |
-| `.ssl_sni_hostname`      | STRING  | SNI hostname                       |
-| `.ssl_check_cert`        | STRING  | Cert validation: `always`, `never` |
-| `.connect_timeout`       | RTIME   | Connection timeout                 |
-| `.first_byte_timeout`    | RTIME   | Time to first byte                 |
-| `.between_bytes_timeout` | RTIME   | Time between bytes                 |
-| `.max_connections`       | INTEGER | Max connections                    |
+| Property                 | Type    | Description                                                          |
+| ------------------------ | ------- | -------------------------------------------------------------------- |
+| `.host`                  | STRING  | Origin hostname or IP                                                |
+| `.port`                  | STRING  | Origin port (default "80")                                           |
+| `.ssl`                   | BOOL    | Enable HTTPS to origin                                               |
+| `.ssl_cert_hostname`     | STRING  | Hostname to verify origin cert against (must match origin cert SANs) |
+| `.ssl_sni_hostname`      | STRING  | SNI hostname sent in TLS handshake (must match origin cert SANs)     |
+| `.ssl_check_cert`        | STRING  | Cert validation: `always`, `never`                                   |
+| `.connect_timeout`       | RTIME   | Connection timeout                                                   |
+| `.first_byte_timeout`    | RTIME   | Time to first byte                                                   |
+| `.between_bytes_timeout` | RTIME   | Time between bytes                                                   |
+| `.max_connections`       | INTEGER | Max connections                                                      |
 
 ## Health Check Probe
 

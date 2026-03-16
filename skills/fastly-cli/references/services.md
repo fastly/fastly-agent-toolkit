@@ -412,16 +412,32 @@ Returns `{"status":"ok"}` on success, or a list of errors explaining what's miss
 
 ### Create a Caching Proxy
 
-Set up a VCL service that caches all responses from an HTTPS origin for 30 minutes. **Configure everything on version 1 before activating — do not use `--autoclone` or `--version latest` for new services.**
+Set up a VCL service that caches responses from an HTTPS origin. **Configure everything on version 1 before activating — do not use `--autoclone` or `--version latest` for new services.**
 
-**Default caching behavior**: Fastly VCL services respect origin `Cache-Control` and `Expires` headers by default. If the origin already sends appropriate caching headers (e.g., `Cache-Control: max-age=3600`), you do not need a VCL snippet — omit the snippet step below. Only add a snippet if you want to override the origin's caching behavior.
+**Default caching behavior**: Fastly VCL services respect origin `Cache-Control` and `Expires` headers by default. If the origin already sends appropriate caching headers (e.g., `Cache-Control: max-age=3600`), you do not need a VCL snippet — skip the snippet step entirely. The pre-flight check (`curl -sI`) reveals these headers. Only add a VCL snippet if the origin sends no caching headers, sends `no-cache`/`no-store` when you want to cache, or you want to override the TTL.
+
+#### Pre-flight checklist (do this BEFORE creating the service)
 
 ```bash
-# Step 1: Create the service
-fastly service create --name "my-proxy" --non-interactive
-# note the service ID from the output
+# 1. Verify the origin serves content with the Host header you intend to use
+curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/
+# Check for: 200 status, Cache-Control/Expires headers
 
-# Step 2: Add domain, backend, and snippet — ALL on version 1
+# 2. Check which hostnames the origin's TLS certificate covers
+echo | openssl s_client -connect ORIGIN_ADDRESS:443 -servername ORIGIN_ADDRESS 2>/dev/null | \
+  openssl x509 -noout -text | grep -A1 "Subject Alternative Name"
+# IMPORTANT: If DESIRED_HOST is not in the SANs, you MUST set
+# --ssl-cert-hostname and --ssl-sni-hostname to ORIGIN_ADDRESS (not DESIRED_HOST)
+```
+
+#### Example: Same hostname for address and Host header
+
+```bash
+# Step 1: Create the service (note: --json is NOT supported on this command)
+fastly service create --name "my-proxy" --non-interactive
+# Parse the service ID from "SUCCESS: Created service XXXXX"
+
+# Step 2: Add domain, backend, and optional snippet — ALL on version 1
 fastly service domain create \
   --service-id $SERVICE_ID \
   --version 1 \
@@ -438,6 +454,7 @@ fastly service backend create \
   --ssl-cert-hostname origin.example.com \
   --ssl-sni-hostname origin.example.com
 
+# Optional: override origin TTL (skip if origin sends good Cache-Control headers)
 fastly service vcl snippet create \
   --service-id $SERVICE_ID \
   --version 1 \
@@ -447,20 +464,43 @@ fastly service vcl snippet create \
 
 # Step 3: Activate once — all configuration is on version 1
 fastly service version activate --service-id $SERVICE_ID --version 1
-
-# wait ~15s for propagation, then test
-curl -sI https://my-proxy.global.ssl.fastly.net/
-curl -sI https://my-proxy.global.ssl.fastly.net/  # should show X-Cache: HIT
-
-# Verify caching is working
-curl -sI https://my-proxy.freetls.fastly.net/ | grep -iE "x-cache|age|cache-control"
-# Expected: X-Cache: MISS (first), then HIT; Age increases; cache-control from origin
 ```
 
-**Before starting**: verify the origin serves content correctly with the Host header you intend to use:
+#### Example: Different Host header from origin address
+
+When the origin address differs from the Host header (e.g., origin at `example.com` but you need to send `Host: cdn.example.com`), the SSL settings must match the origin's TLS certificate, NOT the Host header:
+
 ```bash
-curl -sI -H "Host: origin.example.com" https://origin.example.com/
-# Check for Cache-Control/Expires headers and 200 status
+fastly service backend create \
+  --service-id $SERVICE_ID \
+  --version 1 \
+  --name origin \
+  --address example.com \
+  --port 443 \
+  --use-ssl \
+  --override-host cdn.example.com \
+  --ssl-cert-hostname example.com \
+  --ssl-sni-hostname example.com
+```
+
+If `--ssl-cert-hostname` and `--ssl-sni-hostname` are omitted or set to the override-host value, Fastly will return **503 "hostname doesn't match against certificate"** because it validates the TLS cert against the wrong hostname.
+
+#### Testing and verifying
+
+```bash
+# Wait 15-30s for propagation, then test
+# Expected progression: 500 "Domain Not Found" (normal) → 200 (working)
+# If you see 503 instead, check backend SSL settings
+curl -sI https://my-proxy.freetls.fastly.net/
+
+# Second request should be a cache HIT
+curl -sI https://my-proxy.freetls.fastly.net/ | grep -iE "x-cache|age|cache-control"
+# Expected: x-cache: HIT, age: N, cache-control from origin
+
+# NOTE: HEAD requests may return a cached 500 error from the propagation
+# period even after the service is live. Use GET to populate the cache first,
+# then HEAD will work correctly. Always test with GET (curl -s) before
+# relying on HEAD (curl -sI) results for new URLs.
 ```
 
 ### Create New Service with Backend
@@ -505,7 +545,10 @@ fastly service version activate --service-id SERVICE_ID --version 1
 
 ## Propagation Delays
 
-After activating a service version, allow time for changes to propagate across Fastly's network before testing. New service activations typically propagate within 15-30 seconds, but changes can take up to 10 minutes to reach all POPs. If a request returns "Domain Not Found" or "Service Not Found" right after activation, retry after a few seconds.
+After activating a service version, allow time for changes to propagate across Fastly's network before testing:
+- **New service (first activation)**: 500 "Domain Not Found" for 10-60 seconds while the domain propagates. This is normal.
+- **Version updates**: 15-30 seconds for the new version to take effect at all POPs, up to 10 minutes in rare cases.
+- **Error diagnosis**: If you see 503 after the 500 clears, it's a backend configuration issue (commonly SSL hostname mismatch), not a propagation issue. Fix the backend config instead of waiting longer.
 
 ## Dangerous Operations
 

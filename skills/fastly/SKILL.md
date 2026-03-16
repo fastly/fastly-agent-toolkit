@@ -35,6 +35,17 @@ API examples below use `curl` to document the HTTP method, URL, headers, and bod
 | Other features       | [other-features.md](references/other-features.md)                 | Fanout/real-time messaging, IP lists, POPs, HTTP/3, Image Optimizer, events, notifications                         |
 | Edge phase ordering  | [edge-phases.md](references/edge-phases.md)                       | Understanding edge request/response ordering, debugging feature interactions                                       |
 
+## Quick Start: Simple Caching Proxy
+
+The most common task is setting up a VCL service to cache an origin. Before touching any Fastly config, always run the pre-flight checks documented in the **fastly-cli** skill's [services.md](../fastly-cli/references/services.md) under "Pre-flight checklist". The two checks that prevent the most common errors:
+
+1. **Verify the origin responds** with the Host header you intend to send: `curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/`
+2. **Check TLS certificate SANs** to determine the correct `ssl-cert-hostname`/`ssl-sni-hostname`: `echo | openssl s_client -connect ORIGIN:443 -servername ORIGIN 2>/dev/null | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"`
+
+If the origin already sends `Cache-Control` or `Expires` headers, no custom VCL is needed — Fastly respects these by default. Only add VCL snippets to override or extend caching behavior.
+
+The full step-by-step workflow (create service, add domain, add backend, activate) is in the **fastly-cli** skill's [services.md](../fastly-cli/references/services.md) under "Create a Caching Proxy".
+
 ## Fetching Documentation
 
 Only `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use `format: "markdown"` when fetching them. URLs under `www.fastly.com/documentation/` are a JavaScript app and will return empty content — do not try to fetch them. Do NOT append `.md` to any URL. Prefer the local reference files over fetching.
