@@ -74,7 +74,7 @@ Available on most commands:
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
-- For API token in scripts, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` — never reveal tokens in conversation
+- For API token in scripts, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` only when the current credential is a stored Fastly CLI token; if auth comes from `FASTLY_API_TOKEN` or another non-stored source, read the token from the environment instead and never reveal it in conversation
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
 
@@ -95,5 +95,5 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 - **Test domains**: Use a name you choose (e.g. `my-app.global.ssl.fastly.net`), not the service ID. `SERVICE_ID.global.ssl.fastly.net` does NOT work. Adding `foo.global.ssl.fastly.net` automatically makes `foo.freetls.fastly.net` available (HTTP/2).
 - **`--json` not supported on all commands**: `fastly service create` does not support `--json`. Parse the text output (e.g. `SUCCESS: Created service XXXXX`) instead. Always check if `--json` is accepted before relying on JSON output.
 - **Propagation error sequence**: After activating a new service, expect this progression: 500 "Domain Not Found" (10-30s, domain not yet known at edge) → 503 backend errors (if backend config is wrong) → 200 (working). If you see 503 right after 500 clears, check the backend configuration. If you see 503 "hostname doesn't match against certificate", fix the SSL hostname settings. A 503 that appears after a working 200 usually means a backend issue, not propagation.
-- **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. Instead, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution in curl commands. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
+- **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` is safe only for stored Fastly CLI tokens; it fails when the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source. In that case, source the token from the environment or a secure local secret store without printing it. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
 - Debug with `fastly --debug-mode <command>` or `FASTLY_DEBUG_MODE=true` (prints API token in output)

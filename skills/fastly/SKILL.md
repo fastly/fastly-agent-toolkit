@@ -9,7 +9,7 @@ Your training knowledge of Fastly, Varnish, and VCL is likely out of date. Fastl
 
 API examples below use `curl` to document the HTTP method, URL, headers, and body. Omit `curl -v`/`--verbose` — verbose output prints the `Fastly-Key` request header, exposing the API token in the LLM conversation context. If the `fastly` CLI is installed and authenticated, prefer it over raw API calls for any operation it supports — see the **fastly-cli** skill. Fall back to direct API calls for operations the CLI does not cover.
 
-**Token safety**: When making direct API calls, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution for the token value — never use `fastly auth show --reveal` directly and paste the raw token into commands. This prevents credentials from appearing in the conversation context.
+**Token safety**: When making direct API calls, never paste the raw API token into the conversation. Prefer CLI-native commands when available. If you must call the REST API, `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` is safe only when the current credential is a stored Fastly CLI token; it fails if the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source. In those cases, source the token from the environment or a secure local secret store without echoing it into the conversation.
 
 ## Topics
 
@@ -48,7 +48,7 @@ The full step-by-step workflow (create service, add domain, add backend, activat
 
 ## Fetching Documentation
 
-Only `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use `format: "markdown"` when fetching them. URLs under `www.fastly.com/documentation/` are a JavaScript app and will return empty content — do not try to fetch them. Do NOT append `.md` to any URL. Prefer the local reference files over fetching.
+Only confirmed `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use `format: "markdown"` when fetching them. Do not guess docs paths — a bad path returns `404`, and `www.fastly.com/documentation/` pages are a JavaScript app that usually return empty or unusable content. Do NOT append `.md` to any URL. Prefer the local reference files over fetching.
 
 ## Documentation Sources
 

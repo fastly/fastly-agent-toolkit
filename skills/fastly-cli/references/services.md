@@ -186,7 +186,7 @@ curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/dom
   -d '{"name":"my-project.global.ssl.fastly.net"}'
 ```
 
-To get `$FASTLY_API_TOKEN`, use `fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}'` or check the `FASTLY_API_TOKEN` environment variable.
+To get `$FASTLY_API_TOKEN`, use `fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}'` only if the current credential is a stored Fastly CLI token. If the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source, read the token from the environment instead; `fastly auth show --reveal --quiet` will fail with `current token is not stored`.
 
 ## Healthchecks
 
@@ -399,14 +399,14 @@ fastly service imageoptimizer update \
 
 ## Validating a Version
 
-Always validate before activating. The CLI doesn't have a validate command, so use the REST API:
+Always validate before activating when you can do so safely. The CLI doesn't have a validate command, so use the REST API:
 
 ```bash
 curl -s "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/validate" \
   -H "Fastly-Key: $FASTLY_API_TOKEN"
 ```
 
-Returns `{"status":"ok"}` on success, or a list of errors explaining what's missing (e.g., no domain, no backend).
+Returns `{"status":"ok"}` on success, or a list of errors explaining what's missing (e.g., no domain, no backend). If your current CLI auth is not a stored token, the example above may need to read `FASTLY_API_TOKEN` from the environment instead of calling `fastly auth show --reveal --quiet`.
 
 ## Common Workflows
 
@@ -489,18 +489,18 @@ If `--ssl-cert-hostname` and `--ssl-sni-hostname` are omitted or set to the over
 
 ```bash
 # Wait 15-30s for propagation, then test
-# Expected progression: 500 "Domain Not Found" (normal) → 200 (working)
-# If you see 503 instead, check backend SSL settings
-curl -sI https://my-proxy.freetls.fastly.net/
+# Expected progression: 500 from Varnish while the new domain propagates
+# (normal) → 200 (working). If you see 503 instead, check backend SSL settings.
 
-# Second request should be a cache HIT
-curl -sI https://my-proxy.freetls.fastly.net/ | grep -iE "x-cache|age|cache-control"
-# Expected: x-cache: HIT, age: N, cache-control from origin
+# Use GET first so you do not confuse a cached propagation error with origin health.
+curl -sS -D - -o /tmp/body.txt https://my-proxy.freetls.fastly.net/ | sed -n '1,25p'
 
-# NOTE: HEAD requests may return a cached 500 error from the propagation
-# period even after the service is live. Use GET to populate the cache first,
-# then HEAD will work correctly. Always test with GET (curl -s) before
-# relying on HEAD (curl -sI) results for new URLs.
+# Then confirm Fastly is honoring the origin cache headers and serving HITs.
+curl -sI https://my-proxy.freetls.fastly.net/ | grep -iE "x-cache|age|cache-control|expires"
+# Expected: x-cache: HIT, age: N, cache-control/expires from origin
+
+# NOTE: HEAD requests may return a cached 500 from the propagation period even
+# after the service is live. Always test with GET first on a fresh hostname.
 ```
 
 ### Create New Service with Backend

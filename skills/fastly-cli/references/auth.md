@@ -36,7 +36,7 @@ Login creates a token and stores it locally.
 
 Stored tokens let you keep multiple credentials for different accounts or environments.
 
-**SECURITY WARNING for AI agents**: NEVER run `fastly auth show --reveal` directly — it prints the raw API token into the conversation context, exposing credentials. If you need a token for a `curl` command, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution so the token value is never visible in the conversation.
+**SECURITY WARNING for AI agents**: NEVER run `fastly auth show --reveal` directly — it prints the raw API token into the conversation context, exposing credentials. If you need a token for a `curl` command, `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` is safe only when the current credential is a stored Fastly CLI token. If auth comes from `FASTLY_API_TOKEN` or another non-stored source, that command fails; read the token from the environment instead, without echoing it into the conversation.
 
 ```bash
 # List all stored tokens
@@ -275,7 +275,7 @@ These operations affect authentication and access control.
 
 **"No token provided"**: Run `fastly auth login --sso --token default` or set `FASTLY_API_TOKEN`
 
-**"Token is invalid"** or **SSO token expired**: Token may be expired or revoked. Check with `fastly auth list` (shows expiry). For SSO tokens, refresh with `fastly auth login --sso --token TOKEN_NAME --auto-yes`. For API tokens, re-authenticate with `fastly auth login` or add a new token with `fastly auth add`.
+**"Token is invalid"** or **SSO token expired**: Token may be expired or revoked. Check with `fastly auth list` (shows expiry). For SSO tokens, refresh with `fastly auth login --sso --token TOKEN_NAME --auto-yes`. For API tokens, re-authenticate with `fastly auth login` or add a new token with `fastly auth add`. If `fastly auth show --reveal --quiet` fails with `current token is not stored`, the CLI is likely using `FASTLY_API_TOKEN` or another non-stored credential source rather than a saved auth profile.
 
 **"Insufficient permissions"**: Token scope doesn't include required permissions. Create a token with appropriate scope via the Fastly API.
 
