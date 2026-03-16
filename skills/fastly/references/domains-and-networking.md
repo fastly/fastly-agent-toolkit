@@ -54,6 +54,86 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/domain-management/v1/domains?service_id=SU1Z0isxPaozGVKXdv0eY"
 ```
 
+## End-to-End: Custom Domain with TLS
+
+Complete workflow for making a Fastly service accessible at a custom domain (e.g., `www.example.com`) with HTTPS. This involves three systems: the Fastly service (versioned domain), the Fastly TLS API (certificate), and your DNS provider (records).
+
+### Pre-flight
+
+```bash
+# 1. Check CAA records — determines which CA to use for TLS subscription
+dig CAA example.com +short
+# If "0 issue letsencrypt.org" -> use lets-encrypt
+# If "0 issue certainly.com" -> use certainly
+# If no CAA records -> any CA works
+
+# 2. Pick a TLS configuration (get IDs and DNS records)
+curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
+  "https://api.fastly.com/tls/configurations?include=dns_records"
+# Note the config ID and the CNAME target (e.g., m.sni.global.fastly.net)
+```
+
+### Steps
+
+1. **Add domain to service version** (versioned domain API):
+
+   ```bash
+   # If the active version is locked, clone it first
+   curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     "https://api.fastly.com/service/$SERVICE_ID/version/$ACTIVE_VERSION/clone"
+   # Add domain to the new version
+   curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     -d "name=www.example.com" \
+     "https://api.fastly.com/service/$SERVICE_ID/version/$NEW_VERSION/domain"
+   ```
+
+2. **Activate the version**:
+
+   ```bash
+   curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     "https://api.fastly.com/service/$SERVICE_ID/version/$NEW_VERSION/activate"
+   ```
+
+3. **Create TLS subscription** (choose CA based on CAA records):
+
+   ```bash
+   curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     -H "Content-Type: application/vnd.api+json" \
+     -d '{"data":{"type":"tls_subscription","attributes":{"certificate_authority":"lets-encrypt"},"relationships":{"tls_domains":{"data":[{"type":"tls_domain","id":"www.example.com"}]},"tls_configuration":{"data":{"type":"tls_configuration","id":"CONFIG_ID"}}}}}' \
+     "https://api.fastly.com/tls/subscriptions"
+   ```
+
+4. **Get DNS challenge records** (must use `?include=tls_authorizations`):
+
+   ```bash
+   curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     "https://api.fastly.com/tls/subscriptions/$SUBSCRIPTION_ID?include=tls_authorizations"
+   ```
+
+   Look in `included[].attributes.challenges` for the records to create. Also check `included[].attributes.warnings` for issues (e.g., CAA conflicts).
+
+5. **Configure DNS** (at your DNS provider):
+
+   - **ACME challenge**: `_acme-challenge.www.example.com` CNAME to the value from step 4 (e.g., `xyz.fastly-validations.com`)
+   - **Traffic routing**: `www.example.com` CNAME to `m.sni.global.fastly.net` (from TLS config's `dns_records`)
+   - For apex domains: use A records instead of CNAME (get IPs from TLS config's `dns_records`)
+
+6. **Wait for certificate issuance** (typically 1-5 minutes after DNS propagates):
+
+   ```bash
+   # Poll until state is "issued"
+   curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
+     "https://api.fastly.com/tls/subscriptions/$SUBSCRIPTION_ID"
+   # States: pending -> processing -> issued
+   ```
+
+7. **Verify**:
+
+   ```bash
+   curl -sI https://www.example.com/
+   # Should return HTTP/2 200 with x-served-by: cache-*
+   ```
+
 ## Domain Ownership
 
 Domain ownership records confirm that a customer has validated control over a domain. Ownership is established by obtaining a Fastly-managed TLS certificate or providing a publicly-trusted CA certificate that covers the domain (or a matching wildcard).

@@ -470,6 +470,12 @@ echo | openssl s_client -connect ORIGIN_ADDRESS:443 -servername ORIGIN_ADDRESS 2
   openssl x509 -noout -text | grep -A1 "Subject Alternative Name"
 # IMPORTANT: If DESIRED_HOST is not in the SANs, you MUST set
 # --ssl-cert-hostname and --ssl-sni-hostname to ORIGIN_ADDRESS (not DESIRED_HOST)
+
+# 3. If using a custom domain (not *.global.ssl.fastly.net), check CAA records
+dig CAA DOMAIN +short
+# If a CAA record exists (e.g., "0 issue letsencrypt.org"), you MUST use a
+# matching --cert-auth when creating the TLS subscription later.
+# See tls.md for the full custom domain + TLS workflow.
 ```
 
 #### Example: Same hostname for address and Host header
@@ -577,6 +583,44 @@ fastly service backend update \
   --name origin \
   --address new-origin.example.com
 fastly service version activate --service-id SERVICE_ID --version latest
+```
+
+### Add Custom Domain with TLS to Existing Service
+
+To serve traffic at a custom domain (not `*.global.ssl.fastly.net`), you need both a domain on the service AND a TLS subscription. See `tls.md` for full details.
+
+```bash
+# 1. Check CAA records to choose the right CA
+dig CAA example.com +short
+
+# 2. Add domain to service (autoclone since active version is locked)
+fastly service domain create \
+  --service-id SERVICE_ID \
+  --version active --autoclone \
+  --name www.example.com
+
+# 3. Activate the new version
+fastly service version activate --service-id SERVICE_ID --version latest
+
+# 4. Create TLS subscription (use --cert-auth matching CAA records)
+fastly tls-subscription create \
+  --domain www.example.com \
+  --cert-auth lets-encrypt \
+  --config CONFIG_ID
+
+# 5. Get DNS challenge details (--include + --json required)
+fastly tls-subscription describe --id SUBSCRIPTION_ID --include tls_authorizations --json
+# Look for Authorizations[].Challenges[] — see tls.md for details
+
+# 6. USER ACTION: Create DNS records at your DNS provider:
+#    a) _acme-challenge.www.example.com CNAME -> (value from step 5)
+#    b) www.example.com CNAME -> m.sni.global.fastly.net
+
+# 7. Wait for certificate issuance (poll until state is "issued")
+fastly tls-subscription describe --id SUBSCRIPTION_ID --json
+
+# 8. Verify
+curl -sI https://www.example.com/
 ```
 
 ### Rollback to Previous Version

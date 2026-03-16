@@ -36,7 +36,17 @@ Login creates a token and stores it locally.
 
 Stored tokens let you keep multiple credentials for different accounts or environments.
 
-**SECURITY WARNING for AI agents**: NEVER run `fastly auth show --reveal` directly — it prints the raw API token into the conversation context, exposing credentials. If you need a token for a `curl` command, `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` is safe only when the current credential is a stored Fastly CLI token. If auth comes from `FASTLY_API_TOKEN` or another non-stored source, that command fails; read the token from the environment instead, without echoing it into the conversation.
+**SECURITY WARNING for AI agents**: NEVER run `fastly auth show --reveal` directly — it prints the raw API token into the conversation context, exposing credentials. If you need a token for a `curl` command, use:
+
+```bash
+# For stored tokens (SSO or API) — specify the token NAME explicitly:
+TOKEN=$(fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}')
+
+# Example with an SSO token named "sso2":
+TOKEN=$(fastly auth show sso2 --reveal --quiet | awk '/^Token:/ {print $2}')
+```
+
+**Common pitfall**: `fastly auth show --reveal --quiet` (without a token name) fails with `current token is not stored` when the CLI is authenticated via `FASTLY_API_TOKEN` env var rather than a stored profile. Always specify the stored token name explicitly. Use `fastly auth list` to see available stored token names.
 
 ```bash
 # List all stored tokens

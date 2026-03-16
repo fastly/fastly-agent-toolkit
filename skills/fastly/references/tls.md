@@ -14,11 +14,29 @@ Three approaches: **Platform TLS** (managed certs via Certainly/Let's Encrypt/Gl
 | Update subscription | `PATCH`  | `/tls/subscriptions/{tls_subscription_id}` |
 | Delete subscription | `DELETE` | `/tls/subscriptions/{tls_subscription_id}` |
 
-Subscription states: `pending`, `processing`, `issued`, `renewing`, `failed`. Normal flow: `pending` -> `processing` -> `issued`. Renewals go through `renewing`.
+Subscription states: `pending` -> `processing` -> `issued`. Renewals: `issued` -> `renewing` -> `issued`. Failures: any state -> `failed`.
+
+| State        | Meaning                        | Action                                         |
+| ------------ | ------------------------------ | ---------------------------------------------- |
+| `pending`    | Awaiting DNS challenge records | Configure DNS, then wait                       |
+| `processing` | DNS validated, CA issuing cert | Wait (typically 1-5 minutes)                   |
+| `issued`     | Certificate live and active    | Done                                           |
+| `renewing`   | Auto-renewal in progress       | No action needed                               |
+| `failed`     | Issuance failed                | Check warnings, fix, PATCH with `state: retry` |
+
+Authorization states (in `tls_authorizations`): `blocked` (DNS not configured or CAA conflict) -> challenge validated -> cert issued. Check `included[].attributes.warnings` for details on `blocked` state.
 
 Certificate authorities: `certainly`, `lets-encrypt`, `globalsign`. Migrate between CAs via PATCH `certificate_authority`; to migrate from 'globalsign' to 'certainly', contact Fastly Support. To retry a `failed` subscription, PATCH with `state: retry`.
 
-List filters: `filter[state]`, `filter[tls_domains.id]`, `filter[has_active_order]`, `filter[certificate_authority]`. Include: `tls_authorizations`, `tls_certificates`.
+**CAA record verification.** Before choosing a CA, check the domain's CAA records with `dig CAA example.com +short`. If a CAA record restricts issuance (e.g., `0 issue "letsencrypt.org"`), the subscription's CA must match. Using a different CA (e.g., `certainly`) will result in a `blocked` authorization with warning `"Found conflicting CAA record(s)"`. If no CAA records exist, any CA works.
+
+| CA             | Required CAA `issue` value |
+| -------------- | -------------------------- |
+| `lets-encrypt` | `letsencrypt.org`          |
+| `certainly`    | `certainly.com`            |
+| `globalsign`   | `globalsign.com`           |
+
+List filters: `filter[state]`, `filter[tls_domains.id]`, `filter[has_active_order]`, `filter[certificate_authority]`. Include: `tls_authorizations` (required to get DNS challenge records), `tls_certificates`.
 
 Delete requires no domains in TLS-enabled state. Use `force=true` query param on PATCH or DELETE with active domains (may break TLS).
 
@@ -98,7 +116,25 @@ curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
 | Get configuration    | `GET`   | `/tls/configurations/{tls_configuration_id}` |
 | Update configuration | `PATCH` | `/tls/configurations/{tls_configuration_id}` |
 
-Configurations apply to sets of IP pools and define HTTP protocols (http/1.1, http/2), TLS protocol versions, and the `bulk` flag for Platform TLS. Include `dns_records` to get A/AAAA/CNAME records for DNS setup. Filter: `filter[bulk]`.
+Configurations apply to sets of IP pools and define HTTP protocols, TLS protocol versions, and the `bulk` flag for Platform TLS. **Always include `dns_records`** to get A/AAAA/CNAME records needed for DNS setup. Filter: `filter[bulk]`.
+
+Typical configurations available on most accounts (IDs vary per account):
+
+| Name                   | HTTP Protocols           | TLS Protocols | Best For                            |
+| ---------------------- | ------------------------ | ------------- | ----------------------------------- |
+| TLS v1.3               | http/1.1, http/2         | 1.2, 1.3      | Standard setup (usually default)    |
+| TLS v1.3+0RTT          | http/1.1, http/2         | 1.2, 1.3+0RTT | Lower latency (idempotent requests) |
+| HTTP/3 & TLS v1.3      | http/1.1, http/2, http/3 | 1.2, 1.3      | Modern clients, best performance    |
+| HTTP/3 & TLS v1.3+0RTT | http/1.1, http/2, http/3 | 1.2, 1.3+0RTT | Maximum performance                 |
+
+0-RTT (early data) improves latency but has replay risk for non-idempotent requests. HTTP/3 uses QUIC for better mobile/lossy-network performance. List your account's configs with `GET /tls/configurations`.
+
+```bash
+# Get config with DNS records for domain setup
+curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
+  "https://api.fastly.com/tls/configurations/{tls_configuration_id}?include=dns_records"
+# Response includes A records (for apex) and CNAME target (for subdomains)
+```
 
 ## TLS Domains
 

@@ -36,21 +36,24 @@ fastly tls-platform update \
 fastly tls-platform delete --id PLATFORM_ID
 ```
 
-## TLS Subscriptions (Let's Encrypt)
+## TLS Subscriptions (Managed Certificates)
 
-Automatically provisioned and renewed certificates.
+Automatically provisioned and renewed certificates via Let's Encrypt, Certainly, or GlobalSign.
+
+**IMPORTANT**: The CLI flag for certificate authority is `--cert-auth` (not `--certificate-authority`).
 
 ```bash
 # List subscriptions
 fastly tls-subscription list [--json]
 
-# Create subscription
+# Create subscription (choose CA based on domain's CAA records)
 fastly tls-subscription create \
   --domain www.example.com \
-  --certificate-authority lets-encrypt
+  --cert-auth lets-encrypt \
+  --config CONFIG_ID
 
-# Describe subscription
-fastly tls-subscription describe --id SUBSCRIPTION_ID [--json]
+# Describe subscription (add --include to get DNS challenge details)
+fastly tls-subscription describe --id SUBSCRIPTION_ID --include tls_authorizations --json
 
 # Update subscription
 fastly tls-subscription update --id SUBSCRIPTION_ID
@@ -58,6 +61,46 @@ fastly tls-subscription update --id SUBSCRIPTION_ID
 # Delete subscription
 fastly tls-subscription delete --id SUBSCRIPTION_ID
 ```
+
+### Subscription States
+
+| State        | Meaning                                                 |
+| ------------ | ------------------------------------------------------- |
+| `pending`    | Waiting for DNS challenge records to be configured      |
+| `processing` | DNS validated, certificate being issued by CA (minutes) |
+| `issued`     | Certificate is live and active                          |
+| `renewing`   | Auto-renewal in progress (cert still valid)             |
+| `failed`     | Issuance failed (CAA conflict, DNS issue, CA rejection) |
+
+Authorization states (within each subscription's `tls_authorizations`):
+- `blocked`: Cannot proceed (e.g., missing DNS records, CAA mismatch)
+- `passing`: Challenge verified, DNS records correct
+- `authorized`: Fully authorized by CA
+
+### Getting DNS Challenge Details
+
+By default, `tls-subscription describe --json` returns `Challenges: null` in the authorizations. You **must** add `--include tls_authorizations` to get the actual challenge records:
+
+```bash
+fastly tls-subscription describe --id SUBSCRIPTION_ID --include tls_authorizations --json
+```
+
+**IMPORTANT**: The `--include` flag only affects `--json` output. Without `--json`, the text output omits challenge details even with `--include`.
+
+In the JSON response, look for `Authorizations[].Challenges[]` — each challenge has:
+- `Type`: `managed-dns`, `managed-http-cname`, or `managed-http-a`
+- `RecordType`: `CNAME` or `A`
+- `RecordName`: DNS record name to create (e.g., `_acme-challenge.example.com`)
+- `Values`: array of target values
+
+Also check `Authorizations[].Warnings` for issues like CAA conflicts.
+
+Alternatively, via the REST API:
+```bash
+curl -s -H "Fastly-Key: $TOKEN" \
+  "https://api.fastly.com/tls/subscriptions/SUBSCRIPTION_ID?include=tls_authorizations"
+```
+REST API response uses lowercase fields in `included[].attributes.challenges` (not PascalCase).
 
 ## Custom TLS Certificates
 
@@ -162,17 +205,31 @@ fastly tls-config update \
 ### Setup Let's Encrypt TLS
 
 ```bash
+# 0. Pre-flight: Check CAA records to choose the right CA
+#    lets-encrypt requires CAA to allow "letsencrypt.org"
+#    certainly requires CAA to allow "certainly.com"
+#    If the domain has no CAA records, any CA works.
+dig CAA example.com +short
+
 # 1. Add domain to your service
 fastly service domain create --service-id SERVICE_ID --version 1 --name www.example.com
 fastly service version activate --service-id SERVICE_ID --version 1
 
-# 2. Create TLS subscription
-fastly tls-subscription create --domain www.example.com --certificate-authority lets-encrypt
+# 2. Create TLS subscription (use --cert-auth, NOT --certificate-authority)
+#    Optionally specify --config CONFIG_ID for a specific TLS configuration
+fastly tls-subscription create --domain www.example.com --cert-auth lets-encrypt
 
-# 3. Complete DNS validation (follow instructions in output)
-# Add CNAME record as instructed
+# 3. Get DNS challenge details (--include + --json required to see challenges)
+fastly tls-subscription describe --id SUBSCRIPTION_ID --include tls_authorizations --json
+# Look for Authorizations[].Challenges[] in the JSON output
+# Typical challenge: CNAME _acme-challenge.DOMAIN -> *.fastly-validations.com
+# Also check Authorizations[].Warnings for CAA conflicts
 
-# 4. Wait for certificate issuance (usually minutes)
+# 4. Create DNS records:
+#    a) ACME challenge:  _acme-challenge.www.example.com CNAME <value>.fastly-validations.com
+#    b) Traffic routing:  www.example.com CNAME m.sni.global.fastly.net
+
+# 5. Wait for certificate issuance (usually minutes after DNS propagates)
 fastly tls-subscription describe --id SUBSCRIPTION_ID
 ```
 
@@ -274,10 +331,16 @@ These operations can cause HTTPS to stop working for affected domains.
 
 ## Troubleshooting
 
-**Certificate not working**: Ensure domain points to Fastly (CNAME to `*.global.fastly.net`)
+**Certificate not working**: Ensure domain points to Fastly (CNAME to `m.sni.global.fastly.net` for subdomains, or A records for apex). Get exact records from `fastly tls-config describe --id CONFIG_ID --json` or `GET /tls/configurations/{id}?include=dns_records`.
 
-**Subscription pending**: DNS validation incomplete. Check CNAME records.
+**Subscription stuck in `pending`**: DNS challenge records not configured or not propagated. Verify with `dig CNAME _acme-challenge.DOMAIN +short`. The value should match the challenge from the REST API.
 
-**Chain validation error**: Include intermediate certificates with `--intermediates-blob` when using platform TLS
+**Subscription `failed` with CAA warning**: The domain's CAA records restrict which CAs can issue certificates. Check with `dig CAA DOMAIN +short`. If it says `0 issue "letsencrypt.org"`, you must use `--cert-auth lets-encrypt` (not `certainly`). If no CAA records exist, any CA works. Fix: delete the failed subscription, recreate with the correct `--cert-auth` value.
 
-**Private key mismatch**: Ensure certificate matches uploaded private key
+**Authorization state `blocked`**: Check `included[].attributes.warnings` in the REST API response for details. Common causes: CAA record mismatch, domain not resolving.
+
+**Chain validation error**: Include intermediate certificates with `--intermediates-blob` when using platform TLS.
+
+**Private key mismatch**: Ensure certificate matches uploaded private key.
+
+**`--certificate-authority` flag not found**: The correct flag is `--cert-auth`.

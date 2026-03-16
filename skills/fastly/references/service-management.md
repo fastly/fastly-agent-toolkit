@@ -7,6 +7,7 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 **Version lifecycle: draft, active, locked.** Every service has numbered versions. A version starts as a draft (editable). Activating it deploys its configuration to the edge and automatically locks the previous active version. Locked versions are immutable -- objects cannot be added or edited.
 
 **Clone-modify-activate workflow.** The standard change workflow is:
+
 1. Clone the current active version (`PUT .../version/{v}/clone`) -- creates a new draft.
 2. Modify the draft (add backends, domains, VCL, etc.).
 3. Validate (`GET .../version/{v}/validate`).
@@ -117,6 +118,18 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 Domain check returns an array of `[domain_details, current_cname, is_properly_configured]`.
 
 For test domains, use the versioned domain endpoint to add `foo.global.ssl.fastly.net` — DNS and TLS are pre-configured. This also makes `foo.freetls.fastly.net` (HTTP/2) available automatically. Do NOT use the Domain Management API (`/domain-management/v1/domains`) for test domains — it rejects `*.global.ssl.fastly.net` with a 400 error.
+
+### Custom Domains Require TLS Setup
+
+Adding a custom domain (e.g., `www.example.com`) to a service version is **only step 1**. For HTTPS to work, you also need:
+
+1. **Add domain to service version** (versioned domain API above)
+2. **Activate the version** to deploy the domain config to edge
+3. **Create a TLS subscription or activation** linking the domain to a certificate (see `tls.md`)
+4. **Configure DNS** to point the domain to Fastly (CNAME for subdomains, A records for apex)
+5. **Wait for certificate issuance** (Platform TLS subscriptions take minutes after DNS propagates)
+
+Omitting step 3 means HTTPS visitors will see TLS errors. The versioned domain and TLS subscription are independent API resources — the domain tells Fastly which service handles the hostname, while the TLS subscription/activation provides the certificate for that hostname.
 
 ## VCL Service Settings
 
