@@ -4,12 +4,12 @@ A collection of skills for AI coding agents to work with the Fastly platform and
 
 ## Available skills
 
-- `fastly`: Working with the Fastly platform: services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.
-- `fastly-cli`: Using the Fastly CLI for managing services, compute apps, logging, WAF, TLS, key-value stores, and stats.
-- `falco`: VCL development with Falco: linting, testing, simulation, formatting, REPL, and Terraform integration.
-- `fastlike`: Running Fastly Compute locally with Fastlike (Go-based): backend configuration, builds, and testing.
-- `viceroy`: Running Fastly Compute locally with Viceroy (WASM-based): serving, configuration, testing, and SDK adaptation.
-- `xvcl`: The XVCL VCL transpiler: syntax extensions, subroutines, header manipulation, and caching logic.
+- `fastly`: Working with the Fastly platform, including services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.
+- `fastly-cli`: Using the Fastly CLI to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
+- `falco`: VCL development with Falco, covering linting, testing, simulation, formatting, REPL, and Terraform integration.
+- `fastlike`: Running Fastly Compute locally with Fastlike (Go-based), covering backend configuration, builds, and testing.
+- `viceroy`: Running Fastly Compute locally with Viceroy (WASM-based), covering serving, configuration, testing, and SDK adaptation.
+- `xvcl`: The XVCL VCL transpiler, covering syntax extensions, subroutines, header manipulation, and caching logic.
 
 Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/` directory containing detailed topic files.
 
@@ -17,11 +17,29 @@ Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/
 
 ## Usage
 
-Copy the skills you need into your agent's skills directory. You probably don't need all of them. Pick what's relevant to your project.
+Pick the skills relevant to your project. You probably don't need all of them.
 
-### Preferred: `.agents/skills`
+### Using the `skills` CLI (recommended)
 
-The shared `.agents/skills/` layout is the most portable option when your agent supports the Agent Skills discovery convention. Agents with support for this location include Amp, Cline, Droid, Gemini CLI, kilocode, OpenHands, Replit Agent, Roo Code, Swival, and Warp.
+The [`skills`](https://github.com/vercel-labs/skills) CLI installs skills into the standard `.agents/skills/` directory and automatically symlinks them into agent-specific directories. It supports most agents out of the box.
+
+Install into the current project:
+
+```bash
+bunx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+# or with node:
+npx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+```
+
+Install globally (available across all projects via `~/.agents/skills/`):
+
+```bash
+bunx skills add -g github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+```
+
+### Manual copy
+
+If your agent supports the `.agents/skills/` convention, this is the most portable option. Agents that use this location include Amp, Cline, Codex, Cursor, Gemini CLI, GitHub Copilot, Kimi Code, OpenCode, Replit Agent, Swival, and Warp.
 
 Install into the current project:
 
@@ -30,14 +48,14 @@ mkdir -p .agents/skills
 cp -R ./skills/{falco,viceroy} .agents/skills/
 ```
 
-Some agents also use the shared user-level `~/.agents/skills/` directory, including Cline and Warp:
+Install globally (for agents that support `~/.agents/skills/`):
 
 ```bash
 mkdir -p ~/.agents/skills
 cp -R ./skills/{falco,viceroy} ~/.agents/skills/
 ```
 
-If your agent does not support `.agents/skills/` yet, use its agent-specific location below.
+If your agent doesn't support `.agents/skills/`, use its agent-specific location below.
 
 ### Claude Code
 
@@ -57,7 +75,7 @@ mkdir -p .claude/skills
 cp -R ./skills/{falco,viceroy} .claude/skills/
 ```
 
-For immediate, reliable setup in local environments, prefer the manual copy above first (it does not depend on the marketplace installation step).
+For a quick local setup, the manual copy is more reliable since it doesn't depend on the marketplace.
 
 ### Codex
 
@@ -89,7 +107,7 @@ cp -R ./skills/{falco,viceroy} .qwen/skills/
 
 ### Gemini CLI
 
-Gemini CLI supports the shared `.agents/skills/` layout above. If you prefer Gemini's extension workflow instead of copying individual skills, you can also link this repository directly:
+Gemini CLI supports `.agents/skills/` as shown above. You can also link the whole repository using Gemini's extension workflow:
 
 ```bash
 gemini extensions link .
