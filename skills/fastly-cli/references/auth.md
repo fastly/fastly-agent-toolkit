@@ -205,6 +205,23 @@ fastly auth use work
 fastly service list --token personal
 ```
 
+### Refresh Expired SSO Tokens
+
+SSO tokens expire (check with `fastly auth list`). To refresh without re-entering credentials manually:
+
+```bash
+# Check which tokens are expired
+fastly auth list
+
+# Refresh a specific SSO token (opens browser)
+fastly auth login --sso --token TOKEN_NAME --auto-yes
+
+# Verify the refresh worked
+fastly whoami
+```
+
+The `--auto-yes` flag skips the confirmation prompt. The browser will open for SSO authentication. After success, the stored token is updated automatically.
+
 ### Token Rotation
 
 ```bash
@@ -258,7 +275,7 @@ These operations affect authentication and access control.
 
 **"No token provided"**: Run `fastly auth login --sso --token default` or set `FASTLY_API_TOKEN`
 
-**"Token is invalid"**: Token may be expired or revoked. Re-authenticate with `fastly auth login` or add a new token with `fastly auth add`.
+**"Token is invalid"** or **SSO token expired**: Token may be expired or revoked. Check with `fastly auth list` (shows expiry). For SSO tokens, refresh with `fastly auth login --sso --token TOKEN_NAME --auto-yes`. For API tokens, re-authenticate with `fastly auth login` or add a new token with `fastly auth add`.
 
 **"Insufficient permissions"**: Token scope doesn't include required permissions. Create a token with appropriate scope via the Fastly API.
 

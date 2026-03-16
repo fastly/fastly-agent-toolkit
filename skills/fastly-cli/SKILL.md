@@ -80,15 +80,15 @@ Available on most commands:
 
 ## Propagation Delays
 
-Changes propagate across Fastly's network in seconds to minutes (up to 10 min for version activations, up to 5 min for TLS). Cache purges are 1-2 seconds. Retry with backoff when verifying changes.
+Changes propagate across Fastly's network in seconds to minutes (up to 10 min for version activations, up to 5 min for TLS). Cache purges are 1-2 seconds. Retry with backoff when verifying changes. Test domains (`*.global.ssl.fastly.net`) may return 500 "Domain Not Found" for ~10-15 seconds after initial activation — this is normal propagation, not a configuration error.
 
 ## Troubleshooting
 
-- **403 on domain create**: Use `fastly service domain create` (version-scoped API), not `fastly domain create`
+- **403/400 on domain create**: Use `fastly service domain create` (version-scoped API), not `fastly domain create`. The versionless `fastly domain create` returns 403 for most accounts, and returns 400 for `*.global.ssl.fastly.net` / `*.edgecompute.app` test domains with "Invalid value for fqdn". Always use `fastly service domain create`.
 - **"version is locked"**: Use `--autoclone` or clone first with `fastly service version clone`
 - **New service setup**: Version 1 is unlocked — add domain, backend, and snippets all on `--version 1`, then activate once. Do NOT use `--autoclone` or `--version latest` on a new service — it causes unnecessary version cloning and scattered configuration.
 - **VCL commands**: Snippet/custom VCL commands are under `fastly service vcl` (e.g. `fastly service vcl snippet create`, `fastly service vcl custom create`), NOT `fastly vcl snippet create`
 - **`--content` is inline**: The `--content` flag on snippet/custom VCL commands takes inline VCL code, not a file path. To load from a file: `--content "$(cat file.vcl)"`
-- **Test domains**: Use a name you choose (e.g. `my-app.global.ssl.fastly.net`), not the service ID. `SERVICE_ID.global.ssl.fastly.net` does NOT work.
+- **Test domains**: Use a name you choose (e.g. `my-app.global.ssl.fastly.net`), not the service ID. `SERVICE_ID.global.ssl.fastly.net` does NOT work. Adding `foo.global.ssl.fastly.net` automatically makes `foo.freetls.fastly.net` available (HTTP/2).
 - **Token for REST API calls**: NEVER use `fastly auth show --reveal` in an AI agent context — it exposes the API token in the conversation. Instead, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` as inline substitution in curl commands. Similarly, `--debug-mode` prints secrets to stdout — avoid it unless the user requests it.
 - Debug with `fastly --debug-mode <command>` or `FASTLY_DEBUG_MODE=true` (prints API token in output)

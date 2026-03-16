@@ -1,5 +1,15 @@
 # Caching Reference
 
+## Default Behavior (No VCL Needed)
+
+Fastly VCL services respect origin HTTP caching headers by default:
+- `Cache-Control: max-age=N` and `s-maxage=N` set the cache TTL
+- `Expires` headers are honored when `Cache-Control` is absent
+- `Vary` headers create separate cache entries per header value
+- `Cache-Control: private`, `no-store`, or `no-cache` prevent caching
+
+If the origin already sends appropriate caching headers, you do not need any VCL to enable caching. Only use the VCL patterns below when you need to override or customize the origin's caching behavior.
+
 ## Cache Control Basics
 
 ### TTL (Time To Live)

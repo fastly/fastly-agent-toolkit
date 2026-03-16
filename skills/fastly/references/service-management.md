@@ -116,6 +116,8 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 
 Domain check returns an array of `[domain_details, current_cname, is_properly_configured]`.
 
+For test domains, use the versioned domain endpoint to add `foo.global.ssl.fastly.net` — DNS and TLS are pre-configured. This also makes `foo.freetls.fastly.net` (HTTP/2) available automatically. Do NOT use the Domain Management API (`/domain-management/v1/domains`) for test domains — it rejects `*.global.ssl.fastly.net` with a 400 error.
+
 ## VCL Service Settings
 
 Default settings for a VCL service version (default host, default TTL, stale-if-error, stale-if-error TTL).

@@ -110,6 +110,16 @@ Certificate verification (`ssl_check_cert`) is enabled by default — do not pas
 
 All three hostnames should typically match the origin's hostname. Omitting `--ssl-sni-hostname` causes TLS handshake failures when the origin uses SNI-based certificate selection (shared hosting, CDNs, cloud load balancers).
 
+**When the Host header differs from the origin hostname** (e.g., sending `Host: cdn.example.com` to `origin.example.com`): set `--override-host` to the desired Host header value, and set `--ssl-cert-hostname` and `--ssl-sni-hostname` to the origin's actual hostname (what its TLS certificate covers). Example:
+```bash
+fastly service backend create \
+  --service-id SERVICE_ID --version 1 --name origin \
+  --address origin.example.com --port 443 --use-ssl \
+  --override-host cdn.example.com \
+  --ssl-cert-hostname origin.example.com \
+  --ssl-sni-hostname origin.example.com
+```
+
 For simple HTTP origins that don't require TLS, omit SSL flags and use `--port 80`:
 
 ```bash
@@ -129,7 +139,7 @@ Domains control which hostnames route to your service.
 **IMPORTANT**: There are two CLI command families with similar names but completely different behavior:
 
 - `fastly service domain create` — version-scoped, calls `/service/{id}/version/{v}/domain`. **Use this one.**
-- `fastly domain create` — calls the newer `/domain-management/v1/domains` API, uses `--fqdn` instead of `--name`, and **returns 403 Forbidden** for most accounts. Never use it.
+- `fastly domain create` — calls the newer `/domain-management/v1/domains` API, uses `--fqdn` instead of `--name`, and **returns 403 Forbidden** for most accounts. For test domains (`*.global.ssl.fastly.net`, `*.edgecompute.app`), it returns **400 Bad Request** with "Invalid value for fqdn". Never use it.
 
 ### Test Domains
 
@@ -140,6 +150,8 @@ my-project.global.ssl.fastly.net
 ```
 
 This gives you a working HTTPS URL immediately — no DNS or TLS setup needed. Do not use `*.edgecompute.app` (Compute/wasm only, rejected for VCL services).
+
+Adding `foo.global.ssl.fastly.net` automatically makes `foo.freetls.fastly.net` available too (HTTP/2 enabled). Both URLs work for testing; `freetls.fastly.net` is preferred for HTTP/2 clients.
 
 **WARNING**: The test domain is the name **you choose** (e.g. `my-project.global.ssl.fastly.net`), NOT the service ID. Using `SERVICE_ID.global.ssl.fastly.net` does not work — that hostname does not route to your service.
 
@@ -402,6 +414,8 @@ Returns `{"status":"ok"}` on success, or a list of errors explaining what's miss
 
 Set up a VCL service that caches all responses from an HTTPS origin for 30 minutes. **Configure everything on version 1 before activating — do not use `--autoclone` or `--version latest` for new services.**
 
+**Default caching behavior**: Fastly VCL services respect origin `Cache-Control` and `Expires` headers by default. If the origin already sends appropriate caching headers (e.g., `Cache-Control: max-age=3600`), you do not need a VCL snippet — omit the snippet step below. Only add a snippet if you want to override the origin's caching behavior.
+
 ```bash
 # Step 1: Create the service
 fastly service create --name "my-proxy" --non-interactive
@@ -437,6 +451,16 @@ fastly service version activate --service-id $SERVICE_ID --version 1
 # wait ~15s for propagation, then test
 curl -sI https://my-proxy.global.ssl.fastly.net/
 curl -sI https://my-proxy.global.ssl.fastly.net/  # should show X-Cache: HIT
+
+# Verify caching is working
+curl -sI https://my-proxy.freetls.fastly.net/ | grep -iE "x-cache|age|cache-control"
+# Expected: X-Cache: MISS (first), then HIT; Age increases; cache-control from origin
+```
+
+**Before starting**: verify the origin serves content correctly with the Host header you intend to use:
+```bash
+curl -sI -H "Host: origin.example.com" https://origin.example.com/
+# Check for Cache-Control/Expires headers and 200 status
 ```
 
 ### Create New Service with Backend

@@ -18,6 +18,8 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 **Streaming miss.** Enable with `beresp.do_stream` to begin writing partial responses to cache as soon as headers arrive. New requests for the same URL during download join the in-progress response instead of triggering a new origin fetch (provided the object is still fresh). Without streaming miss, the entire response must complete before any queued requests are served.
 
+**Default caching behavior.** Fastly VCL services respect origin `Cache-Control`, `Expires`, and `Vary` headers by default. If the origin sends `Cache-Control: max-age=3600`, Fastly caches for 1 hour with no VCL configuration needed. Custom VCL (snippets or full VCL) is only needed to override or extend this behavior.
+
 **Fastly VCL is different than mainstream VCL**: Use an up-to-date Fastly VCL reference when developing VCL code.
 
 ## Custom VCL
