@@ -19,6 +19,26 @@ Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/
 
 Copy the skills you need into your agent's skills directory. You probably don't need all of them. Pick what's relevant to your project.
 
+### Preferred: `.agents/skills`
+
+The shared `.agents/skills/` layout is the most portable option when your agent supports the Agent Skills discovery convention. Agents with support for this location include Amp, Cline, Droid, Gemini CLI, kilocode, OpenHands, Replit Agent, Roo Code, Swival, and Warp.
+
+Install into the current project:
+
+```bash
+mkdir -p .agents/skills
+cp -R ./skills/{falco,viceroy} .agents/skills/
+```
+
+Some agents also use the shared user-level `~/.agents/skills/` directory, including Cline and Warp:
+
+```bash
+mkdir -p ~/.agents/skills
+cp -R ./skills/{falco,viceroy} ~/.agents/skills/
+```
+
+If your agent does not support `.agents/skills/` yet, use its agent-specific location below.
+
 ### Claude Code
 
 #### Plugin Marketplace
@@ -68,6 +88,8 @@ cp -R ./skills/{falco,viceroy} .qwen/skills/
 ```
 
 ### Gemini CLI
+
+Gemini CLI supports the shared `.agents/skills/` layout above. If you prefer Gemini's extension workflow instead of copying individual skills, you can also link this repository directly:
 
 ```bash
 gemini extensions link .
