@@ -48,7 +48,7 @@ The full step-by-step workflow (create service, add domain, add backend, activat
 
 ## Fetching Documentation
 
-Only confirmed `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use `format: "markdown"` when fetching them. Do not guess docs paths — a bad path returns `404`, and `www.fastly.com/documentation/` pages are a JavaScript app that usually return empty or unusable content. Do NOT append `.md` to any URL. Prefer the local reference files over fetching.
+Prefer the local reference files. Fetch live docs to fill gaps or get the latest API details using the `Accept: text/markdown` header. This works for all `www.fastly.com/documentation/` and `docs.fastly.com` URLs. Do not guess paths — use the URL tables in each reference file. To discover pages: `https://www.fastly.com/documentation/llms.txt`
 
 ## Documentation Sources
 
