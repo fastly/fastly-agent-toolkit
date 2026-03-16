@@ -167,7 +167,7 @@ The `q` parameter accepts a search query syntax (e.g., `"/a/path sqli from:-7h"`
 
 ## Documentation
 
-URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
+Use the header `Accept: text/markdown` to fetch markdown docs.
 
 | Source                                         | URL                                                                                                |
 | ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |

@@ -164,7 +164,7 @@ Redirect apex domains to their WWW subdomain. Status codes: 301, 302, 307, 308.
 
 ## Documentation
 
-URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
+Use the header `Accept: text/markdown` to fetch markdown docs.
 
 | Source                                          | URL                                                                                                                                            |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |

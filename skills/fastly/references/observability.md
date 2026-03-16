@@ -126,7 +126,7 @@ curl -s -H "Fastly-Key: $FASTLY_API_TOKEN" \
 
 ## Documentation
 
-URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL. Pages contain lists of available metrics and stats respectively.
+Use the header `Accept: text/markdown` to fetch markdown docs. Pages contain lists of available metrics and stats respectively.
 
 | Source                             | URL                                                                                  |
 | ---------------------------------- | ------------------------------------------------------------------------------------ |
