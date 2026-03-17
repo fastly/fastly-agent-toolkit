@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "fastly-agent-skills",
+      "name": "fastly-agent-toolkit",
       "source": "./",
       "description": "Fastly development tools and platform skills",
       "keywords": ["fastly", "edge", "compute", "vcl", "cdn"]
