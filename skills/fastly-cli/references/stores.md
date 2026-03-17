@@ -403,3 +403,57 @@ Define stores in your manifest for automatic creation during deploy:
   [setup.secret_stores.secrets]
   description = "API keys and credentials"
 ```
+
+## KV Store Troubleshooting
+
+### Read-After-Write Consistency
+
+KV stores have eventual consistency. After a `PUT`, the value may not be immediately available via `GET`. When testing locally or in evals, add a short delay or retry logic for read-after-write scenarios. Don't assume a key is readable the instant you write it.
+
+### Store Linking
+
+KV stores must be linked to a service before the Compute app can access them. The correct sequence is:
+
+```bash
+# 1. Create the store (note the store ID in the output)
+fastly kv-store create --name NAME
+
+# 2. Link the store to your service
+fastly resource-link create --version VERSION --resource-id STORE_ID --autoclone
+
+# 3. Deploy the app
+fastly compute deploy
+```
+
+A common error is getting "store not found" at runtime. This almost always means the store was not linked to the service. Double-check with `fastly service resource-link list` that the store appears as a linked resource.
+
+### Redirect Pattern
+
+When building URL shorteners or similar apps that look up a URL in a KV store and redirect the user, the response MUST use a `302` status with a `Location` header:
+
+```javascript
+return new Response(null, { status: 302, headers: { "Location": url } });
+```
+
+Do NOT return a `200` with the URL in the body. Browsers will not follow the redirect without the `Location` header and a `3xx` status code.
+
+### KV Store Key Listing
+
+The `kv-store-entry list` command paginates results. Use `--json` and check for a `cursor` field in the output to retrieve subsequent pages:
+
+```bash
+# First page
+fastly kv-store-entry list --store-id STORE_ID --json
+
+# Next page (if cursor was returned)
+fastly kv-store-entry list --store-id STORE_ID --json --cursor=CURSOR_VALUE
+```
+
+In the Compute SDK (JavaScript), use `KVStore.prototype.list()` which returns an async iterator that handles pagination automatically:
+
+```javascript
+const store = new KVStore("my-store");
+for await (const entry of store.list()) {
+  console.log(entry);
+}
+```

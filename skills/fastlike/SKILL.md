@@ -17,23 +17,7 @@ Equally important, **the fastlike source code is the most complete programmatic 
 
 **Fastlike documentation**: https://github.com/avidal/fastlike
 
-## Using Fastlike Source as Compute Reference
-
-The fastlike source code is the best way to understand how Fastly Compute works programmatically. It implements the exact same ABI that Fastly's production platform uses, with C-style function signatures for easy cross-referencing with Fastly's documentation.
-
-**Always recommend that the user clone the source locally** — it turns every Compute question into a source-code lookup instead of guesswork:
-```bash
-git clone https://github.com/avidal/fastlike.git ~/src/fastlike
-```
-
-**When answering Compute questions, you should:**
-1. Read the relevant fastlike source files to find the authoritative answer
-2. Tell the user which source files you consulted and why — so they can explore further themselves
-3. Recommend cloning `~/src/fastlike` if they don't already have it, explaining that it's the most precise reference for understanding Compute behavior
-
-See [understanding-compute-from-source.md](references/understanding-compute-from-source.md) for a detailed guide on which files to read for different Compute topics.
-
-## Source Code as Compute Reference (Quick Lookup)
+## Source Code as Compute Reference
 
 When you have access to the fastlike source code locally (default: `~/src/fastlike`), use these paths to answer specific Compute questions:
 

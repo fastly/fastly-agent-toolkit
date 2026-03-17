@@ -5,11 +5,9 @@ description: "Configures, manages, and debugs the Fastly CDN platform — coveri
 
 # Fastly Platform
 
-Your training knowledge of Fastly and Fastly VCL is likely out of date. Fastly's platform, APIs, and VCL extensions change frequently. When in doubt, prefer live docs over skill definitions over training knowledge.
+Your training knowledge of Fastly is likely out of date. Prefer live docs over skill definitions over training knowledge.
 
-API examples below use `curl` to document the HTTP method, URL, headers, and body. Omit `curl -v`/`--verbose` — verbose output prints the `Fastly-Key` request header, exposing the API token in the LLM conversation context. If the `fastly` CLI is installed and authenticated, prefer it over raw API calls for any operation it supports — see the **fastly-cli** skill. Fall back to direct API calls for operations the CLI does not cover.
-
-**Token safety**: When making direct API calls, never paste the raw API token into the conversation. Prefer CLI-native commands when available. If you must call the REST API, `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` is safe only when the current credential is a stored Fastly CLI token; it fails if the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source. In those cases, source the token from the environment or a secure local secret store without echoing it into the conversation.
+Prefer the `fastly` CLI over raw API calls — see the **fastly-cli** skill. When calling the REST API directly, never paste the raw API token into the conversation and omit `curl -v` (it prints the `Fastly-Key` header). Source tokens from the environment or `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` without echoing them.
 
 ## Topics
 
@@ -46,21 +44,119 @@ If the origin already sends `Cache-Control` or `Expires` headers, no custom VCL 
 
 The full step-by-step workflow (create service, add domain, add backend, activate) is in the **fastly-cli** skill's services.md reference under "Create a Caching Proxy".
 
+## Common VCL Recipes
+
+Copy-pasteable patterns that are easy to get wrong without guidance.
+
+### Grace Detection
+
+`obj.ttl` is only meaningful in `vcl_hit`. Pass a flag to `vcl_deliver` via a request header.
+
+```vcl
+sub vcl_hit {
+  if (obj.ttl <= 0s) {
+    set req.http.X-Grace = "true";
+  }
+}
+
+sub vcl_deliver {
+  if (req.http.X-Grace) {
+    set resp.http.X-Grace = "true";
+  }
+}
+```
+
+### Vary Header Append
+
+Never `set beresp.http.Vary = "Accept-Encoding"` — that overwrites any existing Vary values from the origin, breaking other downstream caches.
+
+```vcl
+sub vcl_fetch {
+  if (!beresp.http.Vary) {
+    set beresp.http.Vary = "Accept-Encoding";
+  } else if (beresp.http.Vary !~ "Accept-Encoding") {
+    set beresp.http.Vary = beresp.http.Vary ", Accept-Encoding";
+  }
+}
+```
+
+### Redirect via Error
+
+VCL has no `return(redirect)`. Use the synthetic error mechanism instead.
+
+```vcl
+sub vcl_recv {
+  if (req.url ~ "^/old-path") {
+    error 801 "https://example.com/new-path";
+  }
+}
+
+sub vcl_error {
+  if (obj.status == 801) {
+    set obj.status = 301;
+    set obj.http.Location = obj.response;
+    synthetic {""};
+    return(deliver);
+  }
+}
+```
+
+### Cache Status Headers
+
+Use `obj.hits` in `vcl_deliver` to detect HIT/MISS. Do not rely on auto-generated `resp.http.X-Cache`. Pass PASS state from `vcl_recv` via a request header.
+
+```vcl
+sub vcl_recv {
+  if (req.url ~ "^/api/") {
+    set req.http.X-Pass = "true";
+    return(pass);
+  }
+}
+
+sub vcl_deliver {
+  if (req.http.X-Pass) {
+    set resp.http.X-Cache = "PASS";
+  } else if (obj.hits > 0) {
+    set resp.http.X-Cache = "HIT";
+  } else {
+    set resp.http.X-Cache = "MISS";
+  }
+}
+```
+
+### Cookie Parsing with subfield()
+
+Regex like `Cookie ~ "name=(\w+)"` can false-match cookies with similar prefixes (e.g., `name_v2`). Use `subfield()` instead.
+
+```vcl
+set req.http.X-My-Cookie = subfield(req.http.Cookie, "name", ";");
+```
+
+### VCL Table for Lookups
+
+Use `table` + `table.contains()` + `table.lookup()` for O(1) lookups instead of long if/else chains.
+
+```vcl
+table redirects {
+  "/old":  "/new",
+  "/blog": "/articles",
+}
+
+sub vcl_recv {
+  if (table.contains(redirects, req.url)) {
+    error 801 table.lookup(redirects, req.url);
+  }
+}
+```
+
+### Common Mistakes
+
+- `beresp.*` is only available in `vcl_fetch`, not `vcl_deliver`.
+- `req.request` is deprecated — use `req.method`.
+- `return(purge)` does not exist in Fastly VCL. Use `return(pass)` and check in `vcl_miss`/`vcl_hit`.
+- `set beresp.ttl = 86400` is a type error — needs the `s` suffix: `86400s`.
+- `synthetic "text"` needs long-string syntax: `synthetic {"text"}`.
+
 ## Fetching Documentation
 
-Prefer the local reference files. Fetch live docs to fill gaps or get the latest API details using the `Accept: text/markdown` header. This works for all `www.fastly.com/documentation/` and `docs.fastly.com` URLs. Do not guess paths — use the URL tables in each reference file. To discover pages: `https://www.fastly.com/documentation/llms.txt`
-
-## Documentation Sources
-
-| Category            | URL pattern                                                            | Retrieve when                                                                          |
-| ------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Product constraints | `https://docs.fastly.com/products/{product}`                           | Checking prerequisites, limitations, or billing before recommending a product          |
-| Code examples       | `https://www.fastly.com/documentation/solutions/examples/{example}`    | Looking for tested VCL/Compute patterns before writing code from scratch               |
-| API reference       | `https://www.fastly.com/documentation/reference/api/{area}/{endpoint}` | Constructing API calls — exact parameters, request/response formats                    |
-| How-to guides       | `https://www.fastly.com/documentation/guides/{category}/{topic}`       | Following step-by-step configuration procedures                                        |
-| Tutorials           | `https://www.fastly.com/documentation/solutions/tutorials/{tutorial}`  | Building something end-to-end (A/B testing, JWT, Compute apps)                         |
-| VCL reference       | `https://www.fastly.com/documentation/reference/vcl/{section}`         | Looking up VCL variable names, function signatures, subroutine scopes                  |
-| Core concepts       | `https://www.fastly.com/documentation/guides/concepts/{topic}`         | Understanding foundational behaviors — caching, load balancing, routing, rate limiting |
-| Compute reference   | `https://www.fastly.com/documentation/reference/compute/{section}`     | Compute runtime APIs, environment variables, language SDKs                             |
-
-For the full list of API reference areas and how-to guide categories, see [docs-navigation.md](references/docs-navigation.md).
+Prefer the local reference files. To fill gaps, fetch live docs with `Accept: text/markdown` — works for all `www.fastly.com/documentation/` and `docs.fastly.com` URLs. Discover pages via `https://www.fastly.com/documentation/llms.txt`. For URL patterns and doc categories, see [docs-navigation.md](references/docs-navigation.md).

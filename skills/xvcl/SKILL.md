@@ -100,6 +100,33 @@ Built-in functions: `range()`, `len()`, `str()`, `int()`, `hex()`, `format()`, `
 #for idx, item in enumerate(LIST) // index + value
 ```
 
+### Tables with Loops
+
+Use `#for` loops to populate VCL `table` declarations for O(1) lookups, instead of generating inline if-chains.
+
+```xvcl
+#const REDIRECTS = [
+  ("/blog", "/articles"),
+  ("/about-us", "/about"),
+  ("/products/old-widget", "/products/widget-v2")
+]
+
+// O(1) hash-table lookup — the right pattern for data-driven VCL
+table redirects STRING {
+#for old_path, new_path in REDIRECTS
+  "{{old_path}}": "{{new_path}}",
+#endfor
+}
+
+sub vcl_recv {
+  if (table.contains(redirects, req.url.path)) {
+    error 801 table.lookup(redirects, req.url.path);
+  }
+}
+```
+
+Prefer populating VCL `table` declarations with `#for` loops over generating inline if-chains. Tables give O(1) hash lookups and are the idiomatic Fastly pattern for any data-driven routing, redirects, or configuration.
+
 ### Conditionals — `#if` / `#elif` / `#else` / `#endif`
 ```xvcl
 #if PRODUCTION
