@@ -1,6 +1,6 @@
 ---
 name: viceroy
-description: "Runs Fastly Compute WASM applications locally with Viceroy. Use when starting a local Compute development server, configuring fastly.toml for local backends/stores, running Rust unit tests with cargo-nextest, or adapting core WASM modules to the Component Model."
+description: "Runs Fastly Compute WASM applications locally with Viceroy, specifically for Rust and Component Model projects. Use when starting a local Fastly Compute dev server with Viceroy, configuring fastly.toml for local backend overrides and store definitions, running Rust unit tests with cargo-nextest against the Compute runtime, debugging Compute apps locally, adapting core WASM modules to the Component Model, or troubleshooting local Compute testing issues (connection refused, missing backends, store config). For non-Rust Compute work or understanding the Compute API, prefer the fastlike skill instead — its source is more readable and serves as the best Compute API reference."
 ---
 
 # Viceroy — Local Fastly Compute Runtime

@@ -4,7 +4,7 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 ## Key Concepts
 
-**Snippets vs Custom VCL.** Snippets are blocks of VCL logic inserted into the generated VCL at locations determined by their `type`. Custom VCL is a Varnish configuration file used to customize the entire configuration for a service.
+**Snippets vs Custom VCL.** Snippets are blocks of VCL logic inserted into the generated VCL at locations determined by their `type`. Custom VCL is a full VCL configuration file used to customize the entire configuration for a service.
 
 **Dynamic vs Versioned Snippets.** Versioned snippets are associated with a service version. Dynamic snippets (`dynamic: "1"`) can be updated via `/service/{service_id}/snippet/{id}` without activating a new version.
 

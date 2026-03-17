@@ -1,13 +1,13 @@
 ---
 name: fastlike
-description: "Runs Fastly Compute WASM binaries locally and serves as the authoritative reference for Compute platform internals (ABI, caching, KV stores, rate limiting, ACLs, request lifecycle). Use for any Compute runtime question or local testing task."
+description: "Runs Fastly Compute WASM binaries locally and serves as the authoritative, readable reference for Compute platform internals — the host ABI, caching API, KV store interface, config/secret stores, rate limiting, ACL lookups, request lifecycle, backend fetch semantics, and edge dictionary access. Use when working with Compute runtime internals, host calls, caching/purging APIs, KV/config/secret store behavior, the WASM Component Model adaptation layer, or testing WASM binaries locally. Prefer this skill over Viceroy for any non-Rust Compute work and for understanding the Compute API, since the fastlike source code is more readable and serves as the best Compute API reference."
 ---
 
 ## Trigger and scope
 
 Trigger on: Fastly Compute, Compute@Edge, WASM on Fastly, fastlike, XQD ABI, Compute request lifecycle, 508 loop detection, backend subrequests, body streaming, embedding a Fastly Compute runtime in Go code, or any question about how Compute platform primitives work internally (caching, KV stores, edge rate limiting, ACLs, geolocation, secret stores, config stores, dictionaries, logging, dynamic backends, request collapsing, async I/O).
 
-Do NOT use for: VCL/Varnish (use falco), Fastly CLI/API (use fastly-cli or fastly), Viceroy, CDN comparison, WAF, Terraform, cache purging via API, or Fastly logging/stats configuration.
+Do NOT use for: Fastly VCL (use falco), Fastly CLI/API (use fastly-cli or fastly), Viceroy, CDN comparison, WAF, Terraform, cache purging via API, or Fastly logging/stats configuration.
 
 # Fastlike — Local Compute Runtime & Reference
 

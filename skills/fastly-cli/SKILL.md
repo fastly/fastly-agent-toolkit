@@ -1,6 +1,6 @@
 ---
 name: fastly-cli
-description: "Executes Fastly CLI commands for managing CDN services, Compute deploys, and edge infrastructure. Use when running `fastly` commands, working with Fastly service IDs, fastly.toml, or performing CDN operations via CLI."
+description: "Executes Fastly CLI commands for managing CDN services, Compute deploys, and edge infrastructure. Use when running `fastly` CLI commands, creating or managing Fastly services from the terminal, deploying Fastly Compute applications, managing backends/domains/VCL snippets via command line, purging cache, configuring log streaming, setting up TLS certificates, managing KV/config/secret stores, checking service stats, authenticating with Fastly SSO, or working with fastly.toml. Also applies when working with Fastly service IDs in CLI context, or with `fastly service`, `fastly compute`, `fastly auth`, or any Fastly CLI subcommand. Covers service CRUD, version management, autocloning, and troubleshooting common CLI errors."
 ---
 
 ## Trigger and scope

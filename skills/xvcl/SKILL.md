@@ -1,6 +1,6 @@
 ---
 name: xvcl
-description: "Compiles XVCL metaprogramming directives (#const, #for, #def, #inline, #if, #let, #include) into Fastly VCL. Required for .xvcl files — XVCL syntax is not in training data. Workflow: write XVCL, compile with `uvx xvcl`, test with falco."
+description: "Extends Fastly VCL with loops, functions, constants, macros, conditionals, and includes via XVCL — a VCL transpiler that compiles .xvcl files into standard VCL. Use when writing VCL for Fastly, working with .xvcl files, generating repetitive VCL (multiple backends, routing rules, headers) with loops, defining reusable VCL functions with return values, using compile-time constants instead of magic numbers, or writing any Fastly VCL configuration. XVCL syntax is not in training data so this skill is required. Also applies when writing and testing VCL locally (compile with `uvx xvcl`, test with falco), reducing VCL code duplication, splitting large VCL into modular includes, or doing any VCL development task for Fastly — even without explicitly mentioning XVCL."
 ---
 
 ## Trigger and scope

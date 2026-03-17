@@ -537,7 +537,7 @@ If `--ssl-cert-hostname` and `--ssl-sni-hostname` are omitted or set to the over
 
 ```bash
 # Wait 15-30s for propagation, then test
-# Expected progression: 500 from Varnish while the new domain propagates
+# Expected progression: 500 from Fastly CDN while the new domain propagates
 # (normal) → 200 (working). If you see 503 instead, check backend SSL settings.
 
 # Use GET first so you do not confuse a cached propagation error with origin health.

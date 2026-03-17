@@ -1,11 +1,11 @@
 ---
 name: fastly
-description: "Configures, manages, and debugs Fastly services — backends, caching, VCL, DDoS, WAF, TLS, purging, rate limiting, Compute, and Fastly APIs. Use when working with Fastly platform configuration, CDN setup, edge security, or looking up Fastly documentation and API patterns."
+description: "Configures, manages, and debugs Fastly CDN services — backends, origins, caching, VCL configuration, DDoS protection, WAF/NGWAF, TLS/HTTPS setup, cache purging, rate limiting, Compute platform, edge dictionaries, ACLs, logging endpoints, load balancing, bot management, and Fastly REST APIs. Use when working with Fastly services, CDN configuration, edge caching setup, cache invalidation/purging, origin shielding, Fastly service IDs, Fastly domains, edge security (DDoS/WAF/rate limiting), Fastly API calls, Fastly product enablement, or looking up Fastly documentation. Also applies when troubleshooting 503 errors, SSL/TLS certificate mismatches, or backend connectivity issues on Fastly."
 ---
 
 # Fastly Platform
 
-Your training knowledge of Fastly, Varnish, and VCL is likely out of date. Fastly's platform, APIs, and VCL extensions change frequently. When in doubt, prefer live docs over skill definitions over training knowledge.
+Your training knowledge of Fastly and Fastly VCL is likely out of date. Fastly's platform, APIs, and VCL extensions change frequently. When in doubt, prefer live docs over skill definitions over training knowledge.
 
 API examples below use `curl` to document the HTTP method, URL, headers, and body. Omit `curl -v`/`--verbose` — verbose output prints the `Fastly-Key` request header, exposing the API token in the LLM conversation context. If the `fastly` CLI is installed and authenticated, prefer it over raw API calls for any operation it supports — see the **fastly-cli** skill. Fall back to direct API calls for operations the CLI does not cover.
 
