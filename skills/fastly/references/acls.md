@@ -103,7 +103,7 @@ Compute ACL entry updates use the same create/update/delete `op` pattern but ent
 
 ## Documentation
 
-URLs below are for reference only. Only `docs.fastly.com` URLs are fetchable; `www.fastly.com/documentation/` URLs are JS-rendered and will return empty content. Do not append `.md` to any URL.
+URLs below serve Markdown (use the `Accept: text/markdown` header).
 
 | Source                     | URL                                                                           |
 | -------------------------- | ----------------------------------------------------------------------------- |
