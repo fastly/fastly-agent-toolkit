@@ -1,6 +1,6 @@
 ---
 name: fastly
-description: "Configures, manages, and debugs Fastly CDN services — backends, origins, caching, VCL configuration, DDoS protection, WAF/NGWAF, TLS/HTTPS setup, cache purging, rate limiting, Compute platform, edge dictionaries, ACLs, logging endpoints, load balancing, bot management, and Fastly REST APIs. Use when working with Fastly services, CDN configuration, edge caching setup, cache invalidation/purging, origin shielding, Fastly service IDs, Fastly domains, edge security (DDoS/WAF/rate limiting), Fastly API calls, Fastly product enablement, or looking up Fastly documentation. Also applies when troubleshooting 503 errors, SSL/TLS certificate mismatches, or backend connectivity issues on Fastly."
+description: "Configures, manages, and debugs the Fastly CDN platform — covering service and backend setup, caching and VCL, security features like DDoS/WAF/NGWAF/rate limiting/bot management, TLS certificates and cache purging, the Compute platform, and the REST API. Use when working with Fastly services or domains, setting up edge caching or origin shielding, configuring security features, making Fastly API calls, enabling products, or looking up Fastly documentation. Also applies when troubleshooting 503 errors or SSL/TLS certificate mismatches on Fastly, and for configuring logging endpoints, load balancing, ACLs, or edge dictionaries."
 ---
 
 # Fastly Platform
