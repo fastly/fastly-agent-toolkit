@@ -1,7 +1,13 @@
 ---
 name: xvcl
-description: "REQUIRED — XVCL syntax is NOT in training data; the model produces broken code without this skill. XVCL is a VCL preprocessor with directives (#const, #for, #def, #inline, #if, #let, #include) that extend Fastly VCL with metaprogramming. Use when writing or editing .xvcl files, using any XVCL directive, compiling with `uvx xvcl`, writing new VCL for Fastly (prefer XVCL over plain VCL), building edge logic with reusable constants, loops, or functions, or running/testing XVCL scripts locally (the workflow is: write XVCL, compile to VCL, then test with falco). Trigger on: XVCL, .xvcl files, VCL transpiler, VCL metaprogramming, #const/#for/#def/#inline in VCL context, writing a VCL script, writing VCL and running it locally, or any Fastly VCL writing task. Do NOT trigger for: debugging existing .vcl files without XVCL, Fastly API/CLI ops, Fastly Compute, or Terraform — even if they mention VCL."
+description: "Compiles XVCL metaprogramming directives (#const, #for, #def, #inline, #if, #let, #include) into Fastly VCL. Required for .xvcl files — XVCL syntax is not in training data. Workflow: write XVCL, compile with `uvx xvcl`, test with falco."
 ---
+
+## Trigger and scope
+
+Trigger on: XVCL, .xvcl files, VCL transpiler, VCL metaprogramming, #const/#for/#def/#inline in VCL context, writing a VCL script, writing VCL and running it locally, or any Fastly VCL writing task.
+
+Do NOT trigger for: debugging existing .vcl files without XVCL, Fastly API/CLI ops, Fastly Compute, or Terraform — even if they mention VCL.
 
 # Writing VCL with XVCL
 
@@ -182,48 +188,9 @@ uvx xvcl main.xvcl -o main.vcl --source-maps
 | `--debug` / `-v` | Show expansion traces |
 | `--source-maps` | Add source location comments |
 
-## VCL Basics
-
-### Request Lifecycle
-
-1. `vcl_recv` — Request received, choose backend, decide cache behavior
-2. `vcl_hash` — Generate cache key
-3. `vcl_hit` — Cache hit handling
-4. `vcl_miss` — Cache miss, fetch from origin
-5. `vcl_pass` — Bypass cache
-6. `vcl_fetch` — Process origin response
-7. `vcl_deliver` — Send response to client
-8. `vcl_error` — Error handling
-9. `vcl_log` — Logging
-
-### Return Actions
-
-| Subroutine  | Common Returns             |
-| ----------- | -------------------------- |
-| vcl_recv    | `lookup`, `pass`, `error`  |
-| vcl_fetch   | `deliver`, `pass`, `error` |
-| vcl_deliver | `deliver`                  |
-| vcl_error   | `deliver`                  |
-
-### Variable Types
-
-```vcl
-declare local var.str STRING;
-declare local var.num INTEGER;
-declare local var.flag BOOL;
-declare local var.time TIME;
-declare local var.duration RTIME;
-declare local var.decimal FLOAT;
-```
-
-### Key Variables
-
-Request: `req.method`, `req.url`, `req.url.path`, `req.url.qs`, `req.http.*`
-Response: `resp.status`, `resp.http.*`
-Backend Response: `beresp.status`, `beresp.ttl`, `beresp.http.*`
-Client: `client.ip`, `client.geo.country_code`
-
 ## References
+
+For VCL basics (request lifecycle, return actions, variable types), see the VCL syntax and subroutines references below.
 
 Read the relevant reference file completely before implementing specific features.
 

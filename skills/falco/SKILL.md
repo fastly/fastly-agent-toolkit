@@ -1,7 +1,13 @@
 ---
 name: falco
-description: "Lints, tests, simulates, and formats Fastly VCL code using Falco. Also serves as authoritative VCL reference — the falco Go source implements Fastly's full VCL dialect. Use when working with VCL or XVCL in any capacity: linting, testing, simulating, formatting, debugging, writing, reviewing, running locally, or answering VCL semantics questions (variables, scopes, functions, lifecycle, types). Trigger on: VCL files, .vcl extensions, XVCL files, .xvcl extensions, falco CLI, VCL unit tests, VCL linting/simulation/formatting, VCL REPL, beresp/bereq/req.http variables, subroutine scopes, backend/ACL/director/table declarations, edge dictionaries, validating VCL in Terraform plans, or running/testing XVCL scripts locally. Do NOT use for: generic Varnish VCL, Fastly Compute/WASM, Fastly API/dashboard ops, CDN comparison, cache purging, or authoring Terraform resources."
+description: "Lints, tests, simulates, and formats Fastly VCL code. Also serves as authoritative VCL reference via the falco Go source, which implements Fastly's full VCL dialect. Use for any VCL or XVCL development task."
 ---
+
+## Trigger and scope
+
+Trigger on: VCL files, .vcl extensions, XVCL files, .xvcl extensions, falco CLI, VCL unit tests, VCL linting/simulation/formatting, VCL REPL, beresp/bereq/req.http variables, subroutine scopes, backend/ACL/director/table declarations, edge dictionaries, validating VCL in Terraform plans, or running/testing XVCL scripts locally.
+
+Do NOT use for: generic Varnish VCL, Fastly Compute/WASM, Fastly API/dashboard ops, CDN comparison, cache purging, or authoring Terraform resources.
 
 # Falco — VCL Development Tool & Reference
 

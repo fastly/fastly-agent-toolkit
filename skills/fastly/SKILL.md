@@ -1,6 +1,6 @@
 ---
 name: fastly
-description: "Use when configuring, managing, or debugging Fastly services — backends, caching, VCL, DDoS, WAF, TLS, purging, rate limiting, Compute, or calling Fastly APIs. Covers API patterns, product enablement, and live documentation retrieval."
+description: "Configures, manages, and debugs Fastly services — backends, caching, VCL, DDoS, WAF, TLS, purging, rate limiting, Compute, and Fastly APIs. Use when working with Fastly platform configuration, CDN setup, edge security, or looking up Fastly documentation and API patterns."
 ---
 
 # Fastly Platform
@@ -37,14 +37,14 @@ API examples below use `curl` to document the HTTP method, URL, headers, and bod
 
 ## Quick Start: Simple Caching Proxy
 
-The most common task is setting up a VCL service to cache an origin. Before touching any Fastly config, always run the pre-flight checks documented in the **fastly-cli** skill's [services.md](../fastly-cli/references/services.md) under "Pre-flight checklist". The two checks that prevent the most common errors:
+The most common task is setting up a VCL service to cache an origin. Before touching any Fastly config, always run the pre-flight checks from the **fastly-cli** skill's services.md reference under "Pre-flight checklist". The two checks that prevent the most common errors:
 
 1. **Verify the origin responds** with the Host header you intend to send: `curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/`
 2. **Check TLS certificate SANs** to determine the correct `ssl-cert-hostname`/`ssl-sni-hostname`: `echo | openssl s_client -connect ORIGIN:443 -servername ORIGIN 2>/dev/null | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"`
 
 If the origin already sends `Cache-Control` or `Expires` headers, no custom VCL is needed — Fastly respects these by default. Only add VCL snippets to override or extend caching behavior.
 
-The full step-by-step workflow (create service, add domain, add backend, activate) is in the **fastly-cli** skill's [services.md](../fastly-cli/references/services.md) under "Create a Caching Proxy".
+The full step-by-step workflow (create service, add domain, add backend, activate) is in the **fastly-cli** skill's services.md reference under "Create a Caching Proxy".
 
 ## Fetching Documentation
 
@@ -63,42 +63,4 @@ Only confirmed `docs.fastly.com` URLs are fetchable (server-rendered HTML). Use 
 | Core concepts       | `https://www.fastly.com/documentation/guides/concepts/{topic}`         | Understanding foundational behaviors — caching, load balancing, routing, rate limiting |
 | Compute reference   | `https://www.fastly.com/documentation/reference/compute/{section}`     | Compute runtime APIs, environment variables, language SDKs                             |
 
-### API Reference Organization
-
-`https://www.fastly.com/documentation/reference/api/` is organized by area:
-
-| Area                 | Covers                                                             |
-| -------------------- | ------------------------------------------------------------------ |
-| `account/`           | Users, invitations, billing, customer                              |
-| `acls/`              | VCL access control lists and entries                               |
-| `api-security/`      | API discovery, operation management                                |
-| `auth-tokens/`       | API tokens, automation tokens, scopes                              |
-| `dictionaries/`      | Edge dictionaries (key-value stores for VCL)                       |
-| `domain-management/` | Domain management, verification                                    |
-| `load-balancing/`    | Backends, directors, pools, health checks                          |
-| `logging/`           | Logging endpoint configuration (25+ providers)                     |
-| `metrics-stats/`     | Historical stats, domain inspector, origin inspector               |
-| `ngwaf/`             | Next-Gen WAF (legacy path, migrating to `security/`)               |
-| `observability/`     | Custom dashboards, alerts, timeseries                              |
-| `products/`          | Product enablement (DDoS, WAF, IO, etc.)                           |
-| `security/`          | Next-Gen WAF (new versioned path, replaces `ngwaf/` by April 2026) |
-| `services/`          | Service CRUD, versioning, edge data stores (KV, config, secret)    |
-| `tls/`               | TLS certificates, subscriptions, mutual TLS, custom certs          |
-| `vcl-services/`      | VCL objects — snippets, conditions, headers, cache/gzip settings   |
-
-### How-To Guide Categories
-
-`https://www.fastly.com/documentation/guides/` is organized by topic:
-
-| Category              | Covers                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `security/`           | DDoS, WAF, rate limiting, TLS, ACLs, bot management                                                                 |
-| `full-site-delivery/` | Caching, domains/origins, VCL, purging, performance                                                                 |
-| `compute/`            | Developer guides, edge data storage (KV, config, secret stores)                                                     |
-| `integrations/`       | Logging endpoints, third-party services                                                                             |
-| `next-gen-waf/`       | WAF setup, configuration, rules, monitoring                                                                         |
-| `observability/`      | Dashboards, alerts                                                                                                  |
-| `getting-started/`    | Service setup, domain configuration, backends, shielding UI, staging                                                |
-| `account-info/`       | Billing, user management, API tokens, 2FA, audit logs                                                               |
-| `concepts/`           | Caching, compression, failover, geolocation, health checks, load balancing, POPs, rate limiting, routing, shielding |
-| `platform/`           | Fastly DNS, Object Storage                                                                                          |
+For the full list of API reference areas and how-to guide categories, see [docs-navigation.md](references/docs-navigation.md).

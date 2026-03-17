@@ -1,7 +1,13 @@
 ---
 name: fastlike
-description: "USE THIS SKILL whenever the user mentions Fastly Compute, Compute@Edge, WASM on Fastly, or fastlike. This skill covers: running compiled WASM binaries locally with fastlike, configuring backends for Compute services, testing Compute apps without deploying, and understanding how Fastly Compute platform primitives work internally (caching, KV stores, edge rate limiting, ACLs, geolocation, secret stores, config stores, dictionaries, logging, dynamic backends, request collapsing, async I/O). Also use when the user asks about the XQD ABI, Compute request lifecycle, 508 loop detection, backend subrequests, body streaming, or wants to embed a Fastly Compute runtime in Go code. The fastlike source code (~/src/fastlike) is the authoritative programmatic reference for all Compute behavior. Do NOT use for: VCL/Varnish (use falco), Fastly CLI/API (use fastly-cli or fastly), Viceroy, CDN comparison, WAF, Terraform, cache purging via API, or Fastly logging/stats configuration."
+description: "Runs Fastly Compute WASM binaries locally and serves as the authoritative reference for Compute platform internals (ABI, caching, KV stores, rate limiting, ACLs, request lifecycle). Use for any Compute runtime question or local testing task."
 ---
+
+## Trigger and scope
+
+Trigger on: Fastly Compute, Compute@Edge, WASM on Fastly, fastlike, XQD ABI, Compute request lifecycle, 508 loop detection, backend subrequests, body streaming, embedding a Fastly Compute runtime in Go code, or any question about how Compute platform primitives work internally (caching, KV stores, edge rate limiting, ACLs, geolocation, secret stores, config stores, dictionaries, logging, dynamic backends, request collapsing, async I/O).
+
+Do NOT use for: VCL/Varnish (use falco), Fastly CLI/API (use fastly-cli or fastly), Viceroy, CDN comparison, WAF, Terraform, cache purging via API, or Fastly logging/stats configuration.
 
 # Fastlike — Local Compute Runtime & Reference
 
