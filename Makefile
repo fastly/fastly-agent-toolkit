@@ -4,6 +4,6 @@ validate:
 	./scripts/validate.sh
 
 skillscheck:
-	uvx skillscheck skills
+	uvx skillscheck --strict skills
 
 ci: validate skillscheck

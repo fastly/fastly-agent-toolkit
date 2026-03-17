@@ -14,4 +14,4 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - run: uvx skillscheck skills
+      - run: uvx skillscheck --strict skills
