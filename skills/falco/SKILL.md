@@ -107,9 +107,12 @@ Falco catches these, but understanding them prevents wasted lint-fix cycles:
 - **Type mismatch**: `set req.http.X-API = true` — HTTP headers are STRING, not BOOL. Use `"true"`.
 - **Missing time suffix**: `set beresp.ttl = 86400` — RTIME values need `s` suffix: `86400s`.
 - **Wrong scope**: `beresp.*` only exists in `vcl_fetch`. In `vcl_deliver`, use `resp.*`.
-- **Deprecated**: `req.request` works but prefer `req.method`.
+- **Deprecated**: `req.request` → use `req.method`. Falco accepts both, but always change to `req.method` when fixing VCL.
 - **Synthetic strings**: `synthetic "text"` needs long-string syntax: `synthetic {"text"}`.
 - **Backend naming**: Use `F_` prefix: `backend F_origin { ... }`, not `backend origin`.
+- **No modulo operator**: VCL has no `%`. Use `substr()` on a hash or `randomint()` for splitting.
+- **`req.url.path` is read-only in tests**: Use `set req.url = "/path"` in test subroutines, not `set req.url.path`.
+- **Vary placement**: Vary must be set in `vcl_fetch`, not just `vcl_deliver`. Setting Vary after the object enters the cache is too late — the cache key won't include the Vary dimensions.
 
 ## Configuration
 

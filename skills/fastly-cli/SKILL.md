@@ -153,11 +153,28 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 - **Entry size limit**: Individual KV store entries are limited to 25 MB. Plan accordingly for large values.
 - **Listing stores**: `fastly kv-store list` lists all stores on the account, not per-service. Use `fastly resource-link list` to see which stores are linked to a given service.
 
+## Host Header Override Pattern
+
+When the origin hostname differs from the desired Host header (e.g., origin is `dnscrypt.info` but you want to send `Host: download.dnscrypt.info`), use `--override-host` on the backend:
+
+```bash
+fastly service backend create --service-id $SID --version 1 \
+  --name my-origin --address dnscrypt.info --port 443 --use-ssl \
+  --override-host download.dnscrypt.info \
+  --ssl-cert-hostname dnscrypt.info --ssl-sni-hostname dnscrypt.info
+```
+
+The `--override-host` value is the Host header sent to the origin. The `--ssl-cert-hostname` and `--ssl-sni-hostname` must match the origin's TLS certificate (usually the `--address` value). Getting these backwards causes 503 errors.
+
+## Service List Completeness
+
+When enumerating services (e.g., for bandwidth stats), always use `fastly service list --json` and check for pagination. Services with zero traffic still appear in the list. Loop over ALL service IDs from the list — do not rely on stats APIs that omit zero-traffic services.
+
 ## Troubleshooting
 
 See [troubleshooting.md](references/troubleshooting.md) for the full list. The most common pitfalls:
 
-- **503 SSL mismatch**: When `--override-host` differs from `--address`, always set `--ssl-cert-hostname` and `--ssl-sni-hostname` to the origin's actual hostname.
+- **503 SSL mismatch**: When `--override-host` differs from `--address`, always set `--ssl-cert-hostname` and `--ssl-sni-hostname` to the origin's actual hostname (the `--address` value, not the `--override-host` value).
 - **403/400 on domain create**: Use `fastly service domain create`, not `fastly domain create`.
 - **"version is locked"**: Use `--autoclone` or clone first. Better yet, always pass `--autoclone` on every mutation command.
 - **New service setup**: Version 1 is unlocked — add domain, backend, snippets on `--version 1`, then activate once.

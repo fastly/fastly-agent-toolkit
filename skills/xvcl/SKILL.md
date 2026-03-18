@@ -222,6 +222,16 @@ uvx xvcl main.xvcl -o main.vcl --source-maps
 - **Forgetting `#FASTLY` macros**: Every VCL subroutine (`vcl_recv`, `vcl_fetch`, `vcl_deliver`, `vcl_error`, `vcl_hit`, `vcl_miss`, `vcl_pass`) needs `#FASTLY recv` (or the appropriate name) at the top.
 - **Using `backend default`**: Fastly VCL requires `F_` prefixed backend names. Use `backend F_origin { ... }` and `set req.backend = F_origin;`.
 
+## VCL Gotchas
+
+These are VCL runtime issues (not XVCL compile issues) that consistently trip up even skill-equipped agents:
+
+- **No modulo operator**: VCL has no `%` operator. For traffic splitting, use `substr()` on a hash digest: `if (substr(digest.hash_sha256(client.ip), 0, 1) ~ "^[0-7]$")` gives ~50%. Or use `randomint(0, 99) < 50`.
+- **Vary MUST be set in `vcl_fetch`**: The Vary header controls the cache key. Setting it only in `vcl_deliver` is too late — the object is already cached without Vary dimensions. Always append Vary in `vcl_fetch` (and optionally mirror in `vcl_deliver` for client-visible headers). Never overwrite existing Vary: check and append.
+- **`req.url.path` is read-only in falco tests**: In test subroutines, use `set req.url = "/path"` instead of `set req.url.path = "/path"`. The `.path` property is computed from `req.url` and cannot be set directly.
+- **`req.request` is deprecated**: Use `req.method` instead. Falco accepts both but `req.method` is the modern form.
+- **Cookie parsing**: Use `subfield(req.http.Cookie, "name", ";")` instead of regex. Regex like `Cookie ~ "name=(\w+)"` false-matches cookies with similar prefixes (e.g., `name_v2=X`).
+
 ## References
 
 For VCL basics (request lifecycle, return actions, variable types), see the VCL syntax and subroutines references below.
