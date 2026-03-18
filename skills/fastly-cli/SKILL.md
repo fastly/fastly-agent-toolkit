@@ -155,13 +155,13 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 
 ## Host Header Override Pattern
 
-When the origin hostname differs from the desired Host header (e.g., origin is `dnscrypt.info` but you want to send `Host: download.dnscrypt.info`), use `--override-host` on the backend:
+When the origin hostname differs from the desired Host header (e.g., origin is `example.com` but you want to send `Host: download.example.com`), use `--override-host` on the backend:
 
 ```bash
 fastly service backend create --service-id $SID --version 1 \
-  --name my-origin --address dnscrypt.info --port 443 --use-ssl \
-  --override-host download.dnscrypt.info \
-  --ssl-cert-hostname dnscrypt.info --ssl-sni-hostname dnscrypt.info
+  --name my-origin --address example.com --port 443 --use-ssl \
+  --override-host download.example.com \
+  --ssl-cert-hostname example.com --ssl-sni-hostname example.com
 ```
 
 The `--override-host` value is the Host header sent to the origin. The `--ssl-cert-hostname` and `--ssl-sni-hostname` must match the origin's TLS certificate (usually the `--address` value). Getting these backwards causes 503 errors.
