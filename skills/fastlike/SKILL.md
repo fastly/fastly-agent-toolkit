@@ -59,9 +59,23 @@ go install fastlike.dev/cmd/fastlike@latest
 bin/fastlike -wasm app.wasm -backend localhost:8000
 ```
 
+## Fastlike vs Viceroy
+
+| Feature                  | Fastlike                     | Viceroy                                             |
+| ------------------------ | ---------------------------- | --------------------------------------------------- |
+| Language                 | Go                           | Rust                                                |
+| Geolocation              | Custom JSON file (`-geo`)    | Built-in defaults                                   |
+| Hot reload               | SIGHUP (`-reload`)           | Restart required                                    |
+| Install                  | `go install` or `make build` | `cargo install` or `fastly compute serve`           |
+| Local backends           | `-backend name=host:port`    | `[local_server.backends]` in fastly.toml            |
+
+**When to use Fastlike**: Non-Rust Compute apps, want custom geo data, need hot reload, debugging.
+**When to use Viceroy**: Rust Compute apps with cargo-nextest, Component Model projects, using `fastly compute serve`.
+
 ## Common Configurations
 
 **With named backends:**
+
 ```bash
 bin/fastlike -wasm app.wasm \
   -backend api=api.example.com:8080 \
@@ -70,12 +84,15 @@ bin/fastlike -wasm app.wasm \
 ```
 
 **Development mode with hot-reload:**
+
 ```bash
 bin/fastlike -wasm app.wasm -backend localhost:8000 -reload -v 2
 ```
+
 Send `SIGHUP` to reload the WASM without restarting.
 
 **Full configuration:**
+
 ```bash
 bin/fastlike -wasm app.wasm \
   -bind 0.0.0.0:5000 \

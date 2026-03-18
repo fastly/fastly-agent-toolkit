@@ -100,6 +100,17 @@ falco fmt -w ./vcl/**/*.vcl
 terraform show -json planned.out | falco terraform -vv
 ```
 
+## Common VCL Issues
+
+Falco catches these, but understanding them prevents wasted lint-fix cycles:
+
+- **Type mismatch**: `set req.http.X-API = true` — HTTP headers are STRING, not BOOL. Use `"true"`.
+- **Missing time suffix**: `set beresp.ttl = 86400` — RTIME values need `s` suffix: `86400s`.
+- **Wrong scope**: `beresp.*` only exists in `vcl_fetch`. In `vcl_deliver`, use `resp.*`.
+- **Deprecated**: `req.request` works but prefer `req.method`.
+- **Synthetic strings**: `synthetic "text"` needs long-string syntax: `synthetic {"text"}`.
+- **Backend naming**: Use `F_` prefix: `backend F_origin { ... }`, not `backend origin`.
+
 ## Configuration
 
 Create `.falco.yaml` in project root for persistent settings:

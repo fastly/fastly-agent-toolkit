@@ -68,6 +68,8 @@ sub vcl_deliver {
 
 ### Vary Header Append
 
+**Warning: Set Vary in `vcl_fetch`, not `vcl_deliver`.** The Vary header must be present when the object enters the cache so the cache key includes the Vary dimensions. Setting Vary only in `vcl_deliver` means the cache won't differentiate responses — every user gets the same cached variant regardless of the Vary field.
+
 Never `set beresp.http.Vary = "Accept-Encoding"` — that overwrites any existing Vary values from the origin, breaking other downstream caches.
 
 ```vcl
@@ -103,7 +105,7 @@ sub vcl_error {
 
 ### Cache Status Headers
 
-Use `obj.hits` in `vcl_deliver` to detect HIT/MISS. Do not rely on auto-generated `resp.http.X-Cache`. Pass PASS state from `vcl_recv` via a request header.
+Use `obj.hits > 0` in `vcl_deliver` — this is the only reliable way to detect cache hits. Do not rely on auto-generated `resp.http.X-Cache` or any other header inspection. Pass PASS state from `vcl_recv` via a request header.
 
 ```vcl
 sub vcl_recv {
@@ -126,7 +128,7 @@ sub vcl_deliver {
 
 ### Cookie Parsing with subfield()
 
-Regex like `Cookie ~ "name=(\w+)"` can false-match cookies with similar prefixes (e.g., `name_v2`). Use `subfield()` instead.
+Regex like `Cookie ~ "name=(\w+)"` is unreliable — it false-matches cookies with similar prefixes. For example, if the cookie header is `name_v2=X`, the regex `"name=(\w+)"` still matches because `name` appears as a substring of `name_v2`. Use `subfield()` instead — it performs exact key matching with proper delimiter handling.
 
 ```vcl
 set req.http.X-My-Cookie = subfield(req.http.Cookie, "name", ";");
@@ -156,6 +158,7 @@ sub vcl_recv {
 - `return(purge)` does not exist in Fastly VCL. Use `return(pass)` and check in `vcl_miss`/`vcl_hit`.
 - `set beresp.ttl = 86400` is a type error — needs the `s` suffix: `86400s`.
 - `synthetic "text"` needs long-string syntax: `synthetic {"text"}`.
+- `beresp.ttl = 0s` still caches the object (for zero seconds) — use `set beresp.cacheable = false;` to truly prevent caching.
 
 ## Fetching Documentation
 

@@ -9,6 +9,13 @@ Viceroy is Fastly's official local testing environment for Compute applications.
 
 **Viceroy documentation**: https://github.com/fastly/Viceroy
 
+## Common Gotchas
+
+- **Dictionaries and ConfigStores are both supported** but configured differently in `fastly.toml`. Dictionaries go under `[local_server.dictionaries]` as inline key-value maps or JSON files. ConfigStores go under `[local_server.config_stores]`.
+- **`fastly.toml` must have a `[local_server]` section.** Without it, Viceroy won't know about your backends, stores, or other local overrides. Every backend your app calls must be listed under `[local_server.backends]`.
+- **Default port is 7676**, not 5000 (which is Fastlike's default). Access your app at `http://127.0.0.1:7676`.
+- **Backends should point to local servers** when developing locally. Avoid proxying to remote production origins to prevent accidentally leaking request data.
+
 ## Quick Start
 
 ```bash

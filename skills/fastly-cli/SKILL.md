@@ -84,11 +84,74 @@ Available on most commands:
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
 
+## Common Flag Examples
+
+These are the flags that cause the most confusion. Copy-paste these patterns directly.
+
+### Autocloning (use this every time you modify a service)
+
+```bash
+# --autoclone automatically clones a locked version before making changes.
+# Without it, you get "version is locked" errors and waste time cloning manually.
+fastly service backend create --service-id $SID --version active --autoclone \
+  --name my-origin --address origin.example.com --port 443 --use-ssl
+
+fastly service domain create --service-id $SID --version active --autoclone \
+  --name cdn.example.com
+```
+
+Always pass `--autoclone` when creating, updating, or deleting backends, domains, snippets, VCL, conditions, headers, or any other version-scoped resource. It is safe to use even on unlocked versions (it simply does nothing if the version is already editable).
+
+### Boolean flags (--use-ssl, --use-ssl is NOT --use-ssl true)
+
+```bash
+# CORRECT - boolean flags are bare, no value
+fastly service backend create --name origin --address example.com --port 443 --use-ssl
+
+# WRONG - do not pass a value to boolean flags
+fastly service backend create --name origin --address example.com --port 443 --use-ssl true
+```
+
+Other boolean flags that work the same way: `--auto-yes`, `--non-interactive`, `--verbose`, `--quiet`, `--autoclone`.
+
+### Domain creation (requires --name flag)
+
+```bash
+# CORRECT
+fastly service domain create --service-id $SID --version active --autoclone --name cdn.example.com
+
+# WRONG - domain is not a positional argument
+fastly service domain create --service-id $SID --version active cdn.example.com
+
+# WRONG - there is no -d flag
+fastly service domain create --service-id $SID --version active -d cdn.example.com
+```
+
+### Stats (historical and real-time)
+
+```bash
+# Historical stats by day for a date range (JSON output)
+fastly stats historical --service-id $SID --by day \
+  --from "2026-02-01" --to "2026-03-01" --format json
+
+# Real-time stats (last second)
+fastly stats realtime --service-id $SID --format json
+```
+
+The `--by` flag accepts: `day`, `hour`, `minute`. The `--from` and `--to` flags use quoted date strings. Use `--format json` (not `--json`) for stats commands.
+
 ## Propagation Delays
 
 Changes propagate across Fastly's network in seconds to minutes (up to 10 min for version activations, up to 5 min for TLS). Cache purges are 1-2 seconds. Retry with backoff when verifying changes.
 
 **New service activation sequence**: After activating a brand new service, expect 500 "Domain Not Found" for 10-60 seconds while the domain propagates to edge POPs. This is normal — do not change configuration. Wait and retry. After version updates (e.g., fixing backend settings), allow 15-30 seconds for the new version to propagate.
+
+## KV Store Gotchas
+
+- **Link before use**: A KV store must be linked to a service version before Compute code can access it. Use `fastly kv-store create` then `fastly resource-link create --resource-id STORE_ID --service-id $SID --version active --autoclone`.
+- **Eventual consistency**: Read-after-write is eventually consistent. A key you just wrote may not be readable for a few seconds. Do not rely on immediate read-back in scripts; add a short delay or retry loop.
+- **Entry size limit**: Individual KV store entries are limited to 25 MB. Plan accordingly for large values.
+- **Listing stores**: `fastly kv-store list` lists all stores on the account, not per-service. Use `fastly resource-link list` to see which stores are linked to a given service.
 
 ## Troubleshooting
 
@@ -96,7 +159,9 @@ See [troubleshooting.md](references/troubleshooting.md) for the full list. The m
 
 - **503 SSL mismatch**: When `--override-host` differs from `--address`, always set `--ssl-cert-hostname` and `--ssl-sni-hostname` to the origin's actual hostname.
 - **403/400 on domain create**: Use `fastly service domain create`, not `fastly domain create`.
-- **"version is locked"**: Use `--autoclone` or clone first.
+- **"version is locked"**: Use `--autoclone` or clone first. Better yet, always pass `--autoclone` on every mutation command.
 - **New service setup**: Version 1 is unlocked — add domain, backend, snippets on `--version 1`, then activate once.
 - **VCL commands**: Under `fastly service vcl` (e.g. `fastly service vcl snippet create`), not `fastly vcl`.
 - **Token safety**: Never use `fastly auth show --reveal` bare in an AI context — it exposes tokens.
+- **`--use-ssl` is a boolean flag**: Write `--use-ssl`, not `--use-ssl true`. Passing a value causes the next argument to be misinterpreted.
+- **Domain requires `--name`**: The domain is passed via `--name cdn.example.com`, not as a positional argument and not with `-d`.

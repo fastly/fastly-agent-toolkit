@@ -215,6 +215,13 @@ uvx xvcl main.xvcl -o main.vcl --source-maps
 | `--debug` / `-v` | Show expansion traces |
 | `--source-maps` | Add source location comments |
 
+## Common Mistakes
+
+- **Bare constant names in VCL**: `error 200 GREETING;` passes through as a literal string. Use `error 200 "{{GREETING}}";` with template syntax.
+- **Generating if-chains instead of tables**: When you have data-driven routing or redirects, always populate a VCL `table` with `#for` — not an inline if-chain. If-chains are O(n); tables are O(1).
+- **Forgetting `#FASTLY` macros**: Every VCL subroutine (`vcl_recv`, `vcl_fetch`, `vcl_deliver`, `vcl_error`, `vcl_hit`, `vcl_miss`, `vcl_pass`) needs `#FASTLY recv` (or the appropriate name) at the top.
+- **Using `backend default`**: Fastly VCL requires `F_` prefixed backend names. Use `backend F_origin { ... }` and `set req.backend = F_origin;`.
+
 ## References
 
 For VCL basics (request lifecycle, return actions, variable types), see the VCL syntax and subroutines references below.
