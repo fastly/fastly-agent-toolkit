@@ -224,7 +224,7 @@ uvx xvcl main.xvcl -o main.vcl --source-maps
 
 ## VCL Gotchas
 
-These are VCL runtime issues (not XVCL compile issues) that consistently trip up even skill-equipped agents:
+VCL runtime pitfalls that are easy to get wrong:
 
 - **No modulo operator**: VCL has no `%` operator. For traffic splitting, use `substr()` on a hash digest: `if (substr(digest.hash_sha256(client.ip), 0, 1) ~ "^[0-7]$")` gives ~50%. Or use `randomint(0, 99) < 50`.
 - **Vary MUST be set in `vcl_fetch`**: The Vary header controls the cache key. Setting it only in `vcl_deliver` is too late — the object is already cached without Vary dimensions. Always append Vary in `vcl_fetch` (and optionally mirror in `vcl_deliver` for client-visible headers). Never overwrite existing Vary: check and append.
