@@ -214,6 +214,7 @@ uvx xvcl main.xvcl -o main.vcl --source-maps
 | `-I, --include` | Add include search path (repeatable) |
 | `--debug` / `-v` | Show expansion traces |
 | `--source-maps` | Add source location comments |
+| `--error-format` | Error output format: `text` (default) or `json` |
 
 ## Common Mistakes
 

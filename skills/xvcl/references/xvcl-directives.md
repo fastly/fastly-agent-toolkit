@@ -99,8 +99,7 @@ Embed compile-time expressions anywhere in code using `{{ }}`:
 | `min(a, b, ...)`    | Minimum value            | `min(5, 3)` → 3                          |
 | `max(a, b, ...)`    | Maximum value            | `max(5, 3)` → 5                          |
 | `abs(n)`            | Absolute value           | `abs(-42)` → 42                          |
-| `True` / `False`    | Boolean literals         |                                          |
-| `true` / `false`    | Boolean literals (alias) |                                          |
+| `true` / `false`    | Boolean literals (also `True`/`False` in expressions) |                     |
 
 ### Operators in Expressions
 - Arithmetic: `+`, `-`, `*`, `/`, `//` (integer division), `%`
@@ -515,43 +514,52 @@ set var.result = some_function(
 
 ## Error Messages
 
+Errors use a rustc-style structured format with rule IDs, source lines, carets, and actionable help. Use `--error-format json` for machine-readable output.
+
 ### Format
 ```
-Error at main.xvcl:15:
-  Invalid #for syntax: #for in range(10)
-
-  Context:
-    13: sub vcl_recv {
-    14:   // Generate backends
-  → 15:   #for in range(10)
-    16:     backend web{{i}} { ... }
+error[undefined-function]: Function 'normlize_path' is not defined
+  --> main.xvcl:12
+    |
+ 12 | set var.clean = normlize_path(req.url.path);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = did you mean: normalize_path?
+   = note: defined functions: normalize_path, parse_pair
 ```
+
+Each error includes a `rule` ID (e.g., `undefined-function`, `unclosed-block`, `return-count-mismatch`) that identifies the kind of problem.
 
 ### Common Errors
 
-| Error                                     | Cause                              | Fix                                                     |
-| ----------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
-| `Name 'X' is not defined`                 | Undefined constant or variable     | Check spelling; use `--debug` to list available names   |
-| `Invalid #const syntax`                   | Malformed declaration              | Use `#const NAME TYPE = value` or `#const NAME = value` |
-| `No matching #endfor`                     | Missing loop terminator            | Add `#endfor`                                           |
-| `No matching #endif`                      | Missing conditional terminator     | Add `#endif`                                            |
-| `Circular include detected`               | File A includes B which includes A | Restructure into shared file                            |
-| `Cannot find included file`               | Wrong path                         | Check path; add `-I` flag                               |
-| `Macro 'X' already defined`               | Duplicate macro name               | Rename one                                              |
-| `Function 'X' already defined`            | Duplicate function name            | Rename one                                              |
-| `expects N arguments, got M`              | Wrong argument count               | Check function/macro signature                          |
-| `Cannot unpack N values into M variables` | Tuple size mismatch                | Match variable count to tuple size                      |
-| `Type mismatch`                           | Constant type doesn't match        | Check value matches declared type                       |
+| Rule ID                    | Cause                              | Fix                                                     |
+| -------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| `compile-error`            | Undefined constant or variable     | Check spelling; use `--debug` to list available names   |
+| `invalid-for`              | Malformed `#for` syntax            | Use `#for VARIABLE in EXPRESSION`                       |
+| `unclosed-block`           | Missing `#endfor` or `#endif`      | Add the matching closing directive                      |
+| `undefined-function`       | Call to undefined XVCL function    | Check spelling; VCL builtins like `regsub` are ignored  |
+| `return-count-mismatch`    | Wrong number of return variables   | Match variable count to function's return type          |
+| `func-arg-count`           | Wrong number of arguments          | Check function/macro signature                          |
+| `macro-recursion`          | Infinite macro expansion           | Remove circular macro references                        |
+| `unpack-count-mismatch`    | Tuple size mismatch in `#for`      | Match variable count to tuple size                      |
+| `file-not-found`           | Missing include or input file      | Check path; add `-I` flag                               |
 
 ### Name Suggestions
-When an undefined name is used, xvcl suggests similar defined names:
+When an undefined name or function is used, xvcl suggests similar defined names:
 ```
-Error: Name 'PROT' is not defined
-  Did you mean: PORT?
-  Available: PRODUCTION, PORT, MAX_AGE
+error[compile-error]: Name 'PROT' is not defined
+  --> main.xvcl:5
+   = did you mean: PORT?
+   = note: available: PRODUCTION, PORT, MAX_AGE
+```
+
+### JSON Error Output
+Use `--error-format json` for structured diagnostics (useful for editor integrations):
+```bash
+uvx xvcl main.xvcl -o main.vcl --error-format json
 ```
 
 ### Debugging Tips
 - Use `--debug` / `-v` to see expansion traces for each pass
 - Use `--source-maps` to track which include file generated which output lines
+- Use `--error-format json` for machine-readable diagnostics
 - Start with a minimal file and add complexity incrementally
