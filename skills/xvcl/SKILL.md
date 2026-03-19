@@ -64,6 +64,7 @@ sub vcl_deliver {
 Read [xvcl-directives.md](references/xvcl-directives.md) for complete syntax and examples of every directive.
 
 ### Constants — `#const`
+
 ```xvcl
 #const NAME = value              // type auto-inferred
 #const NAME TYPE = value         // explicit type
@@ -80,6 +81,7 @@ Constants are **compile-time only** — they do NOT become VCL variables. Always
 Use in templates: `"{{TTL}}"`, `{{ORIGIN}}`, `backend F_{{name}} { ... }`
 
 ### Template Expressions — `{{ }}`
+
 ```xvcl
 {{CONST_NAME}}                   // constant substitution
 {{PORT * 2}}                     // arithmetic
@@ -92,6 +94,7 @@ Use in templates: `"{{TTL}}"`, `{{ORIGIN}}`, `backend F_{{name}} { ... }`
 Built-in functions: `range()`, `len()`, `str()`, `int()`, `hex()`, `format()`, `enumerate()`, `min()`, `max()`, `abs()`
 
 ### For Loops — `#for` / `#endfor`
+
 ```xvcl
 #for i in range(5)               // 0..4
 #for i in range(2, 8)            // 2..7
@@ -128,6 +131,7 @@ sub vcl_recv {
 Prefer populating VCL `table` declarations with `#for` loops over generating inline if-chains. Tables give O(1) hash lookups and are the idiomatic Fastly pattern for any data-driven routing, redirects, or configuration.
 
 ### Conditionals — `#if` / `#elif` / `#else` / `#endif`
+
 ```xvcl
 #if PRODUCTION
   set req.http.X-Env = "prod";
@@ -141,6 +145,7 @@ Prefer populating VCL `table` declarations with `#for` loops over generating inl
 Supports: boolean constants, comparisons (`==`, `!=`, `<`, `>`), operators (`and`, `or`, `not`).
 
 ### Variable Shorthand — `#let`
+
 ```xvcl
 #let cache_key STRING = req.url.path;
 // expands to:
@@ -149,6 +154,7 @@ Supports: boolean constants, comparisons (`==`, `!=`, `<`, `>`), operators (`and
 ```
 
 ### Functions — `#def` / `#enddef`
+
 ```xvcl
 // Single return value
 #def normalize_path(path STRING) -> STRING
@@ -174,6 +180,7 @@ set var.k, var.v = parse_pair("host:example.com");
 Functions compile to VCL subroutines with parameters passed via `req.http.X-Func-*` headers.
 
 ### Inline Macros — `#inline` / `#endinline`
+
 ```xvcl
 #inline cache_key(url, host)
 digest.hash_md5(url + "|" + host)
@@ -185,6 +192,7 @@ set req.hash += cache_key(req.url, req.http.Host);
 ```
 
 ### Includes — `#include`
+
 ```xvcl
 #include "includes/backends.xvcl"  // relative path
 #include <stdlib/security.xvcl>    // include path (-I)
@@ -208,13 +216,13 @@ uvx xvcl main.xvcl -o main.vcl --debug
 uvx xvcl main.xvcl -o main.vcl --source-maps
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-o, --output` | Output file (default: replace `.xvcl` with `.vcl`) |
-| `-I, --include` | Add include search path (repeatable) |
-| `--debug` / `-v` | Show expansion traces |
-| `--source-maps` | Add source location comments |
-| `--error-format` | Error output format: `text` (default) or `json` |
+| Option           | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `-o, --output`   | Output file (default: replace `.xvcl` with `.vcl`) |
+| `-I, --include`  | Add include search path (repeatable)               |
+| `--debug` / `-v` | Show expansion traces                              |
+| `--source-maps`  | Add source location comments                       |
+| `--error-format` | Error output format: `text` (default) or `json`    |
 
 ## Common Mistakes
 
@@ -239,22 +247,22 @@ For VCL basics (request lifecycle, return actions, variable types), see the VCL 
 
 Read the relevant reference file completely before implementing specific features.
 
-| Topic | File | Use when... |
-|-------|------|-------------|
+| Topic               | File                                                | Use when...                                                |
+| ------------------- | --------------------------------------------------- | ---------------------------------------------------------- |
 | **XVCL Directives** | [xvcl-directives.md](references/xvcl-directives.md) | Writing any XVCL code — complete syntax for all directives |
-| VCL Syntax | [vcl-syntax.md](references/vcl-syntax.md) | Working with data types, operators, control flow |
-| Subroutines | [subroutines.md](references/subroutines.md) | Understanding request lifecycle, custom subs |
-| Headers | [headers.md](references/headers.md) | Manipulating HTTP headers |
-| Backends | [backends.md](references/backends.md) | Configuring origins, directors, health checks |
-| Caching | [caching.md](references/caching.md) | Setting TTL, grace periods, cache keys |
-| Strings | [strings.md](references/strings.md) | String manipulation functions |
-| Crypto | [crypto.md](references/crypto.md) | Hashing, HMAC, base64 encoding |
-| Tables/ACLs | [tables-acls.md](references/tables-acls.md) | Lookup tables, access control lists |
-| Testing VCL | [testing-vcl.md](references/testing-vcl.md) | Writing unit tests, assertions, test helpers |
+| VCL Syntax          | [vcl-syntax.md](references/vcl-syntax.md)           | Working with data types, operators, control flow           |
+| Subroutines         | [subroutines.md](references/subroutines.md)         | Understanding request lifecycle, custom subs               |
+| Headers             | [headers.md](references/headers.md)                 | Manipulating HTTP headers                                  |
+| Backends            | [backends.md](references/backends.md)               | Configuring origins, directors, health checks              |
+| Caching             | [caching.md](references/caching.md)                 | Setting TTL, grace periods, cache keys                     |
+| Strings             | [strings.md](references/strings.md)                 | String manipulation functions                              |
+| Crypto              | [crypto.md](references/crypto.md)                   | Hashing, HMAC, base64 encoding                             |
+| Tables/ACLs         | [tables-acls.md](references/tables-acls.md)         | Lookup tables, access control lists                        |
+| Testing VCL         | [testing-vcl.md](references/testing-vcl.md)         | Writing unit tests, assertions, test helpers               |
 
 ## Project Structure
 
-```
+```text
 vcl/
 ├── main.xvcl
 ├── config.xvcl          # shared constants
