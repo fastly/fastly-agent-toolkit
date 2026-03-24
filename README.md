@@ -62,7 +62,7 @@ If your agent doesn't support `.agents/skills/`, use its agent-specific location
 #### Plugin Marketplace
 
 ```bash
-claude plugin marketplace add git@github.com:fastly/fastly-agent-toolkit.git
+claude plugin install fastly-agent-toolkit@claude-plugins-official
 claude plugin list
 
 # If this fails, add skills manually in the next section.
