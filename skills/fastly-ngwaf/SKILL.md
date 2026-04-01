@@ -1,6 +1,6 @@
 ---
 name: fastly-ngwaf
-description: Perform an internal assessment of Fastly Next-Gen WAF (NGWAF) workspaces to ensure essential login, credit card, and gift card protection rules are configured and enabled.
+description: "Performs an internal assessment of Fastly Next-Gen WAF (NGWAF) workspaces to verify that critical templated protection rules are configured and enabled. Use when auditing NGWAF workspace security posture, checking for missing or disabled login protection rules (LOGINDISCOVERY, LOGINATTEMPT, LOGINSUCCESS, LOGINFAILURE), verifying credit card validation rules (CC-VAL-ATTEMPT, CC-VAL-FAILURE, CC-VAL-SUCCESS), validating gift card protection rules (GC-VAL-ATTEMPT, GC-VAL-FAILURE, GC-VAL-SUCCESS), or identifying potential login endpoints not covered by NGWAF rules."
 ---
 
 # Fastly Next-Gen WAF Internal Assessment
