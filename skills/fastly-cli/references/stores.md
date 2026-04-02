@@ -419,7 +419,7 @@ KV stores must be linked to a service before the Compute app can access them. Th
 fastly kv-store create --name NAME
 
 # 2. Link the store to your service
-fastly resource-link create --version VERSION --resource-id STORE_ID --autoclone
+fastly service resource-link create --service-id SERVICE_ID --version VERSION --resource-id STORE_ID --autoclone
 
 # 3. Deploy the app
 fastly compute deploy

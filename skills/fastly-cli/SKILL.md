@@ -148,10 +148,10 @@ Changes propagate across Fastly's network in seconds to minutes (up to 10 min fo
 
 ## KV Store Gotchas
 
-- **Link before use**: A KV store must be linked to a service version before Compute code can access it. Use `fastly kv-store create` then `fastly resource-link create --resource-id STORE_ID --service-id $SID --version active --autoclone`.
+- **Link before use**: A KV store must be linked to a service version before Compute code can access it. Use `fastly kv-store create` then `fastly service resource-link create --resource-id STORE_ID --service-id $SID --version active --autoclone`.
 - **Eventual consistency**: Read-after-write is eventually consistent. A key you just wrote may not be readable for a few seconds. Do not rely on immediate read-back in scripts; add a short delay or retry loop.
 - **Entry size limit**: Individual KV store entries are limited to 25 MB. Plan accordingly for large values.
-- **Listing stores**: `fastly kv-store list` lists all stores on the account, not per-service. Use `fastly resource-link list` to see which stores are linked to a given service.
+- **Listing stores**: `fastly kv-store list` lists all stores on the account, not per-service. Use `fastly service resource-link list` to see which stores are linked to a given service.
 
 ## Host Header Override Pattern
 

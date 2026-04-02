@@ -48,6 +48,9 @@ fastly stats historical \
 # Filter by region
 fastly stats historical --service-id SERVICE_ID --region europe
 
+# Filter to a single stats field
+fastly stats historical --service-id SERVICE_ID --field bandwidth
+
 # Aggregation period: minute, hour, or day (no "month")
 fastly stats historical --service-id SERVICE_ID --by day
 
@@ -137,6 +140,9 @@ fastly stats usage
 fastly stats usage \
   --from "2024-01-01T00:00:00Z" \
   --to "2024-01-02T00:00:00Z"
+
+# Break down usage by service
+fastly stats usage --by-service
 
 # JSON output
 fastly stats usage --format=json

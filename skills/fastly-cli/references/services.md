@@ -441,14 +441,20 @@ fastly service imageoptimizer update \
 
 ## Validating a Version
 
-Always validate before activating when you can do so safely. The CLI doesn't have a validate command, so use the REST API:
+Always validate before activating when you can do so safely.
+
+```bash
+fastly service version validate --service-id SERVICE_ID --version VERSION
+```
+
+Returns validation status on success, or a list of errors explaining what's missing (e.g., no domain, no backend).
+
+Alternatively, via the REST API:
 
 ```bash
 curl -s "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/validate" \
   -H "Fastly-Key: $FASTLY_API_TOKEN"
 ```
-
-Returns `{"status":"ok"}` on success, or a list of errors explaining what's missing (e.g., no domain, no backend). If your current CLI auth is not a stored token, the example above may need to read `FASTLY_API_TOKEN` from the environment instead of calling `fastly auth show --reveal --quiet`.
 
 ## Common Workflows
 

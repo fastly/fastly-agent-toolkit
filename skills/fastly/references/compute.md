@@ -10,7 +10,7 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 **Cache APIs.** Compute services access Fastly's cache through three APIs with increasing control: Simple Cache (basic get/set), HTTP Cache (HTTP-semantics-aware caching), and Core Cache (full low-level control over cache transactions).
 
-**Resource linking.** Stores (Config, KV, Secret) must be linked to a service before the Compute code can access them. Link via `fastly resource-link create` CLI command or the resource linking API.
+**Resource linking.** Stores (Config, KV, Secret) must be linked to a service before the Compute code can access them. Link via `fastly service resource-link create` CLI command or the resource linking API.
 
 **Client-side encryption for secrets.** For additional security, secrets can be encrypted locally before upload using a client key (X25519 public key from the API) and libsodium sealed boxes.
 

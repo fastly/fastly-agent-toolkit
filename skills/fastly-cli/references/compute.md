@@ -262,7 +262,7 @@ fastly compute metadata --enable-script
 
 ## Compute ACLs
 
-Manage ACLs for Compute services. These are distinct from service-level ACLs managed via `fastly acl`.
+Manage ACLs for Compute services. These are distinct from service-level ACLs managed via `fastly service acl`.
 
 ```bash
 # Create an ACL
