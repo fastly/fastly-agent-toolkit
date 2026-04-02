@@ -12,10 +12,10 @@ This skill assesses Fastly NGWAF workspaces to verify the status of critical tem
 
 ## Workflow
 
-1.  **Retrieve Workspaces**: Fetches all NGWAF workspaces associated with the account.
-2.  **Inspect Rules**: For each workspace, it retrieves the list of configured rules.
-3.  **Validate Critical Rules**: Specifically checks for the presence and enablement of the templated rules listed above.
-4.  **Recommend Actions**: If any of these rules are missing or disabled, it recommends configuring and enabling them to strengthen security posture against Account Takeover (ATO) and carding attacks.
+1. **Retrieve Workspaces**: Fetches all NGWAF workspaces associated with the account.
+2. **Inspect Rules**: For each workspace, it retrieves the list of configured rules.
+3. **Validate Critical Rules**: Specifically checks for the presence and enablement of the templated rules listed above.
+4. **Recommend Actions**: If any of these rules are missing or disabled, it recommends configuring and enabling them to strengthen security posture against Account Takeover (ATO) and carding attacks.
 
 ## Usage
 

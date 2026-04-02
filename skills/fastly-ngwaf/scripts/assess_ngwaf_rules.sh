@@ -1,14 +1,43 @@
 #!/bin/bash
+set -euo pipefail
+
+# Check dependencies
+if ! command -v jq &> /dev/null; then
+  echo "Error: 'jq' is not installed but is required for this script."
+  exit 1
+fi
 
 # Ensure FASTLY_API_KEY is set
-if [ -z "${FASTLY_API_KEY}" ]; then
+if [ -z "${FASTLY_API_KEY:-}" ]; then
   echo "Error: FASTLY_API_KEY environment variable is not set."
   exit 1
 fi
 
+# Helper function for API calls with status code check
+fastly_api_call() {
+  local url="$1"
+  local response
+  local http_code
+  local body
+
+  # Fetch response and status code
+  response=$(curl -s -w "\n%{http_code}" -H "Fastly-Key: ${FASTLY_API_KEY}" "$url")
+  http_code=$(echo "$response" | tail -n1)
+  body=$(echo "$response" | sed '$d')
+
+  if [ "$http_code" -ne 200 ]; then
+    echo "Error: API call failed with status $http_code for $url" >&2
+    echo "Response: $body" >&2
+    exit 1
+  fi
+
+  echo "$body"
+}
+
 # 1. Get the list of ngwaf workspaces
-workspaces=$(curl -s "https://api.fastly.com/ngwaf/v1/workspaces?limit=200" \
-  -H "Fastly-Key: ${FASTLY_API_KEY}" | jq -r '.data[].id')
+# Note: This fetch is limited to 200 workspaces. For accounts with more, pagination should be followed.
+workspaces_json=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces?limit=200")
+workspaces=$(echo "$workspaces_json" | jq -r '.data[].id')
 
 if [ -z "$workspaces" ]; then
   echo "No workspaces found or failed to fetch workspaces."
@@ -20,8 +49,8 @@ for workspace in $workspaces; do
   echo "### Workspace: $workspace"
   
   # List rules for the workspace
-  rules_data=$(curl -s "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/rules?limit=200" \
-    -H "Fastly-Key: ${FASTLY_API_KEY}")
+  # Note: Limited to 200 rules. For workspaces with more, pagination should be followed.
+  rules_data=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/rules?limit=200")
     
   # Assessment groups
   groups=("LOGIN" "CC" "GC")
@@ -29,7 +58,7 @@ for workspace in $workspaces; do
   signals_CC=("CC-VAL-ATTEMPT" "CC-VAL-FAILURE" "CC-VAL-SUCCESS")
   signals_GC=("GC-VAL-ATTEMPT" "GC-VAL-FAILURE" "GC-VAL-SUCCESS")
 
-  loginattempt_found=false
+  loginattempt_enabled=false
 
   for group in "${groups[@]}"; do
     echo "  [$group Rules]"
@@ -46,24 +75,22 @@ for workspace in $workspaces; do
         recommendation="Enable this rule"
         [ "$signal" == "LOGINDISCOVERY" ] && recommendation="CRITICAL: $recommendation"
         echo "  - $signal: IS DISABLED (Recommended: $recommendation)"
-        if [[ "$signal" == "LOGINATTEMPT" ]]; then
-           loginattempt_found=true
-        fi
+        # Note: If LOGINATTEMPT is disabled, we still want to search for login paths.
       else
         echo "  - $signal: ENABLED"
         if [[ "$signal" == "LOGINATTEMPT" ]]; then
-           loginattempt_found=true
+           loginattempt_enabled=true
         fi
       fi
     done
   done
 
-  # If LOGINATTEMPT is not configured, search for login-related requests
-  if [ "$loginattempt_found" = false ]; then
-    echo "  -> LOGINATTEMPT is not enabled/configured. Searching recent request logs for login paths..."
+  # If LOGINATTEMPT is not enabled (missing or disabled), search for login-related requests
+  if [ "$loginattempt_enabled" = false ]; then
+    echo "  -> LOGINATTEMPT is not enabled. Searching recent request logs for potential login paths..."
     # Search for requests with "login" in path and method POST from last 30 min
-    login_requests=$(curl -s "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/requests?limit=100&page=1&q=from%3A-30min%20method%3APOST%20path%3A~\"%2Alogin%2A\"" \
-      -H "Fastly-Key: ${FASTLY_API_KEY}" | jq -r '.data[] | .path' | sort | uniq -c)
+    login_requests_json=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/requests?limit=100&page=1&q=from%3A-30min%20method%3APOST%20path%3A~\"%2Alogin%2A\"")
+    login_requests=$(echo "$login_requests_json" | jq -r '.data[] | .path' | sort | uniq -c)
     
     if [ -n "$login_requests" ]; then
       echo "  -> Found potential login paths in last 30 minutes:"
