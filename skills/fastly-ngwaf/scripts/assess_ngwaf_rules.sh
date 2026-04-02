@@ -45,11 +45,11 @@ check_signal() {
 
   if [ -z "$rule_status" ]; then
     recommendation="Configure and enable this rule"
-    [ "$signal" = "LOGINDISCOVERY" ] && recommendation="CRITICAL: $recommendation to discover unknown login endpoints"
+    [[ "$signal" == "LOGINDISCOVERY" ]] && recommendation="CRITICAL: $recommendation to discover unknown login endpoints"
     echo "  - $signal: NOT CONFIGURED (Recommended: $recommendation)"
   elif [[ "$rule_status" != *"enabled"* ]]; then
     recommendation="Enable this rule"
-    [ "$signal" = "LOGINDISCOVERY" ] && recommendation="CRITICAL: $recommendation"
+    [[ "$signal" == "LOGINDISCOVERY" ]] && recommendation="CRITICAL: $recommendation"
     echo "  - $signal: IS DISABLED (Recommended: $recommendation)"
   else
     echo "  - $signal: ENABLED"
