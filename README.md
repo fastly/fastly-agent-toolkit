@@ -84,6 +84,24 @@ mkdir -p ~/.codex/skills
 cp -R ./skills/{falco,viceroy} ~/.codex/skills/
 ```
 
+### Swival
+
+Swival scans project-local `.swival/skills/` first, then `.agents/skills/`. For global installs, prefer `~/.config/swival/skills/`.
+
+Project-local install:
+
+```bash
+mkdir -p .swival/skills
+cp -R ./skills/{falco,viceroy} .swival/skills/
+```
+
+Global install:
+
+```bash
+mkdir -p ~/.config/swival/skills
+cp -R ./skills/{falco,viceroy} ~/.config/swival/skills/
+```
+
 ### Qwen Code
 
 Qwen Code requires the experimental skills feature. Enable it by adding to `.qwen/settings.json`:
