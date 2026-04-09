@@ -39,7 +39,7 @@ fastly <command> <subcommand> [flags]
 | **Security** | `ngwaf` - Web application firewall                                                      |
 | **TLS**      | `tls-subscription`, `tls-custom`, `tls-platform`, `tls-config` - Certificate management |
 | **Storage**  | `kv-store`, `config-store`, `secret-store` - Edge data stores                           |
-| **Auth**     | `auth` - Login, stored tokens; `auth-token` (deprecated)                                |
+| **Auth**     | `auth` - Login, stored tokens, active token output, revocation; `auth-token` (deprecated) |
 | **Info**     | `stats`, `ip-list`, `pops`, `whoami` - Information queries                              |
 | **Other**    | `dashboard`, `domain`, `products`, `object-storage`, `tools`                            |
 
@@ -80,7 +80,8 @@ Available on most commands:
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
-- For API token in scripts, use `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` only when the current credential is a stored Fastly CLI token; if auth comes from `FASTLY_API_TOKEN` or another non-stored source, read the token from the environment instead and never reveal it in conversation
+- For shell substitutions or pipes that need the active API token, prefer `fastly auth token`; it prints the token only to non-terminal stdout and refuses to write it directly to a terminal
+- In AI contexts, never run `fastly auth show --reveal` bare. If you specifically need a stored token by name rather than the currently active token, use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` only inside a shell substitution
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
 

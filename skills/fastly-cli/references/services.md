@@ -228,7 +228,7 @@ curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/dom
   -d '{"name":"my-project.global.ssl.fastly.net"}'
 ```
 
-To get `$FASTLY_API_TOKEN`, use `fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}'` only if the current credential is a stored Fastly CLI token. If the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source, read the token from the environment instead; `fastly auth show --reveal --quiet` will fail with `current token is not stored`.
+To get `$FASTLY_API_TOKEN` for REST calls, prefer `FASTLY_API_TOKEN=$(fastly auth token)` inside a shell substitution or use the existing `FASTLY_API_TOKEN` environment variable directly. Only use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` when you specifically need a stored token by name; omitting the token name fails when the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source.
 
 ## Healthchecks
 
@@ -365,6 +365,8 @@ fastly service vcl condition list --service-id SERVICE_ID --version 1
 ```
 
 **IMPORTANT — `--content` takes inline VCL, not a file path.** Passing a file path like `--content /tmp/snippet.vcl` sets the snippet content to the literal string "/tmp/snippet.vcl". To load from a file, use shell substitution: `--content "$(cat /tmp/snippet.vcl)"`.
+
+Use `fastly service vcl snippet describe --content` to print only the raw snippet body for either versioned snippets (`--name`) or dynamic snippets (`--dynamic --snippet-id`). `--content` is mutually exclusive with `--json` and `--verbose`.
 
 The `--dynamic` flag creates a dynamic snippet that can be updated without activating a new version. The `-p`/`--priority` flag controls the execution order of snippets (lower values run first).
 

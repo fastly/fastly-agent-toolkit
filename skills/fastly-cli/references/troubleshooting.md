@@ -24,6 +24,8 @@ Snippet/custom VCL commands are under `fastly service vcl` (e.g. `fastly service
 
 The `--content` flag on snippet/custom VCL commands takes inline VCL code, not a file path. To load from a file: `--content "$(cat file.vcl)"`.
 
+On `fastly service vcl snippet describe`, `--content` means "print only the raw VCL body". It cannot be combined with `--json` or `--verbose`.
+
 ## Test domains
 
 Use a name you choose (e.g. `my-app.global.ssl.fastly.net`), not the service ID. `SERVICE_ID.global.ssl.fastly.net` does NOT work. Adding `foo.global.ssl.fastly.net` automatically makes `foo.freetls.fastly.net` available (HTTP/2).
