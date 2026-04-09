@@ -28,7 +28,7 @@ fastly stats aggregate \
   --to "2024-01-02T00:00:00Z"
 
 # JSON output
-fastly stats aggregate --format=json
+fastly stats aggregate --json
 ```
 
 ## Historical Statistics
@@ -55,7 +55,7 @@ fastly stats historical --service-id SERVICE_ID --field bandwidth
 fastly stats historical --service-id SERVICE_ID --by day
 
 # JSON output for processing
-fastly stats historical --service-id SERVICE_ID --format=json
+fastly stats historical --service-id SERVICE_ID --json
 ```
 
 ### Available Fields
@@ -89,7 +89,7 @@ fastly stats domain-inspector --service-id SERVICE_ID \
   --to "2024-01-02T00:00:00Z"
 
 # JSON output
-fastly stats domain-inspector --service-id SERVICE_ID --format=json
+fastly stats domain-inspector --service-id SERVICE_ID --json
 ```
 
 ## Origin Inspector Statistics
@@ -106,7 +106,7 @@ fastly stats origin-inspector --service-id SERVICE_ID \
   --to "2024-01-02T00:00:00Z"
 
 # JSON output
-fastly stats origin-inspector --service-id SERVICE_ID --format=json
+fastly stats origin-inspector --service-id SERVICE_ID --json
 ```
 
 ## Real-time Statistics
@@ -118,7 +118,7 @@ Stream live metrics from your service.
 fastly stats realtime --service-id SERVICE_ID
 
 # JSON output
-fastly stats realtime --service-id SERVICE_ID --format=json
+fastly stats realtime --service-id SERVICE_ID --json
 ```
 
 Real-time stats show:
@@ -145,7 +145,7 @@ fastly stats usage \
 fastly stats usage --by-service
 
 # JSON output
-fastly stats usage --format=json
+fastly stats usage --json
 ```
 
 ## Regional Statistics
@@ -157,7 +157,7 @@ Filter metrics by geographic region using `--region`.
 fastly stats regions
 
 # Filter stats to a specific region
-fastly stats historical --service-id SERVICE_ID --region europe --format=json --by day
+fastly stats historical --service-id SERVICE_ID --region europe --json --by day
 ```
 
 ### Regions
@@ -205,7 +205,7 @@ fastly stats historical \
 
 ```bash
 # Check 5xx errors over the last day
-fastly stats historical --service-id SERVICE_ID --format=json --by hour \
+fastly stats historical --service-id SERVICE_ID --json --by hour \
   | jq -s '[.[].status_5xx] | add'
 
 # Real-time error monitoring
@@ -216,7 +216,7 @@ fastly stats realtime --service-id SERVICE_ID
 
 ```bash
 # Total bandwidth over last 7 days
-fastly stats historical --service-id SERVICE_ID --format=json --by day \
+fastly stats historical --service-id SERVICE_ID --json --by day \
   --from "7 days ago" | jq -s '[.[].bandwidth] | add'
 ```
 
@@ -224,28 +224,28 @@ fastly stats historical --service-id SERVICE_ID --format=json --by day \
 
 ```bash
 # Bandwidth from Europe
-fastly stats historical --service-id SERVICE_ID --format=json --by day \
+fastly stats historical --service-id SERVICE_ID --json --by day \
   --region europe | jq -s '[.[].bandwidth] | add'
 ```
 
 ## JSON Output Format
 
-With `--format=json`, each line is a separate JSON object (one per aggregation period). Lines are **not** wrapped in an array or envelope. Use `jq -s` (slurp) to collect them into an array for aggregation:
+With `--json`, each line is a separate JSON object (one per aggregation period). Lines are **not** wrapped in an array or envelope. Use `jq -s` (slurp) to collect them into an array for aggregation:
 
 ```bash
 # Human-readable (default)
 fastly stats historical --service-id SERVICE_ID
 
 # JSON output — one JSON object per line
-fastly stats historical --service-id SERVICE_ID --format=json --by day
+fastly stats historical --service-id SERVICE_ID --json --by day
 
 # Sum bandwidth across all days
-fastly stats historical --service-id SERVICE_ID --format=json --by day \
+fastly stats historical --service-id SERVICE_ID --json --by day \
   --from "2026-02-01" --to "2026-03-01" \
   | jq -s '[.[].bandwidth] | add'
 
 # Extract per-day request counts
-fastly stats historical --service-id SERVICE_ID --format=json --by day \
+fastly stats historical --service-id SERVICE_ID --json --by day \
   | jq -s '.[] | {start_time, requests}'
 ```
 
@@ -255,7 +255,7 @@ The CLI has no built-in cross-service stats. Loop over services to compare:
 
 ```bash
 fastly service list --json | jq -r '.[] | "\(.ServiceID)|\(.Name)"' | while IFS='|' read -r id name; do
-  bw=$(fastly stats historical -s "$id" --format json --by day \
+  bw=$(fastly stats historical -s "$id" --json --by day \
     --from "2026-02-01" --to "2026-03-01" \
     | jq -s '[.[].bandwidth] | add // 0')
   echo "${bw} ${name}"
@@ -269,7 +269,7 @@ done | sort -rn
 ```bash
 fastly stats historical \
   --service-id SERVICE_ID \
-  --format=json --by day | jq -rs '
+  --json --by day | jq -rs '
   .[] | [.start_time, .requests, .hits, .miss, .bandwidth] | @csv
 ' > stats.csv
 ```
@@ -285,7 +285,7 @@ watch -n 5 'fastly stats realtime --service-id SERVICE_ID'
 
 ```bash
 #!/bin/bash
-errors=$(fastly stats historical --service-id SERVICE_ID --format=json --by hour \
+errors=$(fastly stats historical --service-id SERVICE_ID --json --by hour \
   | jq -s '.[-1].status_5xx')
 if [ "$errors" -gt 100 ]; then
   echo "High error rate: $errors"

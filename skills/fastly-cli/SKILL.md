@@ -133,13 +133,13 @@ fastly service domain create --service-id $SID --version active -d cdn.example.c
 ```bash
 # Historical stats by day for a date range (JSON output)
 fastly stats historical --service-id $SID --by day \
-  --from "2026-02-01" --to "2026-03-01" --format json
+  --from "2026-02-01" --to "2026-03-01" --json
 
 # Real-time stats (last second)
-fastly stats realtime --service-id $SID --format json
+fastly stats realtime --service-id $SID --json
 ```
 
-The `--by` flag accepts: `day`, `hour`, `minute`. The `--from` and `--to` flags use quoted date strings. Use `--format json` (not `--json`) for stats commands.
+The `--by` flag accepts: `day`, `hour`, `minute`. The `--from` and `--to` flags use quoted date strings. Use `--json` for JSON output on stats commands.
 
 ## Propagation Delays
 
