@@ -310,6 +310,8 @@ fastly compute pack --wasm-binary main.wasm
 fastly compute hash-files
 ```
 
+`fastly compute pack` requires a `fastly.toml` in the working directory and writes archives under `pkg/`, typically `pkg/<manifest name>.tar.gz`.
+
 ## Project Configuration (fastly.toml)
 
 ```toml
