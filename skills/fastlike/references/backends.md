@@ -47,6 +47,23 @@ bin/fastlike -wasm gateway.wasm \
   -backend payments=payments-service:3004
 ```
 
+## Simulating Flaky Backends
+
+Append `@N` to a backend address to make it succeed only `N` percent of the time. The other requests get a synthetic 502 — the same shape Fastlike returns when a real upstream is unreachable, so the guest's error path runs exactly as it would in production.
+
+```bash
+# api succeeds for ~50% of requests, the rest return 502
+bin/fastlike -wasm app.wasm -backend api=localhost:8000@50
+
+# cdn always appears down
+bin/fastlike -wasm app.wasm -backend cdn=localhost:9000@0
+
+# catch-all backend with simulated reliability
+bin/fastlike -wasm app.wasm -backend localhost:8000@75
+```
+
+The suffix is only recognized when it is purely numeric and falls in `0..100`, so URLs that legitimately contain `@` (like `http://user:pass@host`) are passed through untouched. A trailing `@<digits>` outside that range is rejected at startup. The same hooks are available programmatically as `fastlike.WithUnreliableBackend` and `fastlike.WithUnreliableDefaultBackend`.
+
 ## How Backends Work
 
 1. Your WASM calls the Fastly Compute ABI to make a backend request with a name

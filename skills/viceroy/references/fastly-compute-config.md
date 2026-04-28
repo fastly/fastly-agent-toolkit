@@ -39,6 +39,7 @@ Define origin servers that your Compute service communicates with.
 | `grpc`               | No       | Enable gRPC support (default: `false`)             |
 | `client_certificate` | No       | Client certificate for mTLS                        |
 | `ca_certificate`     | No       | Custom CA certificate (inline PEM, file, or array) |
+| `health`             | No       | Mock health status: `unknown` (default), `healthy`, or `unhealthy` |
 
 ### With TLS/mTLS
 
@@ -56,6 +57,22 @@ MIIDqTCCApGgAwIBAgIU...
 # Or from file
 # ca_certificate.file = "certs/ca.pem"
 ```
+
+### Mocking Backend Health
+
+Use `health` to make `Backend::is_healthy()` (or its equivalent in other SDKs) return a fixed value at runtime. Useful for exercising fallback paths without needing a real probe.
+
+```toml
+[local_server.backends.primary]
+url = "http://localhost:8000"
+health = "unhealthy"
+
+[local_server.backends.fallback]
+url = "http://localhost:8001"
+health = "healthy"
+```
+
+Accepted values are `unknown` (default), `healthy`, and `unhealthy` — case-insensitive. Anything else is rejected at startup.
 
 ### Dynamic Backends
 

@@ -56,6 +56,11 @@ viceroy serve [OPTIONS] <WASM_FILE>
 | `--experimental_modules wasi-nn`    | Enable experimental WASI-NN module                       |
 | `--unknown-import-behavior <MODE>`  | Handle unknown imports: `link-error` (default) or `trap` |
 | `--local-pushpin-proxy-port <PORT>` | Enable Pushpin real-time messaging support               |
+| `--wasm-exceptions`                 | Enable the Wasm Exception Handling proposal              |
+| `--wasm-gc`                         | Enable the Wasm GC proposal                              |
+| `--wasm-cm-gc`                      | Enable component-model GC integration                    |
+
+The three Wasm feature flags are off by default — production Fastly Compute does not enable them yet. Turn them on only when experimenting with toolchains (e.g. recent Kotlin/Java/Scala targets) that emit GC or exception-handling instructions.
 
 ## Testing the Server
 

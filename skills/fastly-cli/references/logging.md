@@ -200,6 +200,38 @@ fastly log-tail --service-id SERVICE_ID
 
 ```
 
+## Logging Endpoint Error Stream
+
+When a configured logging endpoint can't deliver (DNS failure, TLS handshake error, refused connection, etc.), Fastly records the delivery error. `fastly service logging debug` streams those errors live so you can troubleshoot a misconfigured endpoint without waiting on the destination.
+
+```bash
+# Stream all logging endpoint errors for a service
+fastly service logging debug --service-id SERVICE_ID
+
+# Filter to a single endpoint by name
+fastly service logging debug --service-id SERVICE_ID --filter my-broken-log
+
+# Bound to a time window (Unix seconds)
+fastly service logging debug --service-id SERVICE_ID \
+  --from 1714300000 --to 1714303600
+
+# Print full timestamps instead of compact HH:MM:SS
+fastly service logging debug --service-id SERVICE_ID --timestamps
+
+# JSON output (one error per line)
+fastly service logging debug --service-id SERVICE_ID --json
+```
+
+Output looks like:
+
+```
+INFO: Streaming logging endpoint errors for service <SID>
+
+14:55:10 | Broken Log | Get "https://my-broken.logging.org/...": no such host
+```
+
+Use this any time logs aren't reaching their destination — the error message often points straight at DNS, TLS, or auth problems on the receiver side.
+
 ## Common Patterns
 
 ### JSON Log Format for Analytics
