@@ -107,4 +107,6 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 | Logging endpoint setup by provider    | `https://www.fastly.com/documentation/guides/integrations/logging-endpoints`          |
 | Real-time log streaming configuration | `https://www.fastly.com/documentation/guides/integrations/streaming-logs`             |
 
+**Searching or querying logs stored by Fastly?** Log Explorer & Insights stores and indexes logs within Fastly for querying via API. See the `observability` reference.
+
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.

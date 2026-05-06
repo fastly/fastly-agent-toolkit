@@ -46,6 +46,8 @@ Bulk update accepts JSON with `items` array; each entry has `op` (`create`, `upd
 
 ## KV Stores
 
+KV Store requires account-level product enablement (`kv_store` slug, see `products.md`) before use.
+
 | Action          | Method   | Endpoint                                     |
 | --------------- | -------- | -------------------------------------------- |
 | List KV stores  | `GET`    | `/resources/stores/kv`                       |
@@ -170,6 +172,6 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 | KV Store guide                 | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/kv-stores`     |
 | Config Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/config-stores` |
 | Secret Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/secret-stores` |
-| Dynamic config concept         | `https://www.fastly.com/documentation/guides/concepts/dynamic-config`                 |
+| Compute developer guides       | `https://www.fastly.com/documentation/guides/compute/developer-guides`                |
 
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.
