@@ -38,7 +38,7 @@ Create request body (JSON): `fqdn` (required, immutable after creation), `servic
 
 Update request body (JSON): `service_id` (nullable -- set to `null` to disassociate from service), `description`.
 
-List supports query parameters: `fqdn` (fuzzy match), `service_id`, `activated` (boolean), `verified` (boolean), `sort` (`fqdn` or `-fqdn`), `cursor`, `limit` (default 20, max 100).
+List supports query parameters: `fqdn` (filtered by `fqdn_match`), `fqdn_match` (enum: `contains` [default], `exact`, `starts_with`, `ends_with`), `service_id`, `activated` (boolean), `verified` (boolean), `sort` (`fqdn` or `-fqdn`), `cursor`, `limit` (default 20, max 100).
 
 Response fields: `id` (UUID), `fqdn`, `service_id`, `description`, `activated` (read-only, true if domain has at least one TLS activation), `verified` (read-only, true if ownership is proven via TLS certificate), `created_at`, `updated_at`.
 

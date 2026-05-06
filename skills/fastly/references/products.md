@@ -6,7 +6,7 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 - **Products are enabled per-service** unless noted as account-level in the catalog. Account-level products (AI Accelerator, Domain Research, Object Storage) omit the `/services/{service_id}` path segment entirely.
 - **Some products require prerequisites**: Bot Management requires purchase of the Next-Gen WAF.
-- **Configuration endpoints are separate from enablement**: Only `ddos_protection` and `ngwaf` currently expose `/configuration` endpoints. All other products are simple on/off toggles.
+- **Configuration endpoints are separate from enablement**: `bot_management`, `ddos_protection`, and `ngwaf` expose `/configuration` endpoints. All other products are simple on/off toggles.
 - **Product slugs use underscores**, matching the API spec filenames (e.g., `bot_management`, not `bot-management`). The slug is also returned as `product.id` in API responses.
 
 ## Universal Enablement Pattern
@@ -71,9 +71,10 @@ Disable returns `204 No Content` on success.
 | ----------------------- | ----------------------- | ------- | ------------------------------------- | --------------------------------- |
 | AI Accelerator          | `ai_accelerator`        | Account | No                                    | Beta                              |
 | API Discovery           | `api_discovery`         | Service | No                                    |                                   |
-| Bot Management          | `bot_management`        | Service | No                                    | Requires NGWAF subscription       |
+| Bot Management          | `bot_management`        | Service | Yes -- `contentguard`: on/off         | NGWAF required for post-cache only |
 | Brotli Compression      | `brotli_compression`    | Service | No                                    |                                   |
-| DDoS Protection         | `ddos_protection`       | Service | Yes -- `mode`: off/log/block          | Defaults to `log` mode            |
+| DDoS Protection         | `ddos_protection`       | Service | Yes -- `mode`: off/log/block          | Defaults to `log` mode             |
+| KV Store                | `kv_store`              | Account | No                                    |                                   |
 | Domain Inspector        | `domain_inspector`      | Service | No                                    |                                   |
 | Domain Research         | `domain_research`       | Account | No                                    |                                   |
 | Fanout                  | `fanout`                | Service | No                                    | Publish-subscribe message broker  |
@@ -85,6 +86,8 @@ Disable returns `204 No Content` on success.
 | WebSockets              | `websockets`            | Service | No                                    |                                   |
 
 ### Products with Configuration
+
+**Bot Management** -- Use the `/configuration` endpoint to control ContentGuard (pre-cache bot detection). Property: `contentguard` (`"on"` or `"off"`).
 
 **DDoS Protection** -- Enable accepts an optional `mode` in the request body (`off`, `log`, or `block`). Defaults to `log` if omitted. Use the `/configuration` endpoint to change mode after enablement.
 
