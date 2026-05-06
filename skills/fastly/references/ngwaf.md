@@ -158,9 +158,9 @@ The `q` parameter accepts a search query syntax (e.g., `"/a/path sqli from:-7h"`
 
 | Area             | Key Endpoints                                                                                                                       |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Simulate         | `POST /ngwaf/v1/workspaces/{workspace_id}/simulate` -- test rules against a synthetic request (100KB body limit, stateless) |
-| Agents           | `GET /ngwaf/v1/workspaces/{workspace_id}/agents[/{agent_id}]` -- agent status, version, decision latency (p50/p95/p99), CPU/memory |
-| Agent Keys       | `GET /ngwaf/v1/workspaces/{workspace_id}/agent-keys` -- list agent keys for configuration                                          |
+| Simulate         | `POST /ngwaf/v1/workspaces/{workspace_id}/simulate` -- test rules against a synthetic request (100KB body limit, stateless)         |
+| Agents           | `GET /ngwaf/v1/workspaces/{workspace_id}/agents[/{agent_id}]` -- agent status, version, decision latency (p50/p95/p99), CPU/memory  |
+| Agent Keys       | `GET /ngwaf/v1/workspaces/{workspace_id}/agent-keys` -- list agent keys for configuration                                           |
 | Lists            | `/ngwaf/v1/lists` (account-level), `/ngwaf/v1/workspaces/{workspaceId}/lists` (workspace-level) -- lists for use in rule conditions |
 | Virtual Patches  | `/ngwaf/v1/workspaces/{workspace_id}/virtual-patches` -- virtual patches for a workspace                                            |
 | Redactions       | `/ngwaf/v1/workspaces/{workspace_id}/redactions` -- control which fields are redacted in request logs                               |

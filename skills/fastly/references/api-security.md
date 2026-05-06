@@ -16,20 +16,20 @@ Product slug: `api_discovery`. Must be enabled per service before the operations
 
 ## API Operations
 
-| Action            | Method   | Endpoint                                                           |
-| ----------------- | -------- | ------------------------------------------------------------------ |
-| List discovered   | `GET`    | `/api-security/v1/services/{service_id}/discovered-operations`     |
-| List operations   | `GET`    | `/api-security/v1/services/{service_id}/operations`                |
-| Create operation  | `POST`   | `/api-security/v1/services/{service_id}/operations`                |
-| Get operation     | `GET`    | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
-| Update operation  | `PATCH`  | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
-| Delete operation  | `DELETE` | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
-| Bulk delete       | `DELETE` | `/api-security/v1/services/{service_id}/operations-bulk`           |
-| List tags         | `GET`    | `/api-security/v1/services/{service_id}/tags`                      |
-| Create tag        | `POST`   | `/api-security/v1/services/{service_id}/tags`                      |
-| Get tag           | `GET`    | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
-| Update tag        | `PATCH`  | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
-| Delete tag        | `DELETE` | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
+| Action           | Method   | Endpoint                                                           |
+| ---------------- | -------- | ------------------------------------------------------------------ |
+| List discovered  | `GET`    | `/api-security/v1/services/{service_id}/discovered-operations`     |
+| List operations  | `GET`    | `/api-security/v1/services/{service_id}/operations`                |
+| Create operation | `POST`   | `/api-security/v1/services/{service_id}/operations`                |
+| Get operation    | `GET`    | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
+| Update operation | `PATCH`  | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
+| Delete operation | `DELETE` | `/api-security/v1/services/{service_id}/operations/{operation_id}` |
+| Bulk delete      | `DELETE` | `/api-security/v1/services/{service_id}/operations-bulk`           |
+| List tags        | `GET`    | `/api-security/v1/services/{service_id}/tags`                      |
+| Create tag       | `POST`   | `/api-security/v1/services/{service_id}/tags`                      |
+| Get tag          | `GET`    | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
+| Update tag       | `PATCH`  | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
+| Delete tag       | `DELETE` | `/api-security/v1/services/{service_id}/tags/{tag_id}`             |
 
 Query parameters for list endpoints: `limit` (1-1000, default 100), `page` (0-based). Operations accept `status` filter (`SAVED`, `IGNORED`; defaults to `SAVED`) and `tag_id` filter. Discovered operations accept `domain`, `method`, and `path` filters. Tags accept `limit` and `page` pagination. Bulk delete accepts `operation_ids` array in request body and returns 207 multi-status.
 

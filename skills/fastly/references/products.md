@@ -67,23 +67,23 @@ Disable returns `204 No Content` on success.
 
 ## Product Catalog
 
-| Product                 | Slug (`product_id`)     | Scope   | Has Configuration                     | Notes                             |
-| ----------------------- | ----------------------- | ------- | ------------------------------------- | --------------------------------- |
-| AI Accelerator          | `ai_accelerator`        | Account | No                                    | Beta                              |
-| API Discovery           | `api_discovery`         | Service | No                                    |                                   |
+| Product                 | Slug (`product_id`)     | Scope   | Has Configuration                     | Notes                              |
+| ----------------------- | ----------------------- | ------- | ------------------------------------- | ---------------------------------- |
+| AI Accelerator          | `ai_accelerator`        | Account | No                                    | Beta                               |
+| API Discovery           | `api_discovery`         | Service | No                                    |                                    |
 | Bot Management          | `bot_management`        | Service | Yes -- `contentguard`: on/off         | NGWAF required for post-cache only |
-| Brotli Compression      | `brotli_compression`    | Service | No                                    |                                   |
+| Brotli Compression      | `brotli_compression`    | Service | No                                    |                                    |
 | DDoS Protection         | `ddos_protection`       | Service | Yes -- `mode`: off/log/block          | Defaults to `log` mode             |
-| KV Store                | `kv_store`              | Account | No                                    |                                   |
-| Domain Inspector        | `domain_inspector`      | Service | No                                    |                                   |
-| Domain Research         | `domain_research`       | Account | No                                    |                                   |
-| Fanout                  | `fanout`                | Service | No                                    | Publish-subscribe message broker  |
-| Image Optimizer         | `image_optimizer`       | Service | No                                    |                                   |
-| Log Explorer & Insights | `log_explorer_insights` | Service | No                                    |                                   |
-| Next-Gen WAF (NGWAF)    | `ngwaf`                 | Service | Yes -- `workspace_id`, `traffic_ramp` | Requires `workspace_id` on enable |
-| Object Storage          | `object_storage`        | Account | No                                    |                                   |
-| Origin Inspector        | `origin_inspector`      | Service | No                                    |                                   |
-| WebSockets              | `websockets`            | Service | No                                    |                                   |
+| KV Store                | `kv_store`              | Account | No                                    |                                    |
+| Domain Inspector        | `domain_inspector`      | Service | No                                    |                                    |
+| Domain Research         | `domain_research`       | Account | No                                    |                                    |
+| Fanout                  | `fanout`                | Service | No                                    | Publish-subscribe message broker   |
+| Image Optimizer         | `image_optimizer`       | Service | No                                    |                                    |
+| Log Explorer & Insights | `log_explorer_insights` | Service | No                                    |                                    |
+| Next-Gen WAF (NGWAF)    | `ngwaf`                 | Service | Yes -- `workspace_id`, `traffic_ramp` | Requires `workspace_id` on enable  |
+| Object Storage          | `object_storage`        | Account | No                                    |                                    |
+| Origin Inspector        | `origin_inspector`      | Service | No                                    |                                    |
+| WebSockets              | `websockets`            | Service | No                                    |                                    |
 
 ### Products with Configuration
 

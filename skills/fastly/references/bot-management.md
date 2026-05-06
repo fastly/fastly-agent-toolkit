@@ -8,10 +8,10 @@ Bot Management uses server-side fingerprinting, client challenges, and client-si
 
 ### Deployment Options
 
-| Deployment | Phase | Requires NGWAF | Use Case |
-|------------|-------|----------------|----------|
-| **Pre-cache (ContentGuard)** | Phase 5 (`bot_detection`), before VCL/Compute | No — any Fastly delivery product | Content scraping detection and classification |
-| **Post-cache** | Phase 7 (`edge_waf_request_inspection`), after VCL/Compute | Yes | Full bot management with NGWAF signals, challenges, client-side detections |
+| Deployment                   | Phase                                                      | Requires NGWAF                   | Use Case                                                                   |
+| ---------------------------- | ---------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| **Pre-cache (ContentGuard)** | Phase 5 (`bot_detection`), before VCL/Compute              | No — any Fastly delivery product | Content scraping detection and classification                              |
+| **Post-cache**               | Phase 7 (`edge_waf_request_inspection`), after VCL/Compute | Yes                              | Full bot management with NGWAF signals, challenges, client-side detections |
 
 ### Detection Mechanisms
 
@@ -61,8 +61,8 @@ Product slug: `bot_management`. See `products.md` for the universal enablement p
 
 ### Configuration
 
-| Action     | Method  | Endpoint                                                                |
-|------------|---------|-------------------------------------------------------------------------|
+| Action     | Method  | Endpoint                                                                  |
+| ---------- | ------- | ------------------------------------------------------------------------- |
 | Get config | `GET`   | `/enabled-products/v1/bot_management/services/{service_id}/configuration` |
 | Set config | `PATCH` | `/enabled-products/v1/bot_management/services/{service_id}/configuration` |
 

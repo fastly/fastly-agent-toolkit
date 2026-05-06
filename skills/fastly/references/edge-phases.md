@@ -8,29 +8,29 @@ An approximate model of Fastly edge traffic processing from a user's perspective
 
 Phases begin in order when a request is received.
 
-| # | Phase                             | Features                                                                                                                                                                           |
-|---|---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 | `client_transport_negotiation`    | HTTP/3, QUIC                                                                                                                                                                       |
-| 2 | `client_tls_handshake`            | TLS config, mTLS                                                                                                                                                                   |
-| 3 | `adaptive_threat_engine`          | DDoS Protection                                                                                                                                                                    |
-| 4 | `api_discovery`                   | API Discovery (passive traffic cataloging)                                                                                                                                         |
-| 5 | `bot_detection`                   | Bot Management (pre-cache detection / ContentGuard)                                                                                                                               |
-| 6 | `edge_app_request_processing`\*†  | VCL, Compute, ACLs, IP blocklists, edge rate limiting, WebSockets passthrough, Fanout pub/sub, health checks, caching, request collapsing, clustering, shielding, service chaining |
-| 7 | `edge_waf_request_inspection`     | Edge WAF, Bot Management (post-cache)                                                                                                                                   |
-| 8 | `external_origin_fetch`           | Backends, Origin Inspector, On-The-Fly Packager                                                                                                                                    |
-| 9 | `on_prem_waf_request_inspection`‡ | WAF module-agent (on-prem)                                                                                                                                                         |
+| #   | Phase                             | Features                                                                                                                                                                           |
+| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `client_transport_negotiation`    | HTTP/3, QUIC                                                                                                                                                                       |
+| 2   | `client_tls_handshake`            | TLS config, mTLS                                                                                                                                                                   |
+| 3   | `adaptive_threat_engine`          | DDoS Protection                                                                                                                                                                    |
+| 4   | `api_discovery`                   | API Discovery (passive traffic cataloging)                                                                                                                                         |
+| 5   | `bot_detection`                   | Bot Management (pre-cache detection / ContentGuard)                                                                                                                                |
+| 6   | `edge_app_request_processing`\*†  | VCL, Compute, ACLs, IP blocklists, edge rate limiting, WebSockets passthrough, Fanout pub/sub, health checks, caching, request collapsing, clustering, shielding, service chaining |
+| 7   | `edge_waf_request_inspection`     | Edge WAF, Bot Management (post-cache)                                                                                                                                              |
+| 8   | `external_origin_fetch`           | Backends, Origin Inspector, On-The-Fly Packager                                                                                                                                    |
+| 9   | `on_prem_waf_request_inspection`‡ | WAF module-agent (on-prem)                                                                                                                                                         |
 
 ## Response Processing
 
 Phases begin in order when a response is received.
 
-| #  | Phase                              | Features                                             |
-|----|------------------------------------|------------------------------------------------------|
-| 10 | `on_prem_waf_response_inspection`‡ | WAF module-agent (on-prem)                           |
-| 11 | `image_optimization`               | Image Optimizer                                      |
-| 12 | `edge_waf_response_inspection`     | Edge WAF, Bot Management (post-cache)     |
-| 13 | `edge_app_response_processing`\*   | VCL, Compute, static compression                     |
-| 14 | `dynamic_response_compression`     | Dynamic gzip/brotli                                  |
+| #   | Phase                              | Features                              |
+| --- | ---------------------------------- | ------------------------------------- |
+| 10  | `on_prem_waf_response_inspection`‡ | WAF module-agent (on-prem)            |
+| 11  | `image_optimization`               | Image Optimizer                       |
+| 12  | `edge_waf_response_inspection`     | Edge WAF, Bot Management (post-cache) |
+| 13  | `edge_app_response_processing`\*   | VCL, Compute, static compression      |
+| 14  | `dynamic_response_compression`     | Dynamic gzip/brotli                   |
 
 \* `edge_app_request_processing` and `edge_app_response_processing` may create additional requests. These execute as separate phase sequences.
 
