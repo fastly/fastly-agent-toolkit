@@ -44,11 +44,11 @@ curl -s -H "Fastly-Key: $FASTLY_API_KEY" \
 
 For each workspace, verify these templated rules exist and `enabled` is `true`:
 
-| Category               | Required Signals                                                  |
-| ---------------------- | ----------------------------------------------------------------- |
-| Login Protection       | `LOGINDISCOVERY`, `LOGINATTEMPT`, `LOGINSUCCESS`, `LOGINFAILURE`  |
+| Category               | Required Signals                                                 |
+| ---------------------- | ---------------------------------------------------------------- |
+| Login Protection       | `LOGINDISCOVERY`, `LOGINATTEMPT`, `LOGINSUCCESS`, `LOGINFAILURE` |
 | Credit Card Validation | `CC-VAL-ATTEMPT`, `CC-VAL-FAILURE`, `CC-VAL-SUCCESS`             |
-| Gift Card Validation   | `GC-VAL-ATTEMPT`, `GC-VAL-FAILURE`, `GC-VAL-SUCCESS`            |
+| Gift Card Validation   | `GC-VAL-ATTEMPT`, `GC-VAL-FAILURE`, `GC-VAL-SUCCESS`             |
 
 Check a specific signal:
 
@@ -106,12 +106,12 @@ curl -s -H "Fastly-Key: $FASTLY_API_KEY" \
 
 ## Error Handling
 
-| Error                            | Cause                        | Fix                                              |
-| -------------------------------- | ---------------------------- | ------------------------------------------------ |
-| `FASTLY_API_KEY not set`         | Environment variable missing | `export FASTLY_API_KEY=<token>`                   |
-| `API call failed with status 403`| Token lacks NGWAF scope      | Verify token has `global:read` permission         |
-| `No workspaces found`            | NGWAF not provisioned        | Enable NGWAF on the account first                 |
-| `jq is not installed`            | Missing dependency           | `brew install jq` or `apt-get install -y jq`      |
+| Error                             | Cause                        | Fix                                            |
+| --------------------------------- | ---------------------------- | ---------------------------------------------- |
+| `FASTLY_API_KEY not set`          | Environment variable missing | `export FASTLY_API_KEY=<token>`                |
+| `API call failed with status 403` | Token lacks NGWAF scope      | Verify token has `global:read` permission      |
+| `No workspaces found`             | NGWAF not provisioned        | Enable NGWAF on the account first              |
+| `jq is not installed`             | Missing dependency           | `brew install jq` or `apt-get install -y jq`   |
 
 ## API References
 
