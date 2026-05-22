@@ -28,7 +28,7 @@ git clone https://github.com/ysugimoto/falco.git ~/src/falco
     - [AST (Abstract Syntax Tree)](#ast-abstract-syntax-tree)
   - [Linting Rules](#linting-rules)
   - [VCL Execution Semantics](#vcl-execution-semantics)
-  - [Test Examples — Real VCL Patterns](#test-examples--real-vcl-patterns)
+  - [Test Examples — Real VCL Patterns](#test-examples-real-vcl-patterns)
   - [Tips for Agents](#tips-for-agents)
 
 ---
