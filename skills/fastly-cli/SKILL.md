@@ -171,15 +171,62 @@ The `--override-host` value is the Host header sent to the origin. The `--ssl-ce
 
 When enumerating services (e.g., for bandwidth stats), always use `fastly service list --json` and check for pagination. Services with zero traffic still appear in the list. Loop over ALL service IDs from the list — do not rely on stats APIs that omit zero-traffic services.
 
+## New VCL Service Setup Workflow
+
+Use this sequence to stand up a new VCL caching service end-to-end. Each step includes a validation checkpoint.
+
+1. **Pre-flight** — verify the origin responds and check its TLS certificate SANs:
+
+   ```bash
+   curl -sI https://ORIGIN_ADDRESS/
+   echo | openssl s_client -connect ORIGIN_ADDRESS:443 2>/dev/null | \
+     openssl x509 -noout -text | grep -A1 "Subject Alternative Name"
+   ```
+
+   _Checkpoint: origin returns 200 and the SAN list covers the expected hostname._
+
+2. **Create service** — note the service ID from the output:
+
+   ```bash
+   fastly service create --name "my-service" --non-interactive
+   ```
+
+3. **Add domain + backend on version 1** (do NOT use `--autoclone` or `--version latest` on a new service):
+
+   ```bash
+   fastly service domain create --service-id $SID --version 1 \
+     --name my-service.global.ssl.fastly.net
+
+   fastly service backend create --service-id $SID --version 1 \
+     --name origin --address ORIGIN_ADDRESS --port 443 --use-ssl \
+     --override-host ORIGIN_ADDRESS \
+     --ssl-cert-hostname ORIGIN_ADDRESS --ssl-sni-hostname ORIGIN_ADDRESS
+   ```
+
+4. **Validate version** before activating:
+
+   ```bash
+   fastly service version validate --service-id $SID --version 1
+   ```
+
+   _Checkpoint: validation returns success (no missing domain/backend errors)._
+
+5. **Activate**:
+
+   ```bash
+   fastly service version activate --service-id $SID --version 1
+   ```
+
+6. **Verify propagation** — wait 15-30s, then test with GET (not HEAD):
+
+   ```bash
+   curl -sS -D - -o /dev/null https://my-service.global.ssl.fastly.net/ | head -1
+   ```
+
+   _Checkpoint: 200 OK. If 500 "Domain Not Found", wait and retry (normal for 10-60s). If 503, check backend SSL settings._
+
+See [services.md](references/services.md) for advanced workflows (custom domains with TLS, host header overrides, live service updates).
+
 ## Troubleshooting
 
-See [troubleshooting.md](references/troubleshooting.md) for the full list. The most common pitfalls:
-
-- **503 SSL mismatch**: When `--override-host` differs from `--address`, always set `--ssl-cert-hostname` and `--ssl-sni-hostname` to the origin's actual hostname (the `--address` value, not the `--override-host` value).
-- **403/400 on domain create**: Use `fastly service domain create`, not `fastly domain create`.
-- **"version is locked"**: Use `--autoclone` or clone first. Better yet, always pass `--autoclone` on every mutation command.
-- **New service setup**: Version 1 is unlocked — add domain, backend, snippets on `--version 1`, then activate once.
-- **VCL commands**: Under `fastly service vcl` (e.g. `fastly service vcl snippet create`), not `fastly vcl`.
-- **Token safety**: Never use `fastly auth show --reveal` bare in an AI context — it exposes tokens.
-- **`--use-ssl` is a boolean flag**: Write `--use-ssl`, not `--use-ssl true`. Passing a value causes the next argument to be misinterpreted.
-- **Domain requires `--name`**: The domain is passed via `--name cdn.example.com`, not as a positional argument and not with `-d`.
+See [troubleshooting.md](references/troubleshooting.md) for the full list. Key pitfalls are covered inline above: SSL hostname flags (see Host Header Override Pattern), boolean flags and domain `--name` (see Common Flag Examples), `--autoclone` (see Key Patterns), and token safety (see Key Patterns).
