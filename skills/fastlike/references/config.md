@@ -145,9 +145,10 @@ echo '{"log_level": "info"}' > config/settings.json
 echo '{"api_key": "secret123"}' > config/secrets.json
 
 # Run with all stores
-bin/fastlike -wasm app.wasm -backend localhost:8000 \
+bin/fastlike -backend localhost:8000 \
   -dictionary features=config/dictionary.json \
   -kv sessions=config/kv.json \
   -config-store settings=config/settings.json \
-  -secret-store secrets=config/secrets.json
+  -secret-store secrets=config/secrets.json \
+  app.wasm
 ```

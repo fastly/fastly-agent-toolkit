@@ -9,7 +9,7 @@ Source: `docs/profiling.md` and `profile*.go` files in `~/src/fastlike`.
 The single flag you usually need is `-profile-ui`. It enables the viewer on its own listener; the wasm bind is untouched.
 
 ```bash
-bin/fastlike -wasm app.wasm -backend api=localhost:8080 -profile-ui localhost:6060
+bin/fastlike -backend api=localhost:8080 -profile-ui localhost:6060 app.wasm
 ```
 
 The default `-profile` mode is `trace`, which captures hostcall spans, backend phases, and outcome classification. Collection runs whether or not the UI is bound — `-profile-ui` only controls the viewer.

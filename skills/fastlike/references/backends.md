@@ -19,12 +19,12 @@ Backends are origin servers that your Fastly Compute WASM program proxies reques
 
 **Single origin:**
 ```bash
-bin/fastlike -wasm app.wasm -backend localhost:3000
+bin/fastlike app.wasm -backend localhost:3000
 ```
 
 **Multiple named backends:**
 ```bash
-bin/fastlike -wasm app.wasm \
+bin/fastlike app.wasm \
   -backend api=localhost:3000 \
   -backend static=localhost:4000 \
   -backend auth=localhost:5001
@@ -32,7 +32,7 @@ bin/fastlike -wasm app.wasm \
 
 **Named + catch-all fallback:**
 ```bash
-bin/fastlike -wasm app.wasm \
+bin/fastlike app.wasm \
   -backend api=api.internal:8080 \
   -backend localhost:8000
 ```
@@ -40,7 +40,7 @@ Requests to backend "api" go to `api.internal:8080`, all others to `localhost:80
 
 **Microservices setup:**
 ```bash
-bin/fastlike -wasm gateway.wasm \
+bin/fastlike gateway.wasm \
   -backend users=users-service:3001 \
   -backend orders=orders-service:3002 \
   -backend inventory=inventory-service:3003 \
@@ -53,13 +53,13 @@ Append `@N` to a backend address to make it succeed only `N` percent of the time
 
 ```bash
 # api succeeds for ~50% of requests, the rest return 502
-bin/fastlike -wasm app.wasm -backend api=localhost:8000@50
+bin/fastlike app.wasm -backend api=localhost:8000@50
 
 # cdn always appears down
-bin/fastlike -wasm app.wasm -backend cdn=localhost:9000@0
+bin/fastlike app.wasm -backend cdn=localhost:9000@0
 
 # catch-all backend with simulated reliability
-bin/fastlike -wasm app.wasm -backend localhost:8000@75
+bin/fastlike app.wasm -backend localhost:8000@75
 ```
 
 The suffix is only recognized when it is purely numeric and falls in `0..100`, so URLs that legitimately contain `@` (like `http://user:pass@host`) are passed through untouched. A trailing `@<digits>` outside that range is rejected at startup. The same hooks are available programmatically as `fastlike.WithUnreliableBackend` and `fastlike.WithUnreliableDefaultBackend`.
@@ -90,7 +90,7 @@ Start your backend services first, then run fastlike:
 cd backend && npm start  # Runs on :3000
 
 # Terminal 2: Start fastlike
-bin/fastlike -wasm app.wasm -backend localhost:3000 -v 2
+bin/fastlike app.wasm -backend localhost:3000 -v 2
 ```
 
 Use `-v 2` for verbose logging to see backend requests.
