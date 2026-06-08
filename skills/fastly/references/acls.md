@@ -1,6 +1,6 @@
 # Fastly ACLs
 
-Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/security/acl
+Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/acls/acl
 
 ## Key Concepts
 
@@ -107,9 +107,9 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 
 | Source                     | URL                                                                           |
 | -------------------------- | ----------------------------------------------------------------------------- |
-| ACL API reference          | `https://www.fastly.com/documentation/reference/api/security/acl`             |
-| ACL entries API reference  | `https://www.fastly.com/documentation/reference/api/security/acl-entry`       |
-| Compute ACLs API reference | `https://www.fastly.com/documentation/reference/api/security/acls-in-compute` |
+| ACL API reference          | `https://www.fastly.com/documentation/reference/api/acls/acl`                 |
+| ACL entries API reference  | `https://www.fastly.com/documentation/reference/api/acls/acl-entry`           |
+| Compute ACLs API reference | `https://www.fastly.com/documentation/reference/api/acls/acls`                |
 | ACL guide                  | `https://www.fastly.com/documentation/guides/security/access-control-lists`   |
 
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.

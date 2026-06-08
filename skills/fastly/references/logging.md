@@ -99,13 +99,13 @@ These fields are shared across all or most logging providers:
 
 URLs below serve Markdown (use the `Accept: text/markdown` header).
 
-| Source                                | URL                                                                                   |
-| ------------------------------------- | ------------------------------------------------------------------------------------- |
-| Logging API reference                 | `https://www.fastly.com/documentation/reference/api/logging`                          |
-| Logging integrations guide            | `https://www.fastly.com/documentation/guides/integrations/logging`                    |
-| Log format reference                  | `https://www.fastly.com/documentation/guides/integrations/logging/custom-log-formats` |
-| Logging endpoint setup by provider    | `https://www.fastly.com/documentation/guides/integrations/logging-endpoints`          |
-| Real-time log streaming configuration | `https://www.fastly.com/documentation/guides/integrations/streaming-logs`             |
+| Source                                | URL                                                                                          |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Logging API reference                 | `https://www.fastly.com/documentation/reference/api/logging`                                 |
+| Logging integrations guide            | `https://www.fastly.com/documentation/guides/integrations/logging`                           |
+| Log format reference                  | `https://www.fastly.com/documentation/guides/integrations/streaming-logs/custom-log-formats` |
+| Logging endpoint setup by provider    | `https://www.fastly.com/documentation/guides/integrations/logging-endpoints`                 |
+| Real-time log streaming configuration | `https://www.fastly.com/documentation/guides/integrations/streaming-logs`                    |
 
 **Searching or querying logs stored by Fastly?** Log Explorer & Insights stores and indexes logs within Fastly for querying via API. See the `observability` reference.
 

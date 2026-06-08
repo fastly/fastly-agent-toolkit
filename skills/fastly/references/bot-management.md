@@ -1,6 +1,6 @@
 # Fastly Bot Management
 
-Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/products/bot-management
+Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: https://www.fastly.com/documentation/reference/api/products/bot_management
 
 ## How It Works
 
@@ -84,7 +84,7 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | Product overview, prerequisites, billing         | `https://docs.fastly.com/products/bot-management`                                                           |
 | Setup guides, configuration, challenge tuning    | `https://www.fastly.com/documentation/guides/security/bot-management`                                       |
-| API endpoints, request/response schemas          | `https://www.fastly.com/documentation/reference/api/products/bot-management`                                |
+| API endpoints, request/response schemas          | `https://www.fastly.com/documentation/reference/api/products/bot_management`                                |
 | ContentGuard (pre-cache) setup and usage         | `https://www.fastly.com/documentation/guides/security/bot-management/about-contentguard`                    |
 | Client challenge types, embedding, configuration | `https://www.fastly.com/documentation/guides/security/bot-management/client-challenges`                     |
 | Advanced client-side detection setup             | `https://www.fastly.com/documentation/guides/security/bot-management/using-advanced-client-side-detections` |

@@ -168,15 +168,14 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 
 | Source                                          | URL                                                                                                                                            |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| VCL snippets guide                              | `https://www.fastly.com/documentation/guides/full-site-delivery/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl/using-regular-vcl-snippets` |
-| Dynamic snippets guide                          | `https://www.fastly.com/documentation/guides/full-site-delivery/vcl/mixing-and-matching-fastly-vcl-with-custom-vcl/using-dynamic-vcl-snippets` |
-| Edge dictionaries guide                         | `https://www.fastly.com/documentation/guides/full-site-delivery/vcl/edge-dictionaries`                                                         |
+| About VCL snippets guide                        | `https://www.fastly.com/documentation/guides/full-site-delivery/fastly-vcl/vcl-snippets/about-vcl-snippets` |
+| Using VCL snippets guide                        | `https://www.fastly.com/documentation/guides/full-site-delivery/fastly-vcl/vcl-snippets/using-vcl-snippets` |
+| Edge dictionaries guide                         | `https://www.fastly.com/documentation/guides/full-site-delivery/dictionaries/working-with-dictionaries`                                                         |
 | VCL reference                                   | `https://www.fastly.com/documentation/reference/vcl`                                                                                           |
 | Cache freshness concept                         | `https://www.fastly.com/documentation/guides/concepts/cache/cache-freshness`                                                                   |
 | Stale content concept                           | `https://www.fastly.com/documentation/guides/concepts/cache/stale`                                                                             |
 | Compression concept                             | `https://www.fastly.com/documentation/guides/concepts/compression`                                                                             |
 | Request collapsing, waiting lists, hit-for-pass | `https://www.fastly.com/documentation/guides/concepts/cache/request-collapsing`                                                                |
-| VCL snippets guide                              | `https://www.fastly.com/documentation/guides/full-site-delivery/fastly-vcl/vcl-snippets`                                                       |
 | Conditions guide                                | `https://www.fastly.com/documentation/guides/full-site-delivery/conditions`                                                                    |
 | Caching best practices, TTL tuning              | `https://www.fastly.com/documentation/guides/full-site-delivery/caching`                                                                       |
 

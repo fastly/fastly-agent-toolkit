@@ -75,9 +75,9 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 
 | Source                      | URL                                                                                                             |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Setup and configuration     | `https://www.fastly.com/documentation/guides/security/client-side-protection/setting-up-client-side-protection` |
-| Script inventory monitoring | `https://www.fastly.com/documentation/guides/security/client-side-protection/monitoring-your-inventory`         |
-| Policy management           | `https://www.fastly.com/documentation/guides/security/client-side-protection/managing-your-policy`              |
-| API reference               | `https://www.fastly.com/documentation/reference/api/security/client-side-protection`                            |
+| How Client-Side Protection works | `https://www.fastly.com/documentation/guides/security/client-side-protection/how-it-works` |
+| Script inventory monitoring      | `https://www.fastly.com/documentation/guides/security/client-side-protection/monitoring-your-inventory`         |
+| Policy management                | `https://www.fastly.com/documentation/guides/security/client-side-protection/managing-your-policy`              |
+| API reference                    | `https://www.fastly.com/documentation/reference/api/security/client-side-protection`                            |
 
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.
