@@ -62,6 +62,8 @@ fastly service version stage --version=VERSION --service-id SERVICE_ID
 fastly service version unstage --version=VERSION --service-id SERVICE_ID
 ```
 
+Use the modern `fastly service version activate` subcommand. The older `fastly service-version activate` (hyphenated) form is deprecated. When you do not know the exact version number, target the most recent one with `--version latest`.
+
 To modify a live service: clone the active version, make changes on the new version, validate, then activate. Many CLI commands accept `--autoclone` to do this automatically.
 
 Via the REST API, clone with:

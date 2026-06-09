@@ -62,6 +62,8 @@ bin/fastlike -backend localhost:8000 app.wasm
 
 Flags can appear on either side of the wasm path.
 
+On macOS, avoid binding to port 5000 — the AirTunes/AirPlay Receiver listens there by default and will steal the connection. Pick another port (e.g. `-bind localhost:8000`) or disable the AirPlay Receiver in System Settings.
+
 ## Fastlike vs Viceroy
 
 | Feature        | Fastlike                     | Viceroy                                   |

@@ -380,6 +380,12 @@ fastly compute init --from EXISTING_SERVICE_ID
 fastly compute publish
 ```
 
+## Unit-Testing Guest Code
+
+Test your handler logic with the normal language toolchain (pytest, cargo test, vitest, etc.) rather than only through a local runtime like Viceroy or fastlike — it's faster and runs in CI without a Wasm build.
+
+**Python gotcha:** the Fastly Compute Python SDK's WSGI adapter imports `wit_world`, a module that only exists during component builds and at runtime, not under plain CPython. Importing it in a normal `pytest`/`unittest` run raises `ModuleNotFoundError`. Test the Flask (or other WSGI) app logic directly: guard the `wit_world` import (try/except, or import it lazily inside the handler) or exercise the WSGI app object before it is wrapped and assigned to `HttpIncoming`. That keeps unit tests runnable without a component build.
+
 ## Propagation Delays
 
 After deploying a Compute package, changes can take up to 10 minutes to propagate globally. The CLI performs a status check by default, but automation scripts should implement additional verification with retries if needed. Use `--status-check-timeout` to extend the post-deploy verification period.
@@ -393,3 +399,10 @@ After deploying a Compute package, changes can take up to 10 minutes to propagat
 **Service not available after deploy**: Wait for global propagation (usually < 60 seconds). Use `--status-check-timeout` to extend wait time.
 
 **Viceroy not found**: Viceroy is automatically installed on first `fastly compute serve` run
+
+**Unwanted `originless` backend after deploy**: Deploying an originless Compute app may create a placeholder backend named `originless`. If the app must run with no backend at all, remove it and reactivate:
+
+```bash
+fastly service backend delete --service-id $SID --version latest --autoclone --name originless
+fastly service version activate --service-id $SID --version latest
+```
