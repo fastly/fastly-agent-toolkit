@@ -87,14 +87,14 @@ curl -X DELETE -H "Fastly-Key: $FASTLY_API_TOKEN" \
 
 URLs below serve Markdown (use the `Accept: text/markdown` header).
 
-| Source                               | URL                                                                           |
-| ------------------------------------ | ----------------------------------------------------------------------------- |
-| Product page, prerequisites, billing | `https://docs.fastly.com/products/edge-rate-limiting`                         |
-| Rate limiting conceptual overview    | `https://www.fastly.com/documentation/guides/concepts/rate-limiting`          |
-| Security guide for rate limiting     | `https://www.fastly.com/documentation/guides/security/rate-limiting/`         |
-| ERL API reference                    | `https://www.fastly.com/documentation/reference/api/security/rate-limiter`    |
-| VCL ratecounter declaration          | `https://www.fastly.com/documentation/reference/vcl/declarations/ratecounter` |
-| VCL penaltybox declaration           | `https://www.fastly.com/documentation/reference/vcl/declarations/penaltybox`  |
-| VCL rate limiting example            | `https://www.fastly.com/documentation/solutions/examples/rate-limit-requests` |
+| Source                               | URL                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| Product page, prerequisites, billing | `https://docs.fastly.com/products/edge-rate-limiting`                          |
+| Rate limiting conceptual overview    | `https://www.fastly.com/documentation/guides/concepts/rate-limiting`           |
+| Security guide for rate limiting     | `https://www.fastly.com/documentation/guides/security/rate-limiting`          |
+| ERL API reference                    | `https://www.fastly.com/documentation/reference/api/vcl-services/rate-limiter` |
+| VCL ratecounter declaration          | `https://www.fastly.com/documentation/reference/vcl/declarations/ratecounter`  |
+| VCL penaltybox declaration           | `https://www.fastly.com/documentation/reference/vcl/declarations/penaltybox`   |
+| VCL rate limiting example            | `https://www.fastly.com/documentation/solutions/examples/rate-limit-requests`  |
 
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.

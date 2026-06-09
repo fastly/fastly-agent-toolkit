@@ -217,10 +217,10 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 | Source                            | URL                                                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Account API reference             | `https://www.fastly.com/documentation/reference/api/account`                                            |
-| Tokens API reference              | `https://www.fastly.com/documentation/reference/api/account/tokens`                                     |
+| Tokens API reference              | `https://www.fastly.com/documentation/reference/api/auth-tokens`                                        |
 | Automation tokens reference       | `https://www.fastly.com/documentation/reference/api/auth-tokens/automation`                             |
-| IAM guide                         | `https://www.fastly.com/documentation/guides/account/iam`                                               |
-| User management guide             | `https://www.fastly.com/documentation/guides/account/user-access-and-control`                           |
+| IAM roles reference               | `https://www.fastly.com/documentation/reference/api/account/roles`                                      |
+| User management guide             | `https://www.fastly.com/documentation/guides/account-info/user-and-account-management`                  |
 | Invoices API reference            | `https://www.fastly.com/documentation/reference/api/account/invoices`                                   |
 | Billing, plans, invoices guide    | `https://www.fastly.com/documentation/guides/account-info/billing`                                      |
 | API token creation and management | `https://www.fastly.com/documentation/guides/account-info/user-and-account-management/using-api-tokens` |

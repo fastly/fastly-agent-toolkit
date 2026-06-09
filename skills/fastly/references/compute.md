@@ -163,15 +163,15 @@ curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
 
 URLs below serve Markdown (use the `Accept: text/markdown` header).
 
-| Source                         | URL                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------------- |
-| Compute product page           | `https://docs.fastly.com/products/compute`                                            |
-| Edge data storage product page | `https://docs.fastly.com/products/edge-data-storage`                                  |
-| Cache APIs product page        | `https://docs.fastly.com/products/cache-apis`                                         |
-| Compute developer guides       | `https://www.fastly.com/documentation/guides/compute/developer-guides`                |
-| KV Store guide                 | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/kv-stores`     |
-| Config Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/config-stores` |
-| Secret Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/secret-stores` |
-| Compute developer guides       | `https://www.fastly.com/documentation/guides/compute/developer-guides`                |
+| Source                         | URL                                                                                                |
+| ------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Compute product page           | `https://docs.fastly.com/products/compute`                                                         |
+| Edge data storage product page | `https://docs.fastly.com/products/edge-data-storage`                                               |
+| Cache APIs product page        | `https://docs.fastly.com/products/cache-apis`                                                      |
+| Compute developer guides       | `https://www.fastly.com/documentation/guides/compute/developer-guides`                             |
+| KV Store guide                 | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/working-with-kv-stores`     |
+| Config Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/working-with-config-stores` |
+| Secret Store guide             | `https://www.fastly.com/documentation/guides/compute/edge-data-storage/working-with-secret-stores` |
+| Compute developer guides       | `https://www.fastly.com/documentation/guides/compute/developer-guides`                             |
 
 For general Fastly platform guidance, documentation source index, and other specialized skills, see the `fastly` skill.
