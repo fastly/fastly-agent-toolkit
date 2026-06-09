@@ -41,6 +41,17 @@ Versioned origin servers. Changes require a new service version and activation.
 
 Key fields: `address` (hostname/IP), `name`, `port`, `use_ssl`, `ssl_cert_hostname`, `ssl_sni_hostname`, `shield`, `healthcheck`, `weight`, `auto_loadbalance`, `connect_timeout`, `first_byte_timeout`, `between_bytes_timeout`, `max_conn`, `override_host`, `request_condition`.
 
+**Use these exact field names** — common guesses are wrong and silently ignored:
+
+| Want to...                  | Correct field             | Wrong (do NOT use)                  |
+| --------------------------- | ------------------------- | ----------------------------------- |
+| Rewrite the `Host:` header  | `override_host`           | `host_header`, `host`               |
+| Enable TLS to origin        | `use_ssl=1`               | `ssl=true`, `use_ssl=true`, `tls=1` |
+| Verify the origin cert name | `ssl_cert_hostname`       | `ssl_hostname`, `cert_hostname`     |
+| Send TLS SNI                | `ssl_sni_hostname`        | `sni`, `sni_hostname`               |
+
+Booleans are form values `1`/`0`, not `true`/`false`. When `use_ssl=1` and you set `override_host`, you must also set both `ssl_cert_hostname` and `ssl_sni_hostname` (see the SSL hostname rule below) or the backend returns 503.
+
 **SSL hostname rule**: `ssl_cert_hostname` and `ssl_sni_hostname` must match the origin's TLS certificate (its SANs), NOT the `override_host` value. When `override_host` differs from `address`, always set `ssl_cert_hostname` and `ssl_sni_hostname` to the `address` hostname. Omitting them or setting them to the `override_host` value causes 503 "hostname doesn't match against certificate".
 
 **Pre-flight check**: Before creating any backend, verify the origin's TLS SANs to determine the correct `ssl_cert_hostname`/`ssl_sni_hostname`: `echo | openssl s_client -connect ORIGIN:443 -servername ORIGIN 2>/dev/null | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"`. Also verify the origin responds to the intended Host header: `curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/`.
