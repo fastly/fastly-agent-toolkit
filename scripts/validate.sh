@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLAUDE_CODE_VERSION="${CLAUDE_CODE_VERSION:-2.1.14}"
+CLAUDE_CODE_VERSION="${CLAUDE_CODE_VERSION:-2.1.112}"
 
 echo "=== Validating JSON ==="
 find skills -name "*.json" -print0 | xargs -0 -n1 npx --yes "jsonlint-mod@1.7.6" -q
@@ -30,7 +30,7 @@ npx --yes "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate .
 
 echo "=== Validating Gemini extension ==="
 if [[ -f "gemini-extension.json" ]]; then
-    npx --yes @google/gemini-cli@0.26.0 extensions validate .
+    npx --yes @google/gemini-cli@0.45.2 extensions validate .
 else
     echo "No gemini-extension.json at root, skipping"
 fi
