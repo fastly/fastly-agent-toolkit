@@ -1,5 +1,22 @@
 # Fastly Documentation Navigation
 
+## Searching the Docs
+
+To find pages by topic, query the docs search endpoint (no auth required):
+
+```
+https://api.fastly.com/public-search/docs?query=bot%20management&limit=10
+```
+
+| Parameter | Notes                                            |
+| --------- | ------------------------------------------------ |
+| `query`   | Search term (URL-encode spaces as `%20`)         |
+| `limit`   | Max results (default: 100)                       |
+
+Returns JSON: `{ "record_count": N, "records": [...] }`. Each record has `term` (title), `url` (HTML page URL), and `group` (Guides, Reference, Products, etc.). To fetch a result as Markdown, rewrite an apex `fastly.com` host to `www.fastly.com` (leave `docs.fastly.com` as-is) and use the `Accept: text/markdown` header — see "Fetching Documentation" in the parent SKILL.md.
+
+Use the tables below for orientation when you already know the area. Use search to locate a specific page.
+
 ## API Reference Organization
 
 `https://www.fastly.com/documentation/reference/api/` is organized by area:
