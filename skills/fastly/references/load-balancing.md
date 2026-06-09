@@ -155,10 +155,11 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 
 | Source                                          | URL                                                                                            |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Director backend API reference                  | `https://www.fastly.com/documentation/reference/api/load-balancing/directors/backend`                    |
+| Backends API reference                          | `https://www.fastly.com/documentation/reference/api/services/backend`                          |
+| Director backend mapping API reference          | `https://www.fastly.com/documentation/reference/api/load-balancing/directors/backend`          |
 | Directors API reference                         | `https://www.fastly.com/documentation/reference/api/load-balancing/directors/director`         |
 | Pools API reference                             | `https://www.fastly.com/documentation/reference/api/load-balancing/pools/pool`                 |
-| Health checks API reference                     | `https://www.fastly.com/documentation/reference/api/services/healthcheck` |
+| Health checks API reference                     | `https://www.fastly.com/documentation/reference/api/services/healthcheck`                      |
 | Load balancing concepts                         | `https://www.fastly.com/documentation/guides/concepts/load-balancing`                          |
 | Health check concepts                           | `https://www.fastly.com/documentation/guides/concepts/healthcheck`                             |
 | Failover concepts                               | `https://www.fastly.com/documentation/guides/concepts/failover`                                |

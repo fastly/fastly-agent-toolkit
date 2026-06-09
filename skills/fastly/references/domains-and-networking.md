@@ -237,7 +237,7 @@ URLs below serve Markdown (use the `Accept: text/markdown` header).
 | Source                                          | URL                                                                                        |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Routing traffic to Fastly concept               | `https://www.fastly.com/documentation/guides/concepts/routing-traffic-to-fastly`           |
-| Domain management guide                         | `https://www.fastly.com/documentation/guides/getting-started/domains/about-domains`                   |
+| Domain management guide                         | `https://www.fastly.com/documentation/guides/getting-started/domains/about-domains`        |
 | Domain API reference                            | `https://www.fastly.com/documentation/reference/api/services/domain`                       |
 | Domain ownerships API reference                 | `https://www.fastly.com/documentation/reference/api/services/domain-ownerships`            |
 | Domain setup, DNS records, domain management UI | `https://www.fastly.com/documentation/guides/getting-started/domains/working-with-domains` |
