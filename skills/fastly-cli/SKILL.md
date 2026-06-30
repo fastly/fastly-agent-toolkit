@@ -80,6 +80,8 @@ Available on most commands:
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
 - `ActiveVersion` shape varies; prefer `--version active`, or parse with `jq -r '.ActiveVersion.Number // .ActiveVersion'`
+- CLI version is `fastly version` (not `fastly --version`)
+- POP/shield lookup is `fastly pops`; it has no `list` subcommand and no `--json`; use the `SHIELD` column value (not POP `CODE`) for `--shield`
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
 - For shell substitutions or pipes that need the active API token, prefer `fastly auth token`; it prints the token only to non-terminal stdout and refuses to write it directly to a terminal
 - In AI contexts, never run `fastly auth show --reveal` bare. If you specifically need a stored token by name rather than the currently active token, use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` only inside a shell substitution

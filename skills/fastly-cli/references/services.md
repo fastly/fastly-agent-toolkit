@@ -101,6 +101,21 @@ fastly service backend update \
 fastly service backend delete --service-id SERVICE_ID --version 1 --name origin
 ```
 
+### Origin Shielding
+
+```bash
+# Find shield POP names: use SHIELD column values, not three-letter CODE values.
+# `fastly pops` has no `list` subcommand and no `--json`.
+fastly pops | grep -E 'Brussels|Paris|Amsterdam|London|Frankfurt'
+
+# Enable shielding on a live backend, then activate the cloned version.
+fastly service backend update --service-id SERVICE_ID --version active --autoclone \
+  --name origin --shield bru-brussels-be
+fastly service version activate --service-id SERVICE_ID --version latest
+```
+
+Use the nearest supported shield to the origin. For Roubaix, France, prefer `bru-brussels-be` over `paris-fr` because Brussels is closer and shield-capable.
+
 ### Backend SSL
 
 When connecting to HTTPS origins, use `--use-ssl` and set both `--ssl-cert-hostname` and `--ssl-sni-hostname`:

@@ -178,7 +178,8 @@ fastly stats historical --service-id SERVICE_ID --region europe --json --by day
 ## Infrastructure Information
 
 ```bash
-# List Fastly datacenter POPs
+# List Fastly datacenter POPs. No `pops list`; no `pops --json`.
+# For shielding, copy the SHIELD column value, not the CODE column.
 fastly pops
 
 # List Fastly public IP ranges
