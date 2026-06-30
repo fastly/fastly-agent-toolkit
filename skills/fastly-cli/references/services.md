@@ -19,10 +19,12 @@ For tasks like "create a caching frontend" or "set up a reverse proxy," always u
 | --------------- | -------------------------- |
 | `Name`          | `"my-service"`             |
 | `ServiceID`     | `"5qNP5VBgxNzTm24XcYLW4j"` |
-| `ActiveVersion` | `3`                        |
+| `ActiveVersion` | `3` or `{"Number":3,...}`  |
 | `Type`          | `"vcl"`                    |
 | `Comment`       | `"Production service"`     |
 | `CreatedAt`     | `"2025-01-15T10:30:00Z"`   |
+
+`ActiveVersion` shape varies: `service list --json` commonly returns a number, while `service describe --json` may return an object. Prefer CLI shortcuts like `--version active`; otherwise use `jq -r '.ActiveVersion.Number // .ActiveVersion'`.
 
 Use `.Name` (not `.name`) in jq filters:
 ```bash
@@ -108,7 +110,7 @@ When connecting to HTTPS origins, use `--use-ssl` and set both `--ssl-cert-hostn
 - `--ssl-sni-hostname`: Hostname sent in the TLS SNI extension during the handshake
 - `--override-host`: Sets the Host header sent to the origin
 
-Certificate verification (`ssl_check_cert`) is enabled by default — do not pass `--ssl-check-cert` (it's deprecated). Use `--no-ssl-check-cert` only if you need to disable verification.
+Certificate verification (`ssl_check_cert`) is enabled by default — do not pass `--ssl-check-cert` (it's deprecated). Do not use `--no-ssl-check-cert` to paper over hostname mismatches; fix the origin certificate/SNI or use plain HTTP if the origin only works safely over HTTP.
 
 All three hostnames should typically match the origin's hostname. Omitting `--ssl-sni-hostname` causes TLS handshake failures when the origin uses SNI-based certificate selection (shared hosting, CDNs, cloud load balancers).
 
@@ -162,7 +164,7 @@ Rule of thumb:
 - `--ssl-cert-hostname`: hostname Fastly uses for certificate validation
 - `--ssl-sni-hostname`: hostname Fastly sends in TLS SNI
 
-If the cert covers `origin.example.net` but you set either SSL hostname flag to `cache.example.com`, Fastly will return `503 hostname doesn't match against certificate`.
+If the cert covers `origin.example.net` but you set either SSL hostname flag to `cache.example.com`, Fastly will return `503 hostname doesn't match against certificate`. If no verified HTTPS combination works but `curl -H 'Host: cache.example.com' http://origin.example.net/` does, use an HTTP backend or fix the origin certificate — never disable cert checks as the workaround.
 
 For simple HTTP origins that don't require TLS, omit SSL flags and use `--port 80`:
 
@@ -478,8 +480,9 @@ curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/
 # 2. Check which hostnames the origin's TLS certificate covers
 echo | openssl s_client -connect ORIGIN_ADDRESS:443 -servername ORIGIN_ADDRESS 2>/dev/null | \
   openssl x509 -noout -text | grep -A1 "Subject Alternative Name"
-# IMPORTANT: If DESIRED_HOST is not in the SANs, you MUST set
-# --ssl-cert-hostname and --ssl-sni-hostname to ORIGIN_ADDRESS (not DESIRED_HOST)
+# If SNI ORIGIN_ADDRESS fails or gives the wrong cert, also test SNI DESIRED_HOST.
+# Use HTTPS only when ssl-cert-hostname matches the served cert; otherwise use HTTP
+# or fix the origin certificate. Do not disable backend certificate verification.
 
 # 3. If using a custom domain (not *.global.ssl.fastly.net), check CAA records
 dig CAA DOMAIN +short

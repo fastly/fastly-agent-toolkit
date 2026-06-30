@@ -40,7 +40,7 @@ fastly tls-platform delete --id PLATFORM_ID
 
 Automatically provisioned and renewed certificates via Let's Encrypt, Certainly, or GlobalSign.
 
-**IMPORTANT**: The CLI flag for certificate authority is `--cert-auth` (not `--certificate-authority`).
+**IMPORTANT**: The CLI flag for certificate authority is `--cert-auth` (not `--certificate-authority`). `tls-subscription create` does not support `--json` in current CLI builds; parse its success line or run list/describe after creation.
 
 ```bash
 # List subscriptions
@@ -215,7 +215,7 @@ dig CAA example.com +short
 fastly service domain create --service-id SERVICE_ID --version 1 --name www.example.com
 fastly service version activate --service-id SERVICE_ID --version 1
 
-# 2. Create TLS subscription (use --cert-auth, NOT --certificate-authority)
+# 2. Create TLS subscription (use --cert-auth, NOT --certificate-authority; no --json on create)
 #    Optionally specify --config CONFIG_ID for a specific TLS configuration
 fastly tls-subscription create --domain www.example.com --cert-auth lets-encrypt
 

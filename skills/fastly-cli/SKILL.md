@@ -79,6 +79,7 @@ Available on most commands:
 - Use `--autoclone` to auto-clone locked versions
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
+- `ActiveVersion` shape varies; prefer `--version active`, or parse with `jq -r '.ActiveVersion.Number // .ActiveVersion'`
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
 - For shell substitutions or pipes that need the active API token, prefer `fastly auth token`; it prints the token only to non-terminal stdout and refuses to write it directly to a terminal
 - In AI contexts, never run `fastly auth show --reveal` bare. If you specifically need a stored token by name rather than the currently active token, use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` only inside a shell substitution
@@ -178,12 +179,12 @@ Use this sequence to stand up a new VCL caching service end-to-end. Each step in
 1. **Pre-flight** — verify the origin responds and check its TLS certificate SANs:
 
    ```bash
-   curl -sI https://ORIGIN_ADDRESS/
-   echo | openssl s_client -connect ORIGIN_ADDRESS:443 2>/dev/null | \
+   curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/
+   echo | openssl s_client -connect ORIGIN_ADDRESS:443 -servername ORIGIN_ADDRESS 2>/dev/null | \
      openssl x509 -noout -text | grep -A1 "Subject Alternative Name"
    ```
 
-   _Checkpoint: origin returns 200 and the SAN list covers the expected hostname._
+   _Checkpoint: origin returns 200 and the backend `ssl-cert-hostname` matches the served cert. If no HTTPS SNI/cert combination validates but HTTP with that Host works, use `--port 80` or fix the origin cert; do not disable verification._
 
 2. **Create service** — note the service ID from the output:
 

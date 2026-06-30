@@ -41,6 +41,8 @@ The most common task is setting up a VCL service to cache an origin. Before touc
 1. **Verify the origin responds** with the Host header you intend to send: `curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/`
 2. **Check TLS certificate SANs** to determine the correct `ssl-cert-hostname`/`ssl-sni-hostname`: `echo | openssl s_client -connect ORIGIN:443 -servername ORIGIN 2>/dev/null | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"`
 
+If HTTPS cert validation cannot be made correct but HTTP with the intended Host works, use an HTTP backend or fix the origin cert; never disable backend cert verification as the workaround.
+
 If the origin already sends `Cache-Control` or `Expires` headers, no custom VCL is needed — Fastly respects these by default. Only add VCL snippets to override or extend caching behavior.
 
 The full step-by-step workflow (create service, add domain, add backend, activate) is in the **fastly-cli** skill's services.md reference under "Create a Caching Proxy".
