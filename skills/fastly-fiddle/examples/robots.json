@@ -1,0 +1,20 @@
+{
+  "title": "Synthetic robots.txt via error-restart pattern",
+  "origins": ["https://http-me.fastly.dev"],
+  "vcl": {
+    "init": "# Synthetic robots.txt response\n# via error-restart pattern",
+    "recv": "if (req.url.path == \"/robots.txt\") {\n  error 601;\n}",
+    "error": "if (obj.status == 601) {\n  set obj.status = 200;\n  synthetic {\"User-agent: BadBot\"};\n  return(deliver);\n}"
+  },
+  "requests": [
+    {
+      "path": "/robots.txt",
+      "headers": "X-Custom: value\nX-Other: second",
+      "tests": [
+        "clientFetch.status is 200",
+        "clientFetch.bodyPreview includes \"BadBot\"",
+        "originFetches.count() is 0"
+      ]
+    }
+  ]
+}
