@@ -86,21 +86,15 @@ cp -R ./skills/{falco,viceroy} ~/.codex/skills/
 
 ### Swival
 
-Swival scans project-local `.swival/skills/` first, then `.agents/skills/`. For global installs, prefer `~/.config/swival/skills/`.
-
-Project-local install:
+Stage the collection in your library first, then add the skills you want:
 
 ```bash
-mkdir -p .swival/skills
-cp -R ./skills/{falco,viceroy} .swival/skills/
+swival skills add --global https://github.com/fastly/fastly-agent-toolkit  # stage into ~/.config/swival/library
+swival skills add fastly-agent-toolkit                                     # install the collection into this project
+swival skills add --global fastly-agent-toolkit                            # or activate it in every project
 ```
 
-Global install:
-
-```bash
-mkdir -p ~/.config/swival/skills
-cp -R ./skills/{falco,viceroy} ~/.config/swival/skills/
-```
+Prefer only a couple of skills? Activate them by name instead of the whole collection: `swival skills add falco`, `swival skills add viceroy`.
 
 ### Qwen Code
 
