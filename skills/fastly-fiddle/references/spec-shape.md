@@ -23,36 +23,36 @@ The JSON structure you POST to `/fiddle` as the request body. On GET and POST re
 }
 ```
 
-| Field         | Direction | Notes                                                                     |
-| ------------- | --------- | ------------------------------------------------------------------------- |
-| `id`          | R/W       | 8 hex chars. Omit on create; server assigns. Set on PUT to overwrite.     |
-| `type`        | R/W       | `"vcl"` or `"compute"`. Defaults to `"vcl"`.                              |
+| Field         | Direction | Notes                                                                                    |
+| ------------- | --------- | ---------------------------------------------------------------------------------------- |
+| `id`          | R/W       | 8 hex chars. Omit on create; server assigns. Set on PUT to overwrite.                    |
+| `type`        | R/W       | `"vcl"` or `"compute"`. Defaults to `"vcl"`.                                             |
 | `origins`     | R/W       | Array of up to 5 origin URLs with scheme. Exposed in VCL as `F_origin_0` … `F_origin_4`. |
-| `vcl`         | R/W       | Subroutine bodies. Canonical input key; server normalizes to `src` on read. |
-| `src`         | R/W       | Alias for `vcl`. Always returned on GET; also accepted on POST/PUT.       |
-| `srcVersion`  | R only    | Starts at 0, increments on every PUT.                                     |
-| `requests`    | R/W       | See [Request objects](#request-objects).                                  |
-| `isLocked`    | R/W       | Prevents overwrites by other users.                                       |
-| `isFrozen`    | R only    | Server-set; frozen fiddles reject PUT.                                    |
-| `title`       | R/W       | Free text.                                                                |
-| `description` | R/W       | Free text.                                                                |
+| `vcl`         | R/W       | Subroutine bodies. Canonical input key; server normalizes to `src` on read.              |
+| `src`         | R/W       | Alias for `vcl`. Always returned on GET; also accepted on POST/PUT.                      |
+| `srcVersion`  | R only    | Starts at 0, increments on every PUT.                                                    |
+| `requests`    | R/W       | See [Request objects](#request-objects).                                                 |
+| `isLocked`    | R/W       | Prevents overwrites by other users.                                                      |
+| `isFrozen`    | R only    | Server-set; frozen fiddles reject PUT.                                                   |
+| `title`       | R/W       | Free text.                                                                               |
+| `description` | R/W       | Free text.                                                                               |
 
 ## VCL subroutine slots
 
 Keys of `vcl` / `src` map to Fastly VCL state machine phases:
 
-| Key       | Runs in             | Typical use                                            |
-| --------- | ------------------- | ------------------------------------------------------ |
-| `init`    | `vcl_init`          | Backend definitions, ACLs, tables, one-time setup      |
-| `recv`    | `vcl_recv`          | Request inspection, routing, auth, early `error`       |
-| `hash`    | `vcl_hash`          | Custom cache key composition                           |
-| `hit`     | `vcl_hit`           | On cache hit                                           |
-| `miss`    | `vcl_miss`          | On cache miss before origin fetch                      |
-| `pass`    | `vcl_pass`          | On explicit pass                                       |
-| `fetch`   | `vcl_fetch`         | After origin response, before cache insert (`beresp.*`) |
-| `error`   | `vcl_error`         | Custom error / synthetic responses                     |
-| `deliver` | `vcl_deliver`       | Final response mutations (`resp.*`)                    |
-| `log`     | `vcl_log`           | Logging endpoints                                      |
+| Key       | Runs in       | Typical use                                             |
+| --------- | ------------- | ------------------------------------------------------- |
+| `init`    | `vcl_init`    | Backend definitions, ACLs, tables, one-time setup       |
+| `recv`    | `vcl_recv`    | Request inspection, routing, auth, early `error`        |
+| `hash`    | `vcl_hash`    | Custom cache key composition                            |
+| `hit`     | `vcl_hit`     | On cache hit                                            |
+| `miss`    | `vcl_miss`    | On cache miss before origin fetch                       |
+| `pass`    | `vcl_pass`    | On explicit pass                                        |
+| `fetch`   | `vcl_fetch`   | After origin response, before cache insert (`beresp.*`) |
+| `error`   | `vcl_error`   | Custom error / synthetic responses                      |
+| `deliver` | `vcl_deliver` | Final response mutations (`resp.*`)                     |
+| `log`     | `vcl_log`     | Logging endpoints                                       |
 
 You only need to supply the subroutines you care about. Unset slots get Fastly's defaults. The server wraps your body in the standard `sub vcl_<name> { #FASTLY <name> ... }` scaffolding — do not include the `sub` wrapper yourself.
 
@@ -66,21 +66,21 @@ Fastly VCL concatenates strings either with the `+` operator or by **juxtapositi
 
 Operands may **not** be parenthesized sub-expressions. This is the single most common source of confusing lint errors from the Fastly VCL compiler, including via the Fiddle lint API.
 
-| Form                                                                 | Valid? |
-| -------------------------------------------------------------------- | ------ |
-| `set X = "a" + "b";`                                                 | ✅ |
-| `set X = "a" "b";` (juxtaposition)                                   | ✅ |
-| `set X = req.http.A + req.http.B;`                                   | ✅ |
-| `set X = "pre-" + req.http.A + "-post";`                             | ✅ |
-| `set X = {"a"} + {"b"};`                                             | ✅ |
-| `set X = "free=" + workspace.bytes_free;` (INT auto-coerces)         | ✅ |
-| `synthetic "a" + req.http.X + "b";`                                  | ✅ |
-| `set X = "used=" + (1000 - 40);`                                     | ❌ |
-| `set X = "n=" + (std.atoi(req.http.A) - 1);`                         | ❌ |
+| Form                                                         | Valid? |
+| ------------------------------------------------------------ | ------ |
+| `set X = "a" + "b";`                                         | ✅     |
+| `set X = "a" "b";` (juxtaposition)                           | ✅     |
+| `set X = req.http.A + req.http.B;`                           | ✅     |
+| `set X = "pre-" + req.http.A + "-post";`                     | ✅     |
+| `set X = {"a"} + {"b"};`                                     | ✅     |
+| `set X = "free=" + workspace.bytes_free;` (INT auto-coerces) | ✅     |
+| `synthetic "a" + req.http.X + "b";`                          | ✅     |
+| `set X = "used=" + (1000 - 40);`                             | ❌     |
+| `set X = "n=" + (std.atoi(req.http.A) - 1);`                 | ❌     |
 
 The invalid rows produce:
 
-```
+```text
 warning  Encountered `+` after string expression.
          Suggested: Remove the trailing `+` operator.
 error    Expected string constant, variable, call, or semicolon but got `(`
@@ -114,18 +114,18 @@ Workspace impact: every `+` (or juxtaposition) in a `set` allocates a **new** bu
 
 Fastly VCL lets you raise a synthetic response with `error NNN ["msg"];`. Authors conventionally use:
 
-| Range | Conventional use                                                                   |
-| ----- | ---------------------------------------------------------------------------------- |
-| 4xx   | Client-error synthetics you want the client to see as-is (e.g. `error 403`).      |
-| 5xx   | Server-error synthetics.                                                          |
-| 6xx   | Custom internal codes for synthetic responses. Canonical range for "I built this." |
-| 7xx   | Author-defined, no special meaning.                                               |
+| Range | Conventional use                                                                                                                              |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4xx   | Client-error synthetics you want the client to see as-is (e.g. `error 403`).                                                                  |
+| 5xx   | Server-error synthetics.                                                                                                                      |
+| 6xx   | Custom internal codes for synthetic responses. Canonical range for "I built this."                                                            |
+| 7xx   | Author-defined, no special meaning.                                                                                                           |
 | 8xx   | Reserved by Fastly internally. Historically used for the `error 801 <url>;` redirect idiom, but Fiddle lint rejects it — use 6xx (see below). |
-| 9xx   | Reserved by Fastly internally. Author-defined signalling in some VCL, but Fiddle lint rejects it — use 6xx. |
+| 9xx   | Reserved by Fastly internally. Author-defined signalling in some VCL, but Fiddle lint rejects it — use 6xx.                                   |
 
 The Fiddle lint endpoint (i.e. the Fastly VCL compiler) rejects `error 8NN;` and `error 9NN;` with `valid: false` and:
 
-```
+```text
 8xx and 9xx error codes are used internally by Fastly.  Use 6xx instead.
 ```
 
@@ -190,25 +190,25 @@ Each entry in `requests[]`:
 
 ### Fields you usually set
 
-| Field   | Default | Notes                                                                 |
-| ------- | ------- | --------------------------------------------------------------------- |
-| `method`| `"GET"` | HTTP method.                                                          |
-| `path`  | —       | Path + query. The Host header is derived from the fiddle's execHost.  |
-| `headers` | `""`  | Raw HTTP headers, one per line (`"Header-Name: value\nOther: x"`).    |
-| `body`  | `""`    | Request body as string.                                               |
-| `tests` | `""`    | Assertion list. Send as array on input; stored as newline-joined string. See the `test-dsl.md` reference. |
-| `delay` | `0`    | Milliseconds to wait after the previous request. Use for cache TTL / rate-limit tests. |
+| Field     | Default | Notes                                                                                                     |
+| --------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `method`  | `"GET"` | HTTP method.                                                                                              |
+| `path`    | —       | Path + query. The Host header is derived from the fiddle's execHost.                                      |
+| `headers` | `""`    | Raw HTTP headers, one per line (`"Header-Name: value\nOther: x"`).                                        |
+| `body`    | `""`    | Request body as string.                                                                                   |
+| `tests`   | `""`    | Assertion list. Send as array on input; stored as newline-joined string. See the `test-dsl.md` reference. |
+| `delay`   | `0`     | Milliseconds to wait after the previous request. Use for cache TTL / rate-limit tests.                    |
 
 ### Fields you rarely touch (but should know)
 
-| Field             | Default     | Effect                                                                          |
-| ----------------- | ----------- | ------------------------------------------------------------------------------- |
-| `enableCluster`   | `true`      | Enables Fastly's cluster fetch (real production behavior).                      |
-| `enableShield`    | `false`     | Enables shielding. Turn on to test shield-related VCL (`fastly.ff.visits_this_service`). |
-| `useFreshCache`   | `false`     | Forces a fresh cache for this request, ignoring the session `cacheID`. **Set to `true` for any request whose assertions look at `originFetches.count()` / `originFetches[0].*` if it might run after a warmup or under retry** — a cache HIT silently turns `originFetches.count() is 1` into `0`. |
-| `connType`        | `"h2"`      | `"h2"` or `"h1"`. Matters if your VCL branches on `fastly_info.is_h2` etc.      |
-| `sourceIP`        | `"client"`  | `"client"` means Fastly synthesizes one. Can be set to specific IPs for geo tests. |
-| `followRedirects` | `false`     | Whether the test client follows 3xx.                                            |
+| Field             | Default    | Effect                                                                                                                                                                                                                                                                                             |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enableCluster`   | `true`     | Enables Fastly's cluster fetch (real production behavior).                                                                                                                                                                                                                                         |
+| `enableShield`    | `false`    | Enables shielding. Turn on to test shield-related VCL (`fastly.ff.visits_this_service`).                                                                                                                                                                                                           |
+| `useFreshCache`   | `false`    | Forces a fresh cache for this request, ignoring the session `cacheID`. **Set to `true` for any request whose assertions look at `originFetches.count()` / `originFetches[0].*` if it might run after a warmup or under retry** — a cache HIT silently turns `originFetches.count() is 1` into `0`. |
+| `connType`        | `"h2"`     | `"h2"` or `"h1"`. Matters if your VCL branches on `fastly_info.is_h2` etc.                                                                                                                                                                                                                         |
+| `sourceIP`        | `"client"` | `"client"` means Fastly synthesizes one. Can be set to specific IPs for geo tests.                                                                                                                                                                                                                 |
+| `followRedirects` | `false`    | Whether the test client follows 3xx.                                                                                                                                                                                                                                                               |
 
 ### `tests`: array in, string out
 

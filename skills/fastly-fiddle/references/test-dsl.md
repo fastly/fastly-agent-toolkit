@@ -9,21 +9,25 @@ Verified against the live service on 2026-05-06. The DSL is not formally documen
 Pass:
 
 ```json
-{ "label": "clientFetch.status is 200",
+{
+  "label": "clientFetch.status is 200",
   "testExpr": "clientFetch.status is 200",
   "asyncDelay": 0,
-  "pass": true }
+  "pass": true
+}
 ```
 
 Fail:
 
 ```json
-{ "label": "clientFetch.bodyPreview includes \"NotPresent\"",
+{
+  "label": "clientFetch.bodyPreview includes \"NotPresent\"",
   "testExpr": "clientFetch.bodyPreview includes \"NotPresent\"",
   "asyncDelay": 0,
   "pass": false,
   "expected": "NotPresent",
-  "actual": "BadBot" }
+  "actual": "BadBot"
+}
 ```
 
 `asyncDelay` is server-side wait in ms before evaluation (see [Timing](#timing)).
@@ -32,27 +36,27 @@ Fail:
 
 Three top-level data sources:
 
-| Namespace       | What it represents                                          |
-| --------------- | ----------------------------------------------------------- |
-| `clientFetch`   | The response the Fiddle's test client saw from Fastly       |
-| `originFetches` | The requests Fastly made to origin(s)                       |
-| `events`        | The stream of VCL subroutine invocations that ran           |
+| Namespace       | What it represents                                    |
+| --------------- | ----------------------------------------------------- |
+| `clientFetch`   | The response the Fiddle's test client saw from Fastly |
+| `originFetches` | The requests Fastly made to origin(s)                 |
+| `events`        | The stream of VCL subroutine invocations that ran     |
 
 ## `clientFetch.*`
 
 Scalar fields of the response Fastly sent back to the test client.
 
-| Expression                           | Type    | Notes                                 |
-| ------------------------------------ | ------- | ------------------------------------- |
-| `clientFetch.status`                 | int     | HTTP status code                      |
-| `clientFetch.bodyPreview`            | string  | First N bytes of body                 |
-| `clientFetch.bodyBytesReceived`      | int     | Total body bytes                      |
-| `clientFetch.resp`                   | string  | Raw response line + headers           |
-| `clientFetch.req`                    | string  | Raw request sent to Fastly            |
+| Expression                      | Type   | Notes                       |
+| ------------------------------- | ------ | --------------------------- |
+| `clientFetch.status`            | int    | HTTP status code            |
+| `clientFetch.bodyPreview`       | string | First N bytes of body       |
+| `clientFetch.bodyBytesReceived` | int    | Total body bytes            |
+| `clientFetch.resp`              | string | Raw response line + headers |
+| `clientFetch.req`               | string | Raw request sent to Fastly  |
 
 Examples:
 
-```
+```text
 clientFetch.status is 200
 clientFetch.status is 404
 clientFetch.resp includes "content-length: 30"
@@ -65,15 +69,15 @@ clientFetch.bodyPreview is "hello world"
 
 Collection of requests Fastly forwarded to origin. Use `.count()` and indexing.
 
-| Expression                           | Type    | Notes                                 |
-| ------------------------------------ | ------- | ------------------------------------- |
-| `originFetches.count()`              | int     | How many origin requests were made    |
-| `originFetches[0].req`               | string  | Raw origin request                    |
-| `originFetches[0].status`            | int     | Origin response status                |
+| Expression                | Type   | Notes                              |
+| ------------------------- | ------ | ---------------------------------- |
+| `originFetches.count()`   | int    | How many origin requests were made |
+| `originFetches[0].req`    | string | Raw origin request                 |
+| `originFetches[0].status` | int    | Origin response status             |
 
 Examples:
 
-```
+```text
 originFetches.count() is 0
 originFetches.count() is 1
 originFetches.count() isAtLeast 1
@@ -105,13 +109,13 @@ The stream of VCL subroutine invocations. Each event has shape:
 
 Query events with `.where(...)` filters, index with `[n]`, aggregate with `.count()`.
 
-| Expression                                          | Notes                                             |
-| --------------------------------------------------- | ------------------------------------------------- |
-| `events.where(fnName=recv).count()`                 | How many times `vcl_recv` ran                     |
-| `events.where(fnName=fetch)[0].ttl`                 | The TTL set in the first `vcl_fetch`              |
-| `events.where(fnName=recv)[0].url`                  | `req.url` at the end of the first `vcl_recv`      |
-| `events.where(fnName=error).count()`                | Did `vcl_error` run                               |
-| `events.where(fnName=hit).count()`                  | Cache hit path taken                              |
+| Expression                           | Notes                                        |
+| ------------------------------------ | -------------------------------------------- |
+| `events.where(fnName=recv).count()`  | How many times `vcl_recv` ran                |
+| `events.where(fnName=fetch)[0].ttl`  | The TTL set in the first `vcl_fetch`         |
+| `events.where(fnName=recv)[0].url`   | `req.url` at the end of the first `vcl_recv` |
+| `events.where(fnName=error).count()` | Did `vcl_error` run                          |
+| `events.where(fnName=hit).count()`   | Cache hit path taken                         |
 
 Common `fnName` values: `init`, `recv`, `hash`, `hit`, `miss`, `pass`, `fetch`, `error`, `deliver`, `log`.
 
@@ -119,11 +123,11 @@ Within events you can read a fixed set of attributes as they were when the subro
 
 ## Operators
 
-| Operator    | Example                                                 | Notes                              |
-| ----------- | ------------------------------------------------------- | ---------------------------------- |
-| `is`        | `clientFetch.status is 200`                             | Exact equality                     |
-| `isAtLeast` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600`      | Numeric >=                         |
-| `includes`  | `clientFetch.bodyPreview includes "BadBot"`             | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)). |
+| Operator    | Example                                            | Notes                                                                                                           |
+| ----------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `is`        | `clientFetch.status is 200`                        | Exact equality                                                                                                  |
+| `isAtLeast` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600` | Numeric >=                                                                                                      |
+| `includes`  | `clientFetch.bodyPreview includes "BadBot"`        | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)). |
 
 Additional operators (observed in wild but not exercised in verification): `isAtMost`, `isLessThan`, `isGreaterThan`, `matches` (regex). Test in a throwaway fiddle before relying on them.
 
@@ -131,10 +135,10 @@ Additional operators (observed in wild but not exercised in verification): `isAt
 
 Some assertions carry a server-side `asyncDelay` measured in milliseconds:
 
-| Assertion pattern            | `asyncDelay` | Why                                        |
-| ---------------------------- | ------------ | ------------------------------------------ |
-| `originFetches.count() is 0` | 2500ms       | Must wait to confirm no origin fetch       |
-| Immediate scalar checks      | 0ms          | Evaluated as soon as data arrives          |
+| Assertion pattern            | `asyncDelay` | Why                                  |
+| ---------------------------- | ------------ | ------------------------------------ |
+| `originFetches.count() is 0` | 2500ms       | Must wait to confirm no origin fetch |
+| Immediate scalar checks      | 0ms          | Evaluated as soon as data arrives    |
 
 Your client's total wait must exceed the largest `asyncDelay` in play. Set `maxWait` to 60000ms and you'll never hit the ceiling for realistic test suites.
 
@@ -142,7 +146,7 @@ Your client's total wait must exceed the largest `asyncDelay` in play. Set `maxW
 
 **Served entirely from synthetic** (no origin contact):
 
-```
+```text
 clientFetch.status is 200
 originFetches.count() is 0
 events.where(fnName=error).count() is 1
@@ -151,7 +155,7 @@ clientFetch.bodyPreview includes "<expected body>"
 
 **Cache MISS then HIT** (requires two requests with same `cacheID`):
 
-```
+```text
 # First request
 originFetches.count() is 1
 events.where(fnName=fetch)[0].ttl isAtLeast 3600
@@ -163,7 +167,7 @@ events.where(fnName=hit).count() is 1
 
 **Query string sorted in recv**:
 
-```
+```text
 clientFetch.status is 200
 events.where(fnName=recv).count() is 1
 events.where(fnName=recv)[0].url is "/?aaa=1&bbb=2&ccc=3"
@@ -171,7 +175,7 @@ events.where(fnName=recv)[0].url is "/?aaa=1&bbb=2&ccc=3"
 
 **Auth bypass to origin**:
 
-```
+```text
 originFetches.count() is 1
 originFetches[0].req includes "authorization: Bearer"
 events.where(fnName=pass).count() is 1
@@ -179,7 +183,7 @@ events.where(fnName=pass).count() is 1
 
 **Error path exercised**:
 
-```
+```text
 clientFetch.status is 404
 events.where(fnName=error).count() is 1
 events.where(fnName=deliver)[0].status is 404
@@ -195,7 +199,7 @@ set obj.http.X-Country-Code = "US";
 
 pairs with
 
-```
+```text
 clientFetch.resp includes "x-country-code: US"     # ✅ matches the h2 frame
 clientFetch.resp includes "X-Country-Code: US"     # ❌ never matches under h2
 ```

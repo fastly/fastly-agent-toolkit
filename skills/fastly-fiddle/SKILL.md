@@ -11,22 +11,22 @@ Trigger on: Fastly Fiddle, fiddle.fastly.dev URLs, the Fiddle HTTP API, CI testi
 
 Do NOT use for: local VCL unit testing (use `falco`), fast TDD loops (Fiddle has a 10-20s edge-sync floor per publish), Fastly Compute/Wasm testing (use `viceroy` or `fastlike`), production service deployment (use `fastly-cli`), or anything requiring authenticated Fastly API access — Fiddle does not use your Fastly API key.
 
-Fastly Fiddle is a web-based sandbox at https://fiddle.fastly.dev that compiles and runs VCL on real Fastly edge nodes. Because it uses the production VCL compiler and real POPs, it's the only way outside a real service to test VCL features that depend on edge infrastructure — geolocation data, WAF, ESI, clustering, shielding, rate limiting, real TLS, and real cache behavior.
+Fastly Fiddle is a web-based sandbox at <https://fiddle.fastly.dev> that compiles and runs VCL on real Fastly edge nodes. Because it uses the production VCL compiler and real POPs, it's the only way outside a real service to test VCL features that depend on edge infrastructure — geolocation data, WAF, ESI, clustering, shielding, rate limiting, real TLS, and real cache behavior.
 
-**Official UI**: https://fiddle.fastly.dev
-**Demo CI runner**: https://github.com/fastly/demo-fiddle-ci
+**Official UI**: <https://fiddle.fastly.dev>
+**Demo CI runner**: <https://github.com/fastly/demo-fiddle-ci>
 **API base**: `https://fiddle.fastly.dev` (undocumented but stable; no auth required for public fiddles)
 
 ## When Fiddle, when Falco
 
-| Need                                                  | Use           |
-| ----------------------------------------------------- | ------------- |
-| Fast local iteration (< 1s), watch mode, offline      | `falco test`  |
-| Real Fastly VCL compiler and semantics                | Fiddle        |
-| Real `client.geo.*`, WAF, ESI, rate limiting, shield  | Fiddle        |
-| Shareable URL for bug repros and support tickets      | Fiddle        |
-| CI against real edge nodes                            | Fiddle        |
-| Structured lint with line/col (no execution required) | Either        |
+| Need                                                  | Use                                |
+| ----------------------------------------------------- | ---------------------------------- |
+| Fast local iteration (< 1s), watch mode, offline      | `falco test`                       |
+| Real Fastly VCL compiler and semantics                | Fiddle                             |
+| Real `client.geo.*`, WAF, ESI, rate limiting, shield  | Fiddle                             |
+| Shareable URL for bug repros and support tickets      | Fiddle                             |
+| CI against real edge nodes                            | Fiddle                             |
+| Structured lint with line/col (no execution required) | Either                             |
 | Fastly Compute (WASM)                                 | Neither — use `viceroy`/`fastlike` |
 
 Common workflow: iterate locally with `falco test` for speed, then push edge cases to Fiddle when you need real Fastly behavior or a shareable link. See [falco-vs-fiddle.md](references/falco-vs-fiddle.md) for full trade-offs.
@@ -97,9 +97,9 @@ Non-obvious behavior that will break tools round-tripping fiddles programmatical
 
 5. **Invalid VCL still gets a fiddle ID.** `POST` returns `{valid: false, lintStatus: {...}, fiddle: {id, ...}}` for broken VCL. `valid` is authoritative; don't rely on HTTP status.
 
-6. **VCL string concat with `+` rejects parenthesized operands.** `set X = "used=" + (a - b);` fails with a *misleading* "Remove the trailing `+` operator" suggestion — the `+` is fine, the `(` is what the parser rejects. Compute the sub-expression into a local variable first. See [spec-shape.md](references/spec-shape.md#vcl-string-concatenation).
+6. **VCL string concat with `+` rejects parenthesized operands.** `set X = "used=" + (a - b);` fails with a _misleading_ "Remove the trailing `+` operator" suggestion — the `+` is fine, the `(` is what the parser rejects. Compute the sub-expression into a local variable first. See [spec-shape.md](references/spec-shape.md#vcl-string-concatenation).
 
-7. **`error 8NN;` / `error 9NN;` is rejected by Fiddle lint — use 6xx.** Any 800–999 code fails with "8xx and 9xx error codes are used internally by Fastly.  Use 6xx instead.", **even inside an `if`/`else`/`switch` block** (verified 2026-07; an earlier claim that conditional 8xx/9xx passed was wrong). This means the classic `error 801 <url>;` redirect idiom trips Fiddle lint regardless of conditionals — use `error 602 "<url>";` and build the 301 in `vcl_error`. Codes 400–799 are accepted. See [spec-shape.md](references/spec-shape.md#error-codes-and-the-8xx9xx-lint-check).
+7. **`error 8NN;` / `error 9NN;` is rejected by Fiddle lint — use 6xx.** Any 800–999 code fails with "8xx and 9xx error codes are used internally by Fastly. Use 6xx instead.", **even inside an `if`/`else`/`switch` block** (verified 2026-07; an earlier claim that conditional 8xx/9xx passed was wrong). This means the classic `error 801 <url>;` redirect idiom trips Fiddle lint regardless of conditionals — use `error 602 "<url>";` and build the 301 in `vcl_error`. Codes 400–799 are accepted. See [spec-shape.md](references/spec-shape.md#error-codes-and-the-8xx9xx-lint-check).
 
 8. **Some test expressions have built-in delays.** `originFetches.count() is 0` returns `asyncDelay: 2500` — the server waits 2.5s before evaluating "did nothing happen?". Client wait time must accommodate this; 45-60s is a safe ceiling.
 
@@ -122,15 +122,15 @@ Fiddles are read by humans in a browser. These aren't surprises, but they make s
 
 ## References
 
-| Topic               | File                                                  | Use when...                                                        |
-| ------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
-| **Helper script**   | [scripts/run-fiddle.sh](scripts/run-fiddle.sh)        | Publishing + executing + streaming a fiddle in one shell command   |
-| **Example payload** | [examples/robots.json](examples/robots.json)          | Starting from a known-good minimal fiddle spec                     |
-| **HTTP API**        | [api.md](references/api.md)                           | Calling Fiddle endpoints directly, driving it from any language    |
-| Fiddle spec shape   | [spec-shape.md](references/spec-shape.md)             | Building the JSON payload: origins, src, requests, defaults        |
-| Test DSL            | [test-dsl.md](references/test-dsl.md)                 | Writing `clientFetch.*`, `events.where(...)`, `originFetches.*`    |
-| CI integration      | [ci-integration.md](references/ci-integration.md)     | Running Fiddle tests from Mocha, GitHub Actions, or a shell script |
-| Falco vs Fiddle     | [falco-vs-fiddle.md](references/falco-vs-fiddle.md)   | Choosing the right tool, or combining them in one workflow         |
+| Topic               | File                                                | Use when...                                                        |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| **Helper script**   | [scripts/run-fiddle.sh](scripts/run-fiddle.sh)      | Publishing + executing + streaming a fiddle in one shell command   |
+| **Example payload** | [examples/robots.json](examples/robots.json)        | Starting from a known-good minimal fiddle spec                     |
+| **HTTP API**        | [api.md](references/api.md)                         | Calling Fiddle endpoints directly, driving it from any language    |
+| Fiddle spec shape   | [spec-shape.md](references/spec-shape.md)           | Building the JSON payload: origins, src, requests, defaults        |
+| Test DSL            | [test-dsl.md](references/test-dsl.md)               | Writing `clientFetch.*`, `events.where(...)`, `originFetches.*`    |
+| CI integration      | [ci-integration.md](references/ci-integration.md)   | Running Fiddle tests from Mocha, GitHub Actions, or a shell script |
+| Falco vs Fiddle     | [falco-vs-fiddle.md](references/falco-vs-fiddle.md) | Choosing the right tool, or combining them in one workflow         |
 
 ## Limits and cautions
 

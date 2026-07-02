@@ -4,7 +4,7 @@
 
 ## 1. Node + Mocha (the `demo-fiddle-ci` pattern)
 
-The reference implementation is at https://github.com/fastly/demo-fiddle-ci. Three files:
+The reference implementation is at <https://github.com/fastly/demo-fiddle-ci>. Three files:
 
 - `fiddle-client.js` — thin wrapper over `fetch` + `EventSource`, exposes `get`, `publish`, `clone`, `execute`.
 - `fiddle-mocha.js` — given a `{spec, scenarios[]}`, publishes once, runs each scenario, creates a Mocha `Suite` per client fetch and a `Test` per assertion.
@@ -19,39 +19,47 @@ npm install --save-dev mocha node-fetch@2 eventsource assertion-error
 Your test spec:
 
 ```js
-const testService = require('./fiddle-mocha');
+const testService = require("./fiddle-mocha");
 
-testService('Service: example.com', {
+testService("Service: example.com", {
   debug: false,
   spec: {
     origins: ["https://http-me.fastly.dev"],
     vcl: {
-      recv:  `set req.url = querystring.sort(req.url);`,
+      recv: `set req.url = querystring.sort(req.url);`,
       fetch: `set beresp.ttl = 3600s;`,
     },
   },
   scenarios: [
     {
-      name: 'Request normalisation',
-      requests: [{
-        path: "/?bbb=2&aaa=1",
-        tests: [
-          'clientFetch.status is 200',
-          'events.where(fnName=recv)[0].url is "/?aaa=1&bbb=2"',
-        ],
-      }],
+      name: "Request normalisation",
+      requests: [
+        {
+          path: "/?bbb=2&aaa=1",
+          tests: [
+            "clientFetch.status is 200",
+            'events.where(fnName=recv)[0].url is "/?aaa=1&bbb=2"',
+          ],
+        },
+      ],
     },
     {
-      name: 'Caching',
+      name: "Caching",
       requests: [
-        { path: "/html", tests: [
-            'originFetches.count() is 1',
-            'events.where(fnName=fetch)[0].ttl isAtLeast 3600',
-        ]},
-        { path: "/html", tests: [
-            'originFetches.count() is 0',
-            'events.where(fnName=hit).count() is 1',
-        ]},
+        {
+          path: "/html",
+          tests: [
+            "originFetches.count() is 1",
+            "events.where(fnName=fetch)[0].ttl isAtLeast 3600",
+          ],
+        },
+        {
+          path: "/html",
+          tests: [
+            "originFetches.count() is 0",
+            "events.where(fnName=hit).count() is 1",
+          ],
+        },
       ],
     },
   ],
@@ -114,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - run: npm ci
       - run: npx mocha src/test.js --exit --reporter mocha-junit-reporter
         env:

@@ -4,30 +4,30 @@ Both test VCL. They're complementary, not interchangeable.
 
 ## Decision matrix
 
-| Question                                                            | Falco | Fiddle |
-| ------------------------------------------------------------------- | :---: | :----: |
-| Runs offline / on a laptop with no network                          |  ✅   |   ❌   |
-| Iteration speed < 1s                                                |  ✅   |   ❌   |
-| Uses the real Fastly VCL compiler                                   |  ❌¹  |   ✅   |
-| Real `client.geo.*` values                                          |  ❌   |   ✅   |
-| Real WAF / edge security features                                   |  ❌   |   ✅   |
-| Real ESI processing                                                 |  ❌   |   ✅   |
-| Real rate limiting                                                  |  ❌   |   ✅   |
-| Real shielding / `fastly.ff.visits_this_service`                    |  ❌   |   ✅   |
-| Real TLS                                                            |  ❌   |   ✅   |
-| Persistent cache across test runs                                   |  ❌   |   ✅²  |
-| Assertion DSL with diff on failure                                  |  ✅   |   ✅   |
-| Code coverage                                                       |  ✅   |   ❌   |
-| Watch mode / TDD                                                    |  ✅   |   ❌   |
-| Structured lint errors without execution                            |  ✅   |   ✅   |
-| Shareable URL for bug repros                                        |  ❌   |   ✅   |
-| Works from CI without secrets                                       |  ✅   |   ✅   |
-| Reads VCL from a Terraform plan                                     |  ✅   |   ❌   |
-| Mocks of subroutines / backends / time / geo                        |  ✅   |   ❌   |
+| Question                                         | Falco | Fiddle |
+| ------------------------------------------------ | :---: | :----: |
+| Runs offline / on a laptop with no network       |  ✅   |   ❌   |
+| Iteration speed < 1s                             |  ✅   |   ❌   |
+| Uses the real Fastly VCL compiler                |  ❌¹  |   ✅   |
+| Real `client.geo.*` values                       |  ❌   |   ✅   |
+| Real WAF / edge security features                |  ❌   |   ✅   |
+| Real ESI processing                              |  ❌   |   ✅   |
+| Real rate limiting                               |  ❌   |   ✅   |
+| Real shielding / `fastly.ff.visits_this_service` |  ❌   |   ✅   |
+| Real TLS                                         |  ❌   |   ✅   |
+| Persistent cache across test runs                |  ❌   |  ✅²   |
+| Assertion DSL with diff on failure               |  ✅   |   ✅   |
+| Code coverage                                    |  ✅   |   ❌   |
+| Watch mode / TDD                                 |  ✅   |   ❌   |
+| Structured lint errors without execution         |  ✅   |   ✅   |
+| Shareable URL for bug repros                     |  ❌   |   ✅   |
+| Works from CI without secrets                    |  ✅   |   ✅   |
+| Reads VCL from a Terraform plan                  |  ✅   |   ❌   |
+| Mocks of subroutines / backends / time / geo     |  ✅   |   ❌   |
 
 ¹ Falco is a faithful Go reimplementation of Fastly's VCL dialect. It catches almost everything, but divergences from the real compiler exist — especially around newly shipped VCL features.
 
-² Fiddle's cache is scoped to `cacheID` on execute. Persistent *across one CI run* using a shared ID; deliberately cold with a random ID.
+² Fiddle's cache is scoped to `cacheID` on execute. Persistent _across one CI run_ using a shared ID; deliberately cold with a random ID.
 
 ## Practical guidance
 
@@ -47,7 +47,7 @@ Both test VCL. They're complementary, not interchangeable.
 
 ## Combined workflow
 
-```
+```text
           ┌──────────────────┐
   edit →  │  falco lint      │  < 1s, local
           └──────────────────┘
@@ -74,15 +74,15 @@ The Fiddle run is a gate, not an inner loop. Keep its test suite focused on asse
 
 The two tools have **different assertion DSLs**. You cannot reuse test files between them.
 
-| Concept                        | Falco                                           | Fiddle                                        |
-| ------------------------------ | ----------------------------------------------- | --------------------------------------------- |
-| Equality                       | `assert.equal(actual, 200)`                     | `clientFetch.status is 200`                   |
-| Substring                      | `assert.contains(s, "x")`                       | `clientFetch.bodyPreview includes "x"`        |
-| Subroutine called              | `assert.subroutine_called("my_helper")`         | `events.where(fnName=my_helper).count() is 1` |
-| Origin fetch count             | n/a (no real fetch)                             | `originFetches.count() is 0`                  |
-| TTL set in fetch               | `assert.equal(beresp.ttl, 3600s)` in `@scope: fetch` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600` |
-| State / return                 | `assert.state(lookup)`                          | `events.where(fnName=recv)[0].return is "lookup"` |
-| Error raised                   | `assert.error(404)`                             | `clientFetch.status is 404` + `events.where(fnName=error).count() is 1` |
+| Concept            | Falco                                                | Fiddle                                                                  |
+| ------------------ | ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| Equality           | `assert.equal(actual, 200)`                          | `clientFetch.status is 200`                                             |
+| Substring          | `assert.contains(s, "x")`                            | `clientFetch.bodyPreview includes "x"`                                  |
+| Subroutine called  | `assert.subroutine_called("my_helper")`              | `events.where(fnName=my_helper).count() is 1`                           |
+| Origin fetch count | n/a (no real fetch)                                  | `originFetches.count() is 0`                                            |
+| TTL set in fetch   | `assert.equal(beresp.ttl, 3600s)` in `@scope: fetch` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600`                      |
+| State / return     | `assert.state(lookup)`                               | `events.where(fnName=recv)[0].return is "lookup"`                       |
+| Error raised       | `assert.error(404)`                                  | `clientFetch.status is 404` + `events.where(fnName=error).count() is 1` |
 
 ## One more thing: Fiddle as a remote linter
 

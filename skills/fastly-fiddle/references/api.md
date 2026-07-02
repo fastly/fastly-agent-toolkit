@@ -4,13 +4,13 @@ Undocumented but stable. Base URL: `https://fiddle.fastly.dev`. No auth required
 
 ## Endpoints
 
-| Method | Path                                  | Purpose                                    |
-| ------ | ------------------------------------- | ------------------------------------------ |
-| POST   | `/fiddle`                             | Create a fiddle                            |
-| PUT    | `/fiddle/:id`                         | Update in place (`srcVersion` increments)  |
-| GET    | `/fiddle/:id`                         | Fetch normalized fiddle                    |
-| POST   | `/fiddle/:id/execute?cacheID=N`       | Execute, returns `sessionID`               |
-| GET    | `/results/:sessionID/stream`          | SSE event stream of execution progress     |
+| Method | Path                            | Purpose                                   |
+| ------ | ------------------------------- | ----------------------------------------- |
+| POST   | `/fiddle`                       | Create a fiddle                           |
+| PUT    | `/fiddle/:id`                   | Update in place (`srcVersion` increments) |
+| GET    | `/fiddle/:id`                   | Fetch normalized fiddle                   |
+| POST   | `/fiddle/:id/execute?cacheID=N` | Execute, returns `sessionID`              |
+| GET    | `/results/:sessionID/stream`    | SSE event stream of execution progress    |
 
 Headers: send `Content-Type: application/json` on write, `Accept: application/json` on read.
 
@@ -60,7 +60,7 @@ Unknown ID: `404` with plain text body `There is no fiddle with ID xxxxxxxx`. Do
 
 ## Execute
 
-```
+```http
 POST /fiddle/:id/execute?cacheID=<int>
 ```
 
@@ -76,17 +76,17 @@ Returns:
 
 ## SSE result stream
 
-```
+```http
 GET /results/:sessionID/stream
 Accept: text/event-stream
 ```
 
 Event types observed:
 
-| Event             | Meaning                                                                           |
-| ----------------- | --------------------------------------------------------------------------------- |
-| `waitingForSync`  | Config still syncing to edge. Emitted repeatedly (1/s) for ~10–20s on first publish. |
-| `updateResult`    | New result snapshot. May be emitted multiple times as data accumulates.           |
+| Event            | Meaning                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `waitingForSync` | Config still syncing to edge. Emitted repeatedly (1/s) for ~10–20s on first publish. |
+| `updateResult`   | New result snapshot. May be emitted multiple times as data accumulates.              |
 
 **`waitingForSync` payload** (informational):
 
@@ -107,18 +107,18 @@ Event types observed:
 
 **`updateResult` payload** top-level keys:
 
-| Key              | Type    | Notes                                                                     |
-| ---------------- | ------- | ------------------------------------------------------------------------- |
-| `id`             | string  | Session ID, echoes the URL                                                |
-| `startTime`      | number  | Execution start timestamp                                                 |
-| `requestCount`   | number  | Total requests defined                                                    |
-| `execHost`       | string  | The `<session>-...fiddle.fastly.dev` host that served the request         |
-| `execVersion`    | number  | Which `srcVersion` actually executed                                      |
-| `packageFile`    | string  | Compute only (empty for VCL fiddles)                                      |
-| `insights`       | object  | Performance/cache insights                                                |
-| `clientFetches`  | object  | **Keyed by internal ID**, not array. Each value has `req`/`resp`/`tests`/etc. |
-| `originFetches`  | object  | Same keying. Empty when served from synthetic or cache                    |
-| `events`         | array   | Stream of `{type: "vcl-sub", fnName, server, attribs, time, seqIdx, ...}` |
+| Key             | Type   | Notes                                                                         |
+| --------------- | ------ | ----------------------------------------------------------------------------- |
+| `id`            | string | Session ID, echoes the URL                                                    |
+| `startTime`     | number | Execution start timestamp                                                     |
+| `requestCount`  | number | Total requests defined                                                        |
+| `execHost`      | string | The `<session>-...fiddle.fastly.dev` host that served the request             |
+| `execVersion`   | number | Which `srcVersion` actually executed                                          |
+| `packageFile`   | string | Compute only (empty for VCL fiddles)                                          |
+| `insights`      | object | Performance/cache insights                                                    |
+| `clientFetches` | object | **Keyed by internal ID**, not array. Each value has `req`/`resp`/`tests`/etc. |
+| `originFetches` | object | Same keying. Empty when served from synthetic or cache                        |
+| `events`        | array  | Stream of `{type: "vcl-sub", fnName, server, attribs, time, seqIdx, ...}`     |
 
 Iterate fetches with `Object.values(result.clientFetches)`, not array indexing.
 
@@ -133,8 +133,8 @@ The server keeps streaming `updateResult` indefinitely as more events arrive. Cl
 For test-driven use, the "all expected `tests` populated" condition is:
 
 ```js
-Object.values(result.clientFetches).filter(f => f.tests).length
-  === fiddle.requests.filter(r => r.tests).length
+Object.values(result.clientFetches).filter((f) => f.tests).length ===
+  fiddle.requests.filter((r) => r.tests).length;
 ```
 
 ## Lint-only workflow
