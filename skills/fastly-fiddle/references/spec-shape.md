@@ -113,47 +113,31 @@ synthetic {"used="} + (workspace.bytes_total - workspace.bytes_free);
 
 Workspace impact: every `+` (or juxtaposition) in a `set` allocates a **new** buffer in the per-request workspace; the previous buffer is not freed until end-of-request. Building a large string by repeated self-concatenation (`set X = X + chunk;` in a loop-shaped pattern) is a known way to exhaust workspace and trip `503 WorkspaceOverflow`. See the worked example at <https://fiddle.fastly.dev/fiddle/ecbc9b26>.
 
-## Error codes and the 8xx/9xx lint check
+## Error codes: use 6xx for synthetics
 
-Fastly VCL lets you raise a synthetic response with `error NNN ["msg"];`. Authors conventionally use:
-
-| Range | Conventional use                                                                                                                              |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 4xx   | Client-error synthetics you want the client to see as-is (e.g. `error 403`).                                                                  |
-| 5xx   | Server-error synthetics.                                                                                                                      |
-| 6xx   | Custom internal codes for synthetic responses. Canonical range for "I built this."                                                            |
-| 7xx   | Author-defined, no special meaning.                                                                                                           |
-| 8xx   | Reserved by Fastly internally. Historically used for the `error 801 <url>;` redirect idiom, but Fiddle lint rejects it — use 6xx (see below). |
-| 9xx   | Reserved by Fastly internally. Author-defined signalling in some VCL, but Fiddle lint rejects it — use 6xx.                                   |
-
-The Fiddle lint endpoint (i.e. the Fastly VCL compiler) rejects `error 8NN;` and `error 9NN;` with `valid: false` and:
+Fiddle lint rejects `error` codes in the **800–999** range — in any subroutine and in any context (bare, `if`, `else`, `switch`) — with `valid: false` and:
 
 ```text
 8xx and 9xx error codes are used internally by Fastly.  Use 6xx instead.
 ```
 
-This fires in every subroutine (`recv`, `deliver`, …) for any code in 800–999, and **it fires even when the `error` is inside an `if`/`else`/`switch` block**, not only for bare unconditional statements. An earlier version of this note claimed conditional 8xx/9xx passed lint; that is wrong. A conditional `error 801 "<url>";` in `vcl_recv` is rejected. Codes 400–799 are accepted unconditionally.
+Codes 400–799 are accepted. Use the **6xx** range for synthetics you raise (`error 601;`, `error 602 "<url>";`).
 
-Practical consequences:
+For redirects, raise `error 602 "<url>";` and build the 301 in `vcl_error`:
 
-- **Use the 6xx range for every synthetic you raise in a Fiddle**, conditional or not (`error 601;`, `error 602 "<url>";`).
-- **Redirects:** instead of the `error 801 <url>;` idiom, raise `error 602 "<url>";` and build the 301 in `vcl_error`:
+```vcl
+# vcl_recv
+if (req.url.path == "/old") { error 602 "https://www.example.com/new"; }
 
-  ```vcl
-  # vcl_recv
-  if (req.url.path == "/old") { error 602 "https://www.example.com/new"; }
-
-  # vcl_error
-  if (obj.status == 602) {
-    set obj.http.Location = obj.response;
-    set obj.status = 301;
-    set obj.response = "Moved Permanently";
-    synthetic {""};
-    return(deliver);
-  }
-  ```
-
-- Real Fastly services may still accept `error 801` (the historical idiom); the constraint here is the Fiddle lint endpoint specifically.
+# vcl_error
+if (obj.status == 602) {
+  set obj.http.Location = obj.response;
+  set obj.status = 301;
+  set obj.response = "Moved Permanently";
+  synthetic {""};
+  return(deliver);
+}
+```
 
 ## Origins
 

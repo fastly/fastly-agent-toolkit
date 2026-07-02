@@ -99,7 +99,7 @@ Non-obvious behavior that will break tools round-tripping fiddles programmatical
 
 6. **VCL string concat with `+` rejects parenthesized operands.** `set X = "used=" + (a - b);` fails with a _misleading_ "Remove the trailing `+` operator" suggestion — the `+` is fine, the `(` is what the parser rejects. Compute the sub-expression into a local variable first. See [spec-shape.md](references/spec-shape.md#vcl-string-concatenation).
 
-7. **`error 8NN;` / `error 9NN;` is rejected by Fiddle lint — use 6xx.** Any 800–999 code fails with "8xx and 9xx error codes are used internally by Fastly. Use 6xx instead.", **even inside an `if`/`else`/`switch` block** (an earlier claim that conditional 8xx/9xx passed was wrong). This means the classic `error 801 <url>;` redirect idiom trips Fiddle lint regardless of conditionals — use `error 602 "<url>";` and build the 301 in `vcl_error`. Codes 400–799 are accepted. See [spec-shape.md](references/spec-shape.md#error-codes-and-the-8xx9xx-lint-check).
+7. **`error 8NN;` / `error 9NN;` is rejected by Fiddle lint — use 6xx.** Any 800–999 code fails with "8xx and 9xx error codes are used internally by Fastly. Use 6xx instead.", in any subroutine and any context (bare or inside `if`/`else`/`switch`). So the classic `error 801 <url>;` redirect idiom trips Fiddle lint even inside an `if` — use `error 602 "<url>";` and build the 301 in `vcl_error`. Codes 400–799 are accepted. See [spec-shape.md](references/spec-shape.md#error-codes-use-6xx-for-synthetics).
 
 8. **Some test expressions have built-in delays.** `originFetches.count() is 0` returns `asyncDelay: 2500` — the server waits 2.5s before evaluating "did nothing happen?". Client wait time must accommodate this; 45-60s is a safe ceiling.
 
