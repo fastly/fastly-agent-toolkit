@@ -1,33 +1,8 @@
 # Falco vs Fiddle
 
-Both test VCL. They're complementary, not interchangeable.
+Both test VCL. They're complementary, not interchangeable. SKILL.md's "When Fiddle, when Falco" table is the quick-decision reference; this file covers the reasoning behind it, the combined workflow, and the DSL differences.
 
-## Decision matrix
-
-| Question                                         | Falco | Fiddle |
-| ------------------------------------------------ | :---: | :----: |
-| Runs offline / on a laptop with no network       |  ✅   |   ❌   |
-| Iteration speed < 1s                             |  ✅   |   ❌   |
-| Uses the real Fastly VCL compiler                |  ❌¹  |   ✅   |
-| Real `client.geo.*` values                       |  ❌   |   ✅   |
-| Real WAF / edge security features                |  ❌   |   ✅   |
-| Real ESI processing                              |  ❌   |   ✅   |
-| Real rate limiting                               |  ❌   |   ✅   |
-| Real shielding / `fastly.ff.visits_this_service` |  ❌   |   ✅   |
-| Real TLS                                         |  ❌   |   ✅   |
-| Persistent cache across test runs                |  ❌   |  ✅²   |
-| Assertion DSL with diff on failure               |  ✅   |   ✅   |
-| Code coverage                                    |  ✅   |   ❌   |
-| Watch mode / TDD                                 |  ✅   |   ❌   |
-| Structured lint errors without execution         |  ✅   |   ✅   |
-| Shareable URL for bug repros                     |  ❌   |   ✅   |
-| Works from CI without secrets                    |  ✅   |   ✅   |
-| Reads VCL from a Terraform plan                  |  ✅   |   ❌   |
-| Mocks of subroutines / backends / time / geo     |  ✅   |   ❌   |
-
-¹ Falco is a faithful Go reimplementation of Fastly's VCL dialect. It catches almost everything, but divergences from the real compiler exist — especially around newly shipped VCL features.
-
-² Fiddle's cache is scoped to `cacheID` on execute. Persistent _across one CI run_ using a shared ID; deliberately cold with a random ID.
+One divergence worth internalizing: falco is a faithful Go reimplementation of Fastly's VCL dialect, not the real compiler. It catches almost everything, but divergences exist — especially around newly shipped VCL features. That gap is the core reason Fiddle stays in the loop despite being slower.
 
 ## Practical guidance
 
