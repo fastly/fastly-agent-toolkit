@@ -47,26 +47,12 @@ Both test VCL. They're complementary, not interchangeable.
 
 ## Combined workflow
 
-```text
-          ┌──────────────────┐
-  edit →  │  falco lint      │  < 1s, local
-          └──────────────────┘
-                   │
-                   ▼
-          ┌──────────────────┐
-          │  falco test      │  < 1s per test, watch mode
-          └──────────────────┘
-                   │  (green)
-                   ▼
-          ┌──────────────────┐
-          │  Fiddle CI run   │  10-60s, real edge, pre-merge gate
-          └──────────────────┘
-                   │  (green)
-                   ▼
-          ┌──────────────────┐
-          │  fastly deploy   │  to staging service
-          └──────────────────┘
-```
+Ordered pipeline; each stage must pass (green) before the next runs:
+
+1. falco lint — trigger: on edit. Speed: <1s, local.
+2. falco test — trigger: lint passes. Speed: <1s per test, watch mode.
+3. Fiddle CI run — trigger: falco tests green. Speed: 10-60s, real edge, pre-merge gate.
+4. fastly deploy — trigger: Fiddle CI green. Target: staging service.
 
 The Fiddle run is a gate, not an inner loop. Keep its test suite focused on assertions that only Fiddle can verify — don't duplicate every falco unit test in Fiddle form.
 
