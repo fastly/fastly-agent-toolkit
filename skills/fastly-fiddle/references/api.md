@@ -50,11 +50,18 @@ Key points:
 
 ## Fetch
 
-`GET /fiddle/:id` returns:
+```http
+GET /fiddle/:id
+Accept: application/json
+```
+
+**`Accept: application/json` is required.** Without it the server returns the HTML Fiddle web app (a `200` with a `text/html` body), not the fiddle JSON — so a header-less `curl` "succeeds" but yields an unparseable page. Returns:
 
 ```json
 { "fiddle": { ... }, "valid": true, "lintStatus": {...} }
 ```
+
+**`valid` on a `GET` is not the lint result.** On create/update responses `valid` reports compilation (see [Lint-only workflow](#lint-only-workflow)); on a `GET` it reports execution — it stays `false` until the fiddle has run at least once, then turns `true`. A cleanly-linting fiddle you just created reads back as `valid: false` with an empty `lintStatus`, indistinguishable from broken VCL. Never judge compilation from a `GET`; use the create/update response, or re-submit the spec.
 
 Unknown ID: `404` with plain text body `There is no fiddle with ID xxxxxxxx`. Do not parse as JSON.
 
@@ -165,13 +172,13 @@ curl -sS -X POST https://fiddle.fastly.dev/fiddle \
 }
 ```
 
-Empty array = no issues for that subroutine. Use `valid === false` as the error gate.
+Empty array = no issues for that subroutine. Use `valid === false` as the error gate — but only on the create/update response. On a `GET`, `valid` reports whether the fiddle has executed, not whether it compiles (see [Fetch](#fetch)), so a `GET` cannot be used as a lint gate.
 
 ## Cloning
 
 The UI bundle exposes a `POST /fiddle/:id/clone` endpoint, but the simplest portable cloning pattern is still:
 
-1. `GET /fiddle/:id` → fiddle object
+1. `GET /fiddle/:id` (with `Accept: application/json`, see [Fetch](#fetch)) → fiddle object
 2. Set `id: null` on the returned object
 3. `POST /fiddle` with the modified object
 

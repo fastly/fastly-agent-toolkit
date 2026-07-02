@@ -95,7 +95,9 @@ Non-obvious behavior that will break tools round-tripping fiddles programmatical
 
 4. **Request fields are auto-defaulted by the server.** A `GET` of a fiddle you just created will include fields you didn't send: `method: "GET"`, `connType: "h2"` (HTTP/2 by default — matters for tests that depend on protocol), `enableCluster: true`, `enableShield: false`, `useFreshCache: false`, `sourceIP: "client"`, `followRedirects: false`, `delay: 0`. Set them explicitly if you care.
 
-5. **Invalid VCL still gets a fiddle ID.** `POST` returns `{valid: false, lintStatus: {...}, fiddle: {id, ...}}` for broken VCL. `valid` is authoritative; don't rely on HTTP status.
+5. **Invalid VCL still gets a fiddle ID.** `POST` returns `{valid: false, lintStatus: {...}, fiddle: {id, ...}}` for broken VCL. On a **create/update** (`POST`/`PUT`) response, `valid` is the lint result — `true` if the VCL compiles, `false` if not, with details in `lintStatus`. That's the number to trust for "does this compile?", and you get it without executing anything. Don't rely on HTTP status.
+
+    **But `valid` means something different on a `GET`.** There it tracks execution, not compilation: it stays `false` until the fiddle has been executed at least once, then flips to `true`. A fiddle that lints perfectly cleanly still reads back as `valid: false` right after you create it. So judge compilation from the create/update response (or by re-submitting the spec) — never from a `GET`. A `GET` can't distinguish a valid-but-not-yet-run fiddle from a genuinely broken one: both come back `valid: false` with an empty `lintStatus`.
 
 6. **VCL string concat with `+` rejects parenthesized operands.** `set X = "used=" + (a - b);` fails with a _misleading_ "Remove the trailing `+` operator" suggestion — the `+` is fine, the `(` is what the parser rejects. Compute the sub-expression into a local variable first. See [spec-shape.md](references/spec-shape.md#vcl-string-concatenation).
 
