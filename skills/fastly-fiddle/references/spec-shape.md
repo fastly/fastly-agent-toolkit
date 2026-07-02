@@ -86,15 +86,18 @@ warning  Encountered `+` after string expression.
 error    Expected string constant, variable, call, or semicolon but got `(`
 ```
 
-**The "remove the `+`" suggestion is wrong.** The `+` is fine; the `(` is the problem. To embed an arithmetic result in a string, compute it into a variable first:
+**The "remove the `+`" suggestion is wrong.** The `+` is fine; the `(` is the problem. To embed an arithmetic result in a string, compute it into a variable first.
+
+Note a second, independent constraint: Fastly VCL has no binary arithmetic operator in a `set`, so `set var.used = a - b;` also fails to compile (`Expected ';', got '-'`). Build the value with compound-assignment operators (`+=`, `-=`, …) instead:
 
 ```vcl
 # Bad: parenthesized expression as a concat operand
 set req.http.X = "used=" + (std.atoi(req.http.Total) - std.atoi(req.http.Free));
 
-# Good: compute into a local variable, then concat
+# Good: compute into a local variable with compound assignment, then concat
 declare local var.used INTEGER;
-set var.used = std.atoi(req.http.Total) - std.atoi(req.http.Free);
+set var.used = std.atoi(req.http.Total);
+set var.used -= std.atoi(req.http.Free);
 set req.http.X = "used=" + var.used;
 ```
 
