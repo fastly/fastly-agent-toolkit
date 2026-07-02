@@ -2,7 +2,7 @@
 
 Each request in a fiddle carries a `tests` list. Each line is a single assertion in Fiddle's domain-specific language. The server evaluates them after the request completes and reports `pass` / `actual` / `expected` per assertion.
 
-Verified against the live service on 2026-05-06. The DSL is not formally documented by Fastly; these are the patterns observed in `fastly/demo-fiddle-ci` and by direct testing.
+The DSL is not formally documented by Fastly; these are the patterns observed in `fastly/demo-fiddle-ci` and by direct testing.
 
 ## Shape of results
 

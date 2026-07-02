@@ -129,7 +129,7 @@ The Fiddle lint endpoint (i.e. the Fastly VCL compiler) rejects `error 8NN;` and
 8xx and 9xx error codes are used internally by Fastly.  Use 6xx instead.
 ```
 
-This fires in every subroutine (`recv`, `deliver`, …) for any code in 800–999, and — verified 2026-07 — **it fires even when the `error` is inside an `if`/`else`/`switch` block**, not only for bare unconditional statements. An earlier version of this note claimed conditional 8xx/9xx passed lint; that is wrong. A conditional `error 801 "<url>";` in `vcl_recv` is rejected. Codes 400–799 are accepted unconditionally.
+This fires in every subroutine (`recv`, `deliver`, …) for any code in 800–999, and **it fires even when the `error` is inside an `if`/`else`/`switch` block**, not only for bare unconditional statements. An earlier version of this note claimed conditional 8xx/9xx passed lint; that is wrong. A conditional `error 801 "<url>";` in `vcl_recv` is rejected. Codes 400–799 are accepted unconditionally.
 
 Practical consequences:
 
