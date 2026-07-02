@@ -120,6 +120,12 @@ Fiddles are read by humans in a browser. These aren't surprises, but they make s
 - **Format VCL with `\n` and indentation** rather than cramming everything onto one line.
 - **Send `User-Agent: <tool>/<version>` on every API call.** Fiddle is unauthenticated shared infra; default `curl/x.y` or library UAs are bad citizenship. This is the API call's UA, not the simulated request's `headers`.
 
+## Testing in CI
+
+Reference implementation: [fastly/demo-fiddle-ci](https://github.com/fastly/demo-fiddle-ci) — a Node + Mocha harness. Clone it and write your `{spec, scenarios[]}`.
+
+The one non-obvious thing: it publishes the fiddle once, then re-executes the same fiddle ID per scenario with different `requests[]`. Only re-execution is warm (~2s); a fresh publish pays the 10-20s edge-sync floor (see "Limits" below and gotcha #11). Keep scenarios sequential.
+
 ## References
 
 | Topic               | File                                                | Use when...                                                        |
@@ -129,7 +135,6 @@ Fiddles are read by humans in a browser. These aren't surprises, but they make s
 | **HTTP API**        | [api.md](references/api.md)                         | Calling Fiddle endpoints directly, driving it from any language    |
 | Fiddle spec shape   | [spec-shape.md](references/spec-shape.md)           | Building the JSON payload: origins, src, requests, defaults        |
 | Test DSL            | [test-dsl.md](references/test-dsl.md)               | Writing `clientFetch.*`, `events.where(...)`, `originFetches.*`    |
-| CI integration      | [ci-integration.md](references/ci-integration.md)   | Running Fiddle tests from Mocha, GitHub Actions, or a shell script |
 | Falco vs Fiddle     | [falco-vs-fiddle.md](references/falco-vs-fiddle.md) | Choosing the right tool, or combining them in one workflow         |
 
 ## Limits and cautions
