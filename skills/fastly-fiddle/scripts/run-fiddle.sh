@@ -312,11 +312,10 @@ elif [[ -n $FID_OVERRIDE ]]; then
     exit 1
   fi
   FID=$FID_OVERRIDE
-  # Honor the server's .valid flag (GET shape varies — top-level on bare
-  # fetches, nested under .fiddle on some envelopes). Don't blindly trust
-  # the stored fiddle: an invalid one would otherwise sail into /execute
-  # and surface as a confusing "no sessionID" downstream.
-  VALID=$(echo "$RESP" | jq -r '.valid // .fiddle.valid')
+  # Don't gate on GET's `.valid`: it means "has executed yet?", not "lints?",
+  # so it's false for any un-executed fiddle. Lint already ran at create; a
+  # genuine breakage surfaces via the existing "no results" (exit 4) path.
+  VALID=true
   ACTION="Reusing"
 else
   RESP=$(api_call "POST /fiddle" \
