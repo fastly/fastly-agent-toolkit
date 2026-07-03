@@ -6,8 +6,10 @@
 #   run-fiddle.sh --id <fiddle-id-or-url>          # execute existing, no publish
 #   run-fiddle.sh --id <fiddle-id> <fiddle.json>   # PUT (update) + execute
 #
+#   run-fiddle.sh --lint-only <fiddle.json>        # POST + report lint, no exec
+#
 #   Common flags: [--cache-id N] [--max-wait SECONDS] [--retries N]
-#                 [--ua STRING] [--no-bodies] [--quiet] [--debug]
+#                 [--lint-only] [--ua STRING] [--no-bodies] [--quiet] [--debug]
 #
 # Defaults:
 #   --cache-id   random per invocation, drawn from /dev/urandom. Two
@@ -32,6 +34,12 @@
 #                   stays stable, but the new VCL recompiles and propagates,
 #                   so expect another ~10-120s edge-sync wait. PUT is not
 #                   partial: omitted subroutines are cleared.
+#   --lint-only     Publish (POST, or PUT with --id) and report {valid,
+#                   lintStatus} only. Skips /execute, the SSE stream, and the
+#                   edge-sync wait entirely — a ~1-3s "does this compile?"
+#                   check instead of the 10-120s publish+execute round trip.
+#                   Use it whenever you don't need runtime assertion results;
+#                   the spec on disk is untouched. Requires a spec file.
 #   --no-bodies     Omit `status`, `content_type`, and `body_preview` from
 #                   each result in the JSON output. The default is to include
 #                   them; use this flag for compact machine-readable output.
@@ -81,6 +89,7 @@ RETRIES=2
 QUIET=0
 DEBUG=0
 SHOW_BODIES=1
+LINT_ONLY=0
 BASE='https://fiddle.fastly.dev'
 # Cap the JSON round trip on /fiddle endpoints (POST/PUT/GET). Independent
 # of the SSE stream's MAX_WAIT budget. Bump if your network is slow.
@@ -113,6 +122,7 @@ while [[ $# -gt 0 ]]; do
     --retries)  [[ $# -ge 2 ]] || { echo "--retries requires a value" >&2; usage; }; RETRIES=$2; shift 2 ;;
     --ua)       [[ $# -ge 2 ]] || { echo "--ua requires a value" >&2; usage; }; UA=$2; shift 2 ;;
     --quiet|-q) QUIET=1; shift ;;
+    --lint-only)  LINT_ONLY=1; shift ;;
     --no-bodies)  SHOW_BODIES=0; shift ;;
     --show-bodies|--verbose|-v) SHOW_BODIES=1; shift ;; # kept for back-compat
     --debug)    DEBUG=1; shift ;;
@@ -143,6 +153,12 @@ fi
 
 if [[ -z $FID_OVERRIDE && -z $SPEC_FILE ]]; then
   echo "need either <fiddle.json> or --id <fiddle-id>" >&2
+  usage
+fi
+if [[ $LINT_ONLY == 1 && -z $SPEC_FILE ]]; then
+  # A bare --id has nothing to lint: GET's `valid` tracks execution, not
+  # compilation (see references/spec-shape.md gotcha on the GET valid flag).
+  echo "--lint-only needs a <fiddle.json> spec to compile" >&2
   usage
 fi
 # Stdin support: slurp `-` into a tempfile so we can validate, count tests,
@@ -335,6 +351,17 @@ if [[ $VALID != true ]]; then
   fi
   echo "$RESP" | jq '.lintStatus // .fiddle.lintStatus' >&2
   exit 2
+fi
+
+# --lint-only: the fiddle compiled, and that's all we were asked to confirm.
+# Report {valid, lintStatus} and stop here — no /execute, no SSE, no edge-sync
+# wait. This is the cheap "does this VCL compile?" check (~1-3s vs the 10-120s
+# publish+execute floor); use it whenever you don't need runtime assertion
+# results. The spec you POSTed is unchanged on disk.
+if [[ $LINT_ONLY == 1 ]]; then
+  log "$ACTION: $BASE/fiddle/$FID (lint only, not executed)"
+  echo "$RESP" | jq '{fiddle_id: .fiddle.id, url: ("'"$BASE"'/fiddle/" + .fiddle.id), valid, lintStatus: (.lintStatus // .fiddle.lintStatus // {})}'
+  exit 0
 fi
 
 # Compute EXPECTED_TOTAL. Prefer the local spec when we have one (it's what we

@@ -31,10 +31,47 @@ Fastly Fiddle is a web-based sandbox at <https://fiddle.fastly.dev> that compile
 
 Common workflow: iterate locally with `falco test` for speed, then push edge cases to Fiddle when you need real Fastly behavior or a shareable link. See [falco-vs-fiddle.md](references/falco-vs-fiddle.md) for full trade-offs.
 
-## Minimal round trip
+## Workflow: deliverable first, then the cheapest check that answers your question
 
-For anything beyond a one-shot smoke test, use the bundled helper which
-handles publish → execute → SSE → completion-detection in one call:
+Two rules keep you out of the slow path, which is what wastes time and gets
+agents killed by a wall-clock limit:
+
+1. **If your job is to produce a spec file, write it to disk first**, before
+   any network call. The file is the deliverable — it must exist even if a
+   later publish stalls on a cold edge-sync. Don't build the spec only inside
+   a `curl --data` argument and lose it when the call blocks.
+
+2. **Match the check to the question.** "Does this VCL compile / is the spec
+   shape accepted?" is answered by a _single_ `POST /fiddle` reading `valid` —
+   ~1-3s, no execution, no edge-sync wait (see gotcha #5). You only need the
+   full publish → execute → SSE round trip when you must observe _runtime_
+   assertion results (actual `clientFetch`/`originFetches`/`events` values),
+   and that pays the 10-120s edge-sync floor per publish. **Executing is the
+   exception, not the default** — reach for it deliberately, and always bound
+   your wait; never block indefinitely on the stream.
+
+### Lint-only (the common case): compile check, no execution
+
+```bash
+scripts/run-fiddle.sh --lint-only fiddle.json
+# {fiddle_id, url, valid, lintStatus}. Exit 0 = compiles, 2 = lint error
+# (details on stderr). No /execute, no SSE, no edge-sync wait.
+```
+
+The raw equivalent is one call — POST and read `valid`:
+
+```bash
+UA='fiddle-skill-example/1.0'
+curl -sS --max-time 30 -X POST https://fiddle.fastly.dev/fiddle \
+  -H 'Content-Type: application/json' -H "User-Agent: $UA" \
+  --data @fiddle.json | jq '{valid, lintStatus}'   # valid==true ⇒ it compiles
+```
+
+### Full round trip (only when you need runtime results)
+
+When you genuinely need to see assertions pass/fail on the edge, the bundled
+helper handles publish → execute → SSE → completion-detection in one call,
+with a bounded `--max-wait` (default 180s per attempt) so it can't hang:
 
 ```bash
 scripts/run-fiddle.sh examples/robots.json
@@ -77,8 +114,10 @@ SID=$(curl -sS -X POST "https://fiddle.fastly.dev/fiddle/$FID/execute?cacheID=1"
         -H 'Accept: application/json' -H "User-Agent: $UA" | jq -r '.sessionID')
 
 # 3. Stream results. Emits repeated `event: waitingForSync` (~10-20s on first
-#    publish) then `event: updateResult` with full pass/fail data.
-curl -sS -N -H "User-Agent: $UA" "https://fiddle.fastly.dev/results/$SID/stream"
+#    publish) then `event: updateResult` with full pass/fail data. ALWAYS cap
+#    the stream with --max-time so a slow/cold sync can't block you forever;
+#    on timeout, re-execute the same $FID (warm, ~2s) rather than re-publishing.
+curl -sS -N --max-time 120 -H "User-Agent: $UA" "https://fiddle.fastly.dev/results/$SID/stream"
 ```
 
 Full protocol details in [api.md](references/api.md).
