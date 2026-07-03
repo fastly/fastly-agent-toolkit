@@ -6,6 +6,7 @@ A collection of skills for AI coding agents to work with the Fastly platform and
 
 - `fastly`: Working with the Fastly platform, including services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.
 - `fastly-cli`: Using the Fastly CLI to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
+- `fastly-fiddle`: Testing VCL against real Fastly edge infrastructure with Fastly Fiddle, covering assertion-based tests, the Fiddle HTTP API, shareable bug reproductions, and CI integration.
 - `falco`: VCL development with Falco, covering linting, testing, simulation, formatting, REPL, and Terraform integration.
 - `fastlike`: Running Fastly Compute locally with Fastlike (Go-based), covering backend configuration, builds, and testing.
 - `viceroy`: Running Fastly Compute locally with Viceroy (WASM-based), covering serving, configuration, testing, and SDK adaptation.
