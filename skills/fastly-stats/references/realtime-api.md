@@ -61,7 +61,11 @@ concurrent polls for the same service can be throttled.
 - `recorded` is the Unix timestamp of the second.
 - `aggregated` holds all-POP totals for that second, keyed by metric name (see [fields.md](fields.md)).
 - `datacenter` holds the same metrics broken down by POP code (`SJC`, `LHR`, …). POP codes come
-  from `fastly pops`.
+  from `fastly pops`. **Prefer reading this per-POP map, not just `aggregated`** — a spike or
+  error surge is usually concentrated in one or a few POPs, and the aggregate hides it. If the
+  service is shielded, the **shield POP** also appears here but carries origin-shielding
+  (edge-to-shield) traffic rather than client traffic — identify it via `fastly pops` (`SHIELD`
+  column) and flag it separately so it isn't read as a client edge.
 - `Timestamp` is the value to send in the **next** request — do not compute it yourself.
 
 ## Poll loop

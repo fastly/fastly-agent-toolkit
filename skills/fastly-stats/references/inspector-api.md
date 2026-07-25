@@ -37,7 +37,7 @@ GET /metrics/domains/services/{service_id}
 | `end` | string | Exclusive end. Same formats as `start`. |
 | `downsample` | string | Bucket size: `minute`, `hour`, or `day`. (This is the Inspector's `by`.) |
 | `metric` | string | Comma-separated metric names to return. Omit for a default set; naming below. |
-| `group_by` | string | Dimensions to split by. Origin: `host`, `region`, `datacenter`. Domain: `domain`, `region`, `datacenter`. Comma-separate to nest. |
+| `group_by` | string | Dimensions to split by. Origin: `host`, `region`, `datacenter`. Domain: `domain`, `region`, `datacenter`. Comma-separate to nest. Add `datacenter` (or `region`) when diagnosing — per-POP granularity surfaces issues local to one POP that the host/domain aggregate hides. |
 | `region` | string | Comma-separated region filter (same codes as historical stats). |
 | `datacenter` | string | Comma-separated uppercase POP codes. |
 | `host` | string | Origin Inspector only: comma-separated origin hosts to filter. |

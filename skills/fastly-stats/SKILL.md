@@ -246,6 +246,26 @@ Full loop in [references/realtime-api.md](references/realtime-api.md).
 return `meta.next_cursor`; pass it back as `cursor` until it is null. See
 [references/inspector-api.md](references/inspector-api.md).
 
+## Pinpoint issues with POP-level (datacenter) data
+
+Default to pulling the **per-POP breakdown** when diagnosing, not just the aggregate. A
+service-wide number that looks healthy routinely hides a single POP erroring or a regional latency
+spike — the aggregate averages it away. Every source exposes POP-level granularity:
+
+- Real-time: the `datacenter` map in each record (metrics keyed by POP code).
+- Historical stats: `datacenter=SJC,LHR` filters, and `/stats` is reported per region.
+- Inspector: `group_by=datacenter` (or `region`) alongside `host`/`domain`.
+
+So when the question is "why is X bad", reach for POP granularity first — it turns "5xx are up"
+into "5xx are up *at LHR*", which is usually the actual lead.
+
+**Watch for Shield POPs in the breakdown.** If the service uses shielding, one POP is designated
+the shield — it sits between the edge POPs and your origin, so its entry in a `datacenter`
+breakdown represents edge-to-shield (origin-shielding) traffic, not client-facing traffic, and
+reads very differently from an edge POP. Identify it with `fastly pops` (the `SHIELD` column) and
+the service's shield setting; the `shield` stat field counts shield-served requests. Call the
+shield POP out explicitly when presenting per-POP numbers so it isn't mistaken for a client edge.
+
 ## Limits and cautions
 
 - **Origin Inspector and Domain Inspector are paid add-ons** and must be enabled per service. If
