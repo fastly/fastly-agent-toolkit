@@ -97,6 +97,15 @@ curl -sS -H "Fastly-Key: $(fastly auth token)" \
   "https://api.fastly.com/stats/usage_by_month?year=2026&month=07&billable_units=true"
 ```
 
+**Billable units vs raw stats.** Fastly bills in decimal SI units — 1 GB = 10^9 bytes,
+1 TB = 10^12 bytes — and presents requests in units of 10,000. The billed figure is *not* the same
+as summing the raw `bandwidth` field from `/stats`: billing counts the size of each response
+(header + body) delivered to clients **and** bandwidth from Fastly to your origins. With
+`billable_units=true`, `usage_by_month` returns bandwidth already converted to GB and requests
+already divided by 10,000, so it lines up with your invoice. For a rough GB figure from a raw
+`bandwidth` byte count, divide by `1e9` (decimal GB), never `2^30`. Details:
+<https://docs.fastly.com/products/how-we-calculate-your-delivery-bill>.
+
 ## Region codes
 
 `GET /stats/regions` returns the authoritative live list:

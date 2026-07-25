@@ -80,6 +80,24 @@ done
 
 To sample once instead of streaming, just request `ts/0` and read `Data[0].aggregated`.
 
+If you format `recorded` into a clock time, use UTC (`strftime`) unless the user asked for local
+time, so timestamps are comparable across machines: `jq -r '.Data[] | (.recorded|strftime("%H:%M:%SZ"))'`.
+
+## CLI equivalent
+
+For a quick live view without writing a poll loop, the CLI wraps this same feed and chains
+`Timestamp` for you:
+
+```bash
+fastly stats realtime --service-id "$SID" --json \
+  | jq -r '.Data[]? | [(.recorded|strftime("%H:%M:%SZ")), .aggregated.requests, .aggregated.status_5xx] | @tsv'
+```
+
+`fastly stats realtime` streams **NDJSON** — one JSON object per line — so process it line by line
+(no `jq -s` needed here, unlike the historical `--json` commands). The raw `curl` loop above is
+worth it when you want a derived error rate or the per-POP `datacenter` breakdown, which the CLI
+does not surface as cleanly.
+
 ## Convenience history forms
 
 The origin/domain real-time endpoints also offer `ts/h` (last 120 seconds) and

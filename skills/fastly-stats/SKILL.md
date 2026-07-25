@@ -92,6 +92,38 @@ Token-safety rules (they exist because agent transcripts are logged and often sh
 - Omit `curl -v` on authenticated calls — verbose mode echoes the `Fastly-Key` header.
 - Never `echo` the token or paste it into a message. Prefer `$(fastly auth token)` inline.
 
+## Time and units conventions
+
+Two things trip up otherwise-correct queries.
+
+**Time — default to UTC.** All endpoints interpret Unix timestamps as UTC, and ISO-8601 values
+should carry a `Z`/offset. When you *format* results, prefer UTC unless the user asked for local
+time: use `date -u`, and in `jq` use `strftime` (UTC) rather than `strflocaltime` (machine-local).
+Reporting local time silently when the user didn't ask for it makes numbers hard to compare across
+machines and regions.
+
+**Units — raw bytes are not your bill.** `bandwidth` and every `*_bytes` field are **raw bytes**
+(response header + body). Two consequences:
+
+- To show GB/TB, use **decimal SI units** the way Fastly bills: 1 GB = 10^9 bytes, 1 TB = 10^12
+  bytes (`bytes / 1e9`), **not** binary GiB (`2^30`). Mixing the two is a common reporting error.
+- Raw `bandwidth` is edge traffic, not billable usage. Billing counts delivery to clients **and**
+  traffic to origins, presents requests in units of 10,000, and reports bandwidth in decimal GB.
+  For anything billing-related use the usage endpoints (`fastly stats usage` /
+  `GET /stats/usage*`) with `billable_units=true`, which does that conversion for you. See
+  [references/historical-stats-api.md](references/historical-stats-api.md#usage--billing-endpoints)
+  and Fastly's <https://docs.fastly.com/products/how-we-calculate-your-delivery-bill>.
+
+**Latency/timing lives in two places, measuring different things:**
+
+- *Edge performance* — classic historical stats expose aggregate processing times `hits_time`,
+  `miss_time`, `pass_time` (seconds), i.e. how long Fastly spent serving requests at the edge.
+- *Origin performance* — Origin Inspector exposes per-origin response **latency histograms**
+  (buckets from ~0 ms to 60 s+), i.e. how slow your backends are.
+
+They answer different questions ("is the edge slow?" vs "is an origin slow?") and are both useful;
+pick based on which side you're investigating.
+
 ## Choose the right API
 
 Pick the row that matches the question, then jump to the linked reference.
@@ -189,19 +221,26 @@ fastly stats historical -s "$SID" --by hour --from "1 hour ago" --json \
 
 **Bandwidth across all services (last month).** The CLI has no cross-service rollup; loop
 `fastly service list`. Zero-traffic services still appear in the list but may be omitted by the
-stats response — always drive the loop from the service list, defaulting missing sums to 0:
+stats response — always drive the loop from the service list, defaulting missing sums to 0. Report
+in decimal GB (`/1e9`), not GiB (see Time and units conventions):
 
 ```bash
 fastly service list --json | jq -r '.[] | "\(.ServiceID)|\(.Name)"' | while IFS='|' read -r id name; do
-  bw=$(fastly stats historical -s "$id" --by day --from "30 days ago" --json \
+  bytes=$(fastly stats historical -s "$id" --by day --from "30 days ago" --json \
     | jq -s '[.[].bandwidth] | add // 0')
-  printf '%s\t%s\n' "$bw" "$name"
+  printf '%.2f GB\t%s\n' "$(echo "$bytes / 1000000000" | bc -l)" "$name"
 done | sort -rn
 ```
 
-**Real-time requests-per-second.** Poll `ts/0` once, then feed the returned `Timestamp` back in
-a loop; each response yields one entry per elapsed second. Full loop in
-[references/realtime-api.md](references/realtime-api.md).
+This is raw edge `bandwidth`. If the goal is the **bill**, query billable usage instead:
+`fastly stats usage --by-service` or `GET /stats/usage_by_service` (add `billable_units=true` on
+`usage_by_month`) — bandwidth already in GB, requests already in units of 10,000.
+
+**Real-time requests-per-second.** Quickest path is the CLI — `fastly stats realtime -s ID --json`
+streams the same feed (NDJSON, one second per line) and handles `Timestamp` chaining for you. For
+a custom watch (per-POP breakdown, derived error rate), poll the raw endpoint: `ts/0` once, then
+feed the returned `Timestamp` back in a loop; each response yields one entry per elapsed second.
+Full loop in [references/realtime-api.md](references/realtime-api.md).
 
 **Per-domain traffic with pagination.** Inspector responses cap at `limit` rows (max 200) and
 return `meta.next_cursor`; pass it back as `cursor` until it is null. See

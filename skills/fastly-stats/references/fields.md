@@ -178,3 +178,10 @@ Not measurements — they identify a row:
 - Time fields (`*_time`, `*_time_ms`) are seconds or milliseconds as the suffix indicates.
 - Ratios (`hit_ratio`, `edge_hit_ratio`, `origin_offload`) are floats in `[0,1]` — multiply by
   100 for a percentage.
+- To convert byte fields to GB/TB, use **decimal SI** units (÷`1e9` for GB, ÷`1e12` for TB), the
+  way Fastly bills — not binary GiB (`2^30`). Raw `bandwidth` (header + body) is edge traffic and
+  is not your invoice; billable figures come from the usage endpoints — see
+  [historical-stats-api.md](historical-stats-api.md#usage--billing-endpoints).
+- `hits_time` / `miss_time` / `pass_time` are **edge** processing seconds (how long Fastly spent
+  serving requests). For **origin** response latency, use Origin Inspector's latency histograms
+  ([inspector-api.md](inspector-api.md)) — a different measurement.

@@ -12,6 +12,16 @@ empty data.
 - Origin vs Domain: use Origin Inspector to answer "which backend is slow / erroring / busy",
   Domain Inspector to answer "how much traffic is each hostname taking".
 
+**Where latency/timing lives (this matters):** Origin Inspector's latency histograms measure
+**origin response time** — how slow your backends are. That is *not* the same as edge
+performance. If the question is "how long is Fastly taking to serve requests at the edge", that
+comes from the classic Historical Stats fields `hits_time` / `miss_time` / `pass_time`
+(aggregate processing seconds) — see [historical-stats-api.md](historical-stats-api.md) and
+[fields.md](fields.md). Both are useful and often examined together: a fast edge with a slow
+origin, or vice versa, are diagnosed from different sources. Domain Inspector additionally exposes
+edge cache/offload metrics (`edge_hit_ratio`, `origin_offload`) per domain. Timestamps in
+`start`/`end` are UTC — pass `Z`-suffixed ISO-8601 or Unix seconds.
+
 ## Historical (api.fastly.com)
 
 ```text
