@@ -2,6 +2,12 @@
 
 A collection of skills for AI coding agents to work with the Fastly platform and edge computing tools.
 
+## Agent Plugins
+
+This repository is a portable [Agent Plugin](https://agent-plugins.org/specification).
+Clients load the root [`plugin.json`](plugin.json) manifest and discover the skills in `skills/`.
+It is a skills-only package, so it does not include an `mcp.json` configuration.
+
 ## Available skills
 
 - `fastly`: Working with the Fastly platform, including services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.

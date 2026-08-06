@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "fastly-agent-toolkit",
+  "version": "0.1.0",
+  "description": "Fastly development tools and platform skills",
+  "author": {"name": "Fastly"},
+  "homepage": "https://github.com/fastly/fastly-agent-toolkit",
+  "repository": "https://github.com/fastly/fastly-agent-toolkit",
+  "license": "MIT",
+  "keywords": ["fastly", "edge", "compute", "vcl", "cdn"]
+}

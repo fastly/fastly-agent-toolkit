@@ -4,7 +4,11 @@ set -euo pipefail
 CLAUDE_CODE_VERSION="${CLAUDE_CODE_VERSION:-2.1.112}"
 
 echo "=== Validating JSON ==="
-find skills -name "*.json" -print0 | xargs -0 -n1 npx --yes "jsonlint-mod@1.7.6" -q
+json_files=("plugin.json")
+while IFS= read -r -d '' json_file; do
+    json_files+=("$json_file")
+done < <(find skills -name "*.json" -print0)
+npx --yes "jsonlint-mod@1.7.6" -q "${json_files[@]}"
 
 echo "=== Validating YAML ==="
 yaml_files=$(find skills \( -name "*.yml" -o -name "*.yaml" \)) || true
@@ -37,8 +41,31 @@ fi
 
 echo "=== Cross-checking metadata consistency ==="
 errors=0
+agent_plugin_json="plugin.json"
 plugin_json=".claude-plugin/plugin.json"
 gemini_json="gemini-extension.json"
+
+echo "=== Validating Agent Plugins manifest ==="
+if [[ ! -f "$agent_plugin_json" ]]; then
+    echo "Error: Missing $agent_plugin_json" >&2
+    errors=$((errors + 1))
+elif ! jq -e '
+    type == "object"
+    and all(keys[]; . == "$schema" or . == "name" or . == "version" or . == "description" or . == "author" or . == "homepage" or . == "repository" or . == "license" or . == "keywords" or . == "extensions")
+    and ."$schema" == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+    and (if (.name | type) == "string" then (.name | length >= 1 and length <= 64 and test("^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$") and (contains("--") | not) and (contains("..") | not)) else false end)
+    and (if has("version") then (.version | type) == "string" else true end)
+    and (if has("description") then (.description | type) == "string" else true end)
+    and (if has("homepage") then (.homepage | type) == "string" else true end)
+    and (if has("repository") then (.repository | type) == "string" else true end)
+    and (if has("license") then (.license | type) == "string" else true end)
+    and (if has("keywords") then (.keywords | if type == "array" then all(.[]; type == "string") else false end) else true end)
+    and (if has("author") then (.author | if type == "object" then (all(keys[]; . == "name" or . == "email" or . == "url") and all(.[]; type == "string")) else false end) else true end)
+    and (if has("extensions") then (.extensions | type) == "object" else true end)
+' "$agent_plugin_json" >/dev/null; then
+    echo "Error: $agent_plugin_json does not conform to the Agent Plugins 1.0.0 manifest schema" >&2
+    errors=$((errors + 1))
+fi
 
 if [[ ! -f "$plugin_json" ]]; then
     echo "Error: Missing $plugin_json" >&2
