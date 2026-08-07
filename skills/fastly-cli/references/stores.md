@@ -97,6 +97,9 @@ fastly kv-store-entry delete --store-id STORE_ID --key "user:123" --force
 # Conditional delete (only if generation marker matches)
 fastly kv-store-entry delete --store-id STORE_ID --key "user:123" --if-generation-match=42
 
+# Delete every entry whose key starts with a prefix
+fastly kv-store-entry delete --store-id STORE_ID --prefix "user:"
+
 # Delete all entries in a store
 fastly kv-store-entry delete --store-id STORE_ID --all --concurrency=100 --max-errors=100
 ```

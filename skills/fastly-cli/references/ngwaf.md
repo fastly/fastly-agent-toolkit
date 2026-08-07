@@ -376,6 +376,34 @@ fastly ngwaf workspace rule update --rule-id=RULE-ID --path=PATH [--workspace-id
 fastly ngwaf workspace rule delete --rule-id=RULE-ID [--workspace-id] [--json]
 ```
 
+## Time Series Metrics
+
+Attack and request counters over a time range, at the account level or for a single workspace.
+Note the asymmetry: the account-level command is `list`, the workspace-level one is `get`.
+
+```bash
+# Account-level, grouped by workspace
+fastly ngwaf time-series list \
+  --from=2026-08-01T00:00:00Z \
+  --to=2026-08-07T00:00:00Z \
+  --metrics=requests_total,requests_attack,requests_total_blocked \
+  --dimensions=workspaces \
+  --granularity=3600 \
+  --json
+
+# Workspace-level
+fastly ngwaf workspace time-series get \
+  --workspace-id WORKSPACE_ID \
+  --from=2026-08-01T00:00:00Z \
+  --metrics=XSS,SQLI,HTTP404 \
+  --json
+```
+
+`--from` and `--metrics` are required on both. Dates are RFC 3339, not the plain `YYYY-MM-DD` that `fastly stats` accepts.
+Built-in metrics are `XSS`, `SQLI`, `HTTP404`, `requests_total`, `requests_attack` and `requests_total_blocked`; custom signal names work too.
+`--granularity` is a bucket size in seconds. Both commands claim a default of 86400 in `--help`, but the CLI only sends the value when you pass the flag, and the API then picks its own: the account-level `list` buckets by day while the workspace-level `get` buckets by hour. Pass `--granularity` explicitly whenever the bucket size matters.
+`--dimensions` only exists on the account-level command, where it accepts `workspaces` or `time` (default `time`).
+
 ## Alerts
 
 Configure alerting integrations.

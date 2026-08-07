@@ -60,9 +60,11 @@ fastly service version activate --service-id SERVICE_ID --version 2
 fastly service version deactivate --service-id SERVICE_ID --version 2
 fastly service version lock --service-id SERVICE_ID --version 2
 fastly service version update --service-id SERVICE_ID --version 2 --comment "Production release"
-fastly service version stage --version=VERSION --service-id SERVICE_ID
+fastly service version stage --version=VERSION --service-id SERVICE_ID --autoclone
 fastly service version unstage --version=VERSION --service-id SERVICE_ID
 ```
+
+`stage` accepts `--autoclone` too, so `--version active --autoclone` clones the active version and stages the clone in one step.
 
 Use the modern `fastly service version activate` subcommand. The older `fastly service-version activate` (hyphenated) form is deprecated. When you do not know the exact version number, target the most recent one with `--version latest`.
 

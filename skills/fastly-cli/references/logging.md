@@ -254,16 +254,44 @@ Use this any time logs aren't reaching their destination — the error message o
 
 ### Conditional Logging
 
-Use placement to log only on specific conditions:
+`--response-condition` takes the **name of a condition that already exists on the service version**, not a VCL expression.
+Create the condition first with `fastly service vcl condition create`, then reference it by name:
 
 ```bash
+fastly service vcl condition create \
+  --service-id SERVICE_ID \
+  --version active --autoclone \
+  --name server-errors \
+  --type RESPONSE \
+  --statement 'resp.status >= 500' \
+  --priority 10
+
 fastly service logging s3 create \
   --service-id SERVICE_ID \
-  --version 1 \
+  --version latest \
   --name error-logs \
-  --placement waf_debug \
-  --response-condition "resp.status >= 500"
+  --response-condition server-errors
   # ... other options
+```
+
+Both commands have to land on the same editable version. `--autoclone` on the first one clones the active version, so the second one targets that clone with `--version latest` rather than `--version active`.
+
+`--type` is one of `REQUEST`, `CACHE`, `RESPONSE`, `PREFETCH`. Logging endpoints attach to `RESPONSE` conditions.
+Leave `--response-condition` off entirely to log every request.
+
+### Placement
+
+`--placement` controls where in the generated VCL the logging call is emitted, which is a separate concern from conditions.
+Setting it to `none` suppresses the call entirely, and that is the only valid value for Compute services.
+On a Delivery service, pass an empty string to an `update` to put the endpoint back to automatic placement:
+
+```bash
+fastly service logging s3 update \
+  --service-id SERVICE_ID \
+  --version 3 \
+  --autoclone \
+  --name s3-logs \
+  --placement ""
 ```
 
 ### Multiple Log Endpoints
@@ -275,7 +303,7 @@ You can create multiple logging endpoints for the same service:
 fastly service logging s3 create --name archive-logs ...
 
 # Error logs to Datadog for alerting
-fastly service logging datadog create --name error-alerts --response-condition "resp.status >= 500" ...
+fastly service logging datadog create --name error-alerts --response-condition server-errors ...
 
 # Real-time to Kafka for processing
 fastly service logging kafka create --name realtime-logs ...

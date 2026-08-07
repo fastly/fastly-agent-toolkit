@@ -13,16 +13,17 @@ Covers: services, backends, domains, VCL snippets, cache purging, Compute/WASM d
 
 ## References
 
-| Topic          | File                                  | Use when...                                                                              |
-| -------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Authentication | [auth.md](references/auth.md)         | Login, stored tokens, service auth, CI/CD auth setup                                     |
-| Compute        | [compute.md](references/compute.md)   | Building/deploying edge applications, local dev server                                   |
-| Services       | [services.md](references/services.md) | Service CRUD, backends, domains, ACLs, dictionaries, VCL, purging, rate limiting         |
-| Logging        | [logging.md](references/logging.md)   | Log streaming to S3, GCS, Datadog, Splunk, Kafka, 25+ providers                          |
-| NGWAF          | [ngwaf.md](references/ngwaf.md)       | Next-Gen WAF workspaces, IP/country lists, rules, signals, thresholds, alerts            |
-| Stats          | [stats.md](references/stats.md)       | Historical/real-time metrics, cache hit ratios, error rates, bandwidth, regional traffic |
-| Stores         | [stores.md](references/stores.md)     | KV Stores, Config Stores, Secret Stores, resource links                                  |
-| TLS            | [tls.md](references/tls.md)           | Platform TLS, Let's Encrypt subscriptions, custom certs, mutual TLS                      |
+| Topic          | File                                            | Use when...                                                                              |
+| -------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Authentication | [auth.md](references/auth.md)                   | Login, stored tokens, service auth, CI/CD auth setup                                     |
+| Compute        | [compute.md](references/compute.md)             | Building/deploying edge applications, local dev server                                   |
+| Services       | [services.md](references/services.md)           | Service CRUD, backends, domains, ACLs, dictionaries, VCL, purging, rate limiting         |
+| Logging        | [logging.md](references/logging.md)             | Log streaming to S3, GCS, Datadog, Splunk, Kafka, 25+ providers                          |
+| NGWAF          | [ngwaf.md](references/ngwaf.md)                 | Next-Gen WAF workspaces, IP/country lists, rules, signals, thresholds, alerts            |
+| Notifications  | [notifications.md](references/notifications.md) | Slack/PagerDuty/webhook integrations, audit log event mappings                            |
+| Stats          | [stats.md](references/stats.md)                 | Historical/real-time metrics, cache hit ratios, error rates, bandwidth, regional traffic |
+| Stores         | [stores.md](references/stores.md)               | KV Stores, Config Stores, Secret Stores, resource links                                  |
+| TLS            | [tls.md](references/tls.md)                     | Platform TLS, Let's Encrypt subscriptions, custom certs, mutual TLS                      |
 
 ## Command Structure
 
@@ -41,7 +42,8 @@ fastly <command> <subcommand> [flags]
 | **Storage**  | `kv-store`, `config-store`, `secret-store` - Edge data stores                           |
 | **Auth**     | `auth` - Login, stored tokens, active token output, revocation; `auth-token` (deprecated) |
 | **Info**     | `stats`, `ip-list`, `pops`, `whoami` - Information queries                              |
-| **Other**    | `dashboard`, `domain`, `products`, `object-storage`, `tools`                            |
+| **Notify**   | `integration` - Notification destinations; `audit-log event-mapping` - Event triggers   |
+| **Other**    | `dashboard`, `domain`, `dns`, `apisecurity`, `products`, `object-storage`, `tools`      |
 
 ## Global Flags
 
@@ -58,6 +60,7 @@ Available on most commands:
 --version VERSION          # Specific version number
 --version active           # Currently active version
 --version latest           # Most recent version
+--version staged           # Currently staged version
 
 # Authentication
 --token TOKEN              # API token or stored token name (use 'default' for default)
@@ -75,7 +78,7 @@ Available on most commands:
 ## Key Patterns
 
 - Target by ID (`-s SERVICE_ID`) or name (`--service-name NAME`)
-- Version targeting: `--version active`, `--version latest`, or `--version N`
+- Version targeting: `--version active`, `--version latest`, `--version staged`, or `--version N`
 - Use `--autoclone` to auto-clone locked versions
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
 - **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase

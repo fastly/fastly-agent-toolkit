@@ -4,16 +4,17 @@ Build and deploy serverless applications at the edge using Fastly Compute.
 
 ## Quick Reference
 
-| Command                   | Purpose                               |
-| ------------------------- | ------------------------------------- |
-| `fastly compute init`     | Create new Compute project            |
-| `fastly compute build`    | Compile to WebAssembly                |
-| `fastly compute deploy`   | Deploy package to service             |
-| `fastly compute publish`  | Build + deploy in one step            |
-| `fastly compute serve`    | Local development server              |
-| `fastly compute metadata` | Control metadata collection           |
-| `fastly compute update`   | Update a package on a service version |
-| `fastly compute acl`      | Manage Compute ACLs                   |
+| Command                        | Purpose                                        |
+| ------------------------------ | ---------------------------------------------- |
+| `fastly compute init`          | Create new Compute project                     |
+| `fastly compute build`         | Compile to WebAssembly                         |
+| `fastly compute deploy`        | Deploy package to service                      |
+| `fastly compute publish`       | Build + deploy in one step                     |
+| `fastly compute serve`         | Local development server                       |
+| `fastly compute metadata`      | Control metadata collection                    |
+| `fastly compute update`        | Update a package on a service version          |
+| `fastly compute acl`           | Manage Compute ACLs                            |
+| `fastly compute install-tools` | Pre-install the Viceroy binary used by `serve` |
 
 ## Initialize a New Project
 
@@ -34,6 +35,7 @@ fastly compute init --from SERVICE_ID
 fastly compute init -l rust
 fastly compute init --language javascript
 fastly compute init --language go
+fastly compute init --language python
 
 # Specify project directory
 fastly compute init -p /path/to/project
@@ -42,7 +44,7 @@ fastly compute init -p /path/to/project
 fastly compute init -a "developer@example.com"
 ```
 
-**Supported languages**: rust, javascript, go, other
+**Supported languages**: rust, javascript, go, cpp, python, other
 
 **Key flags**:
 - `-p, --directory` - Destination directory for the new project
@@ -206,6 +208,15 @@ fastly compute serve --viceroy-args "--log-level=debug"
 - `--viceroy-path` - Path to a user-installed Viceroy binary
 
 The local server uses Viceroy to emulate the Fastly Compute environment.
+
+### Pre-installing Viceroy
+
+`fastly compute serve` downloads Viceroy on first use, which is awkward inside a container build or an offline CI runner.
+`fastly compute install-tools` downloads it ahead of time and takes no flags:
+
+```bash
+fastly compute install-tools
+```
 
 ## Update a Package on a Service Version
 
@@ -392,13 +403,13 @@ After deploying a Compute package, changes can take up to 10 minutes to propagat
 
 ## Troubleshooting
 
-**Build fails**: Ensure language toolchain is installed (Rust, Node.js, or Go)
+**Build fails**: Ensure language toolchain is installed (Rust, Node.js, Go, or Python)
 
 **Package too large**: Maximum size is 100MB compressed. Optimize dependencies.
 
 **Service not available after deploy**: Wait for global propagation (usually < 60 seconds). Use `--status-check-timeout` to extend wait time.
 
-**Viceroy not found**: Viceroy is automatically installed on first `fastly compute serve` run
+**Viceroy not found**: Viceroy is automatically installed on first `fastly compute serve` run, or ahead of time with `fastly compute install-tools`
 
 **Unwanted `originless` backend after deploy**: Deploying an originless Compute app may create a placeholder backend named `originless`. If the app must run with no backend at all, remove it and reactivate:
 
