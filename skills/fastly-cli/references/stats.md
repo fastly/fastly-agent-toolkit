@@ -14,9 +14,37 @@ Access historical, real-time, and aggregated metrics for Fastly services.
 | `stats regions`          | List stats regions             |
 | `stats usage`            | Usage stats                    |
 
+## Two Flag Families
+
+`fastly stats` fronts two unrelated APIs. `historical`, `aggregate` and `usage` speak the Historical Stats API;
+`domain-inspector` and `origin-inspector` speak the Inspector metrics API. They share `--from`, `--to`, `--region`
+and `--json`, but nothing else: granularity and selection use different flag names on each side.
+Reaching for `--by` or `--field` on an inspector, or `--datacenter` on `historical`, fails with a usage error.
+
+| Flag                       | historical | aggregate | usage | domain-inspector | origin-inspector |
+| -------------------------- | ---------- | --------- | ----- | ---------------- | ---------------- |
+| `--from` / `--to`          | yes        | yes       | yes   | yes              | yes              |
+| `--by` (minute/hour/day)   | yes        | yes       | yes   | no               | no               |
+| `--downsample`             | no         | no        | no    | yes              | yes              |
+| `--field` (single field)   | yes        | no        | no    | no               | no               |
+| `--metric` (repeatable)    | no         | no        | no    | yes              | yes              |
+| `--region`                 | one value  | one value | one value | repeatable   | repeatable       |
+| `--datacenter`             | no         | no        | no    | repeatable       | repeatable       |
+| `--domain`                 | no         | no        | no    | repeatable       | no               |
+| `--host`                   | no         | no        | no    | no               | repeatable       |
+| `--group-by`               | no         | no        | no    | repeatable       | repeatable       |
+| `--limit` / `--cursor`     | no         | no        | no    | yes              | yes              |
+| `--by-service`             | no         | no        | yes   | no               | no               |
+| `--service-id` / `--service-name` | yes | no        | no    | yes              | yes              |
+| `--json`                   | yes        | yes       | yes   | yes              | yes              |
+
+`stats realtime` takes no filtering flags at all: only `--service-id` / `--service-name` and `--json`.
+`stats regions` takes no flags whatsoever, not even `--json`.
+
 ## Aggregate Statistics
 
-Query aggregated historical stats across services.
+Query aggregated historical stats across every service on the account. There is no `--service-id` here, and no
+`--field`: the only filters are `--from`, `--to`, `--by` and `--region`.
 
 ```bash
 # Aggregated stats
@@ -58,7 +86,18 @@ fastly stats historical --service-id SERVICE_ID --by day
 fastly stats historical --service-id SERVICE_ID --json
 ```
 
+There is no `--datacenter` on `historical`: `--region` is as narrow as the CLI goes. Per-POP history is only
+reachable through the Historical Stats API directly, which the CLI does not expose. The inspectors do take
+`--datacenter`, but they cover domain and origin metrics rather than plain service traffic.
+
 ### Available Fields
+
+These are the values accepted by `--field` on `stats historical`, and a small excerpt of the keys present in the JSON
+output of `historical` and `aggregate` (which carry well over a hundred each). They are not inspector metric names:
+`domain-inspector` and `origin-inspector` take their own vocabulary via `--metric`.
+
+`stats usage` is shaped differently again: its JSON is an object keyed by region, and each region carries only
+`bandwidth`, `compute_requests` and `requests`.
 
 | Field        | Description               |
 | ------------ | ------------------------- |
@@ -77,36 +116,70 @@ fastly stats historical --service-id SERVICE_ID --json
 
 ## Domain Inspector Statistics
 
-Inspect domain-level metrics for your service. Useful for understanding traffic patterns and performance on a per-domain basis.
+Inspect domain-level metrics for your service. Useful for understanding traffic patterns and performance on a
+per-domain basis.
+
+Flags: `--from`, `--to`, `--downsample` (minute/hour/day), `--metric` (repeatable, up to 10), `--domain`,
+`--datacenter`, `--region`, `--group-by`, `--limit`, `--cursor`, `--json`. The repeatable flags are joined with commas
+before the request goes out, so repeating the flag and passing one comma-separated value are equivalent.
 
 ```bash
 # Domain inspector stats
 fastly stats domain-inspector --service-id SERVICE_ID
 
-# Specific time range
+# Specific time range, hourly buckets
 fastly stats domain-inspector --service-id SERVICE_ID \
-  --from "2024-01-01T00:00:00Z" \
-  --to "2024-01-02T00:00:00Z"
+  --from "2026-08-01T00:00:00Z" \
+  --to "2026-08-02T00:00:00Z" \
+  --downsample hour
 
-# JSON output
-fastly stats domain-inspector --service-id SERVICE_ID --json
+# Pick metrics and break them down per domain
+fastly stats domain-inspector --service-id SERVICE_ID \
+  --metric requests --metric bandwidth \
+  --group-by domain --json
+
+# Narrow to one domain served from one POP
+fastly stats domain-inspector --service-id SERVICE_ID \
+  --domain www.example.com --datacenter BWI
+
+# Page through a large result set
+fastly stats domain-inspector --service-id SERVICE_ID --limit 100 --json
+fastly stats domain-inspector --service-id SERVICE_ID --limit 100 --cursor CURSOR --json
 ```
+
+Read `meta.next_cursor` from the JSON response and feed it back as `--cursor` until it comes back empty.
 
 ## Origin Inspector Statistics
 
-Inspect origin-level metrics for your service. Helps identify origin health issues, latency, and request volume per origin.
+Inspect origin-level metrics for your service. Helps identify origin health issues, latency, and request volume per
+origin.
+
+Same flag set as the domain inspector, except that the per-entity filter is `--host` (origin hostname) rather than
+`--domain`.
 
 ```bash
 # Origin inspector stats
 fastly stats origin-inspector --service-id SERVICE_ID
 
-# Specific time range
+# Daily responses grouped by origin host
 fastly stats origin-inspector --service-id SERVICE_ID \
-  --from "2024-01-01T00:00:00Z" \
-  --to "2024-01-02T00:00:00Z"
+  --from "2026-08-01T00:00:00Z" \
+  --to "2026-08-07T00:00:00Z" \
+  --downsample day --metric responses --group-by host --json
 
-# JSON output
-fastly stats origin-inspector --service-id SERVICE_ID --json
+# One origin, one region
+fastly stats origin-inspector --service-id SERVICE_ID \
+  --host origin.example.com --region europe
+```
+
+### Inspectors Return Empty Data When the Product Is Off
+
+Domain Inspector and Origin Inspector are paid add-ons. If they are not enabled on the service, the API still answers
+`"status": "success"` with an empty `data` array, which reads exactly like a service that had no traffic. Check the
+entitlement before concluding there is nothing to see:
+
+```bash
+fastly products --service-id SERVICE_ID
 ```
 
 ## Real-time Statistics
@@ -150,7 +223,8 @@ fastly stats usage --json
 
 ## Regional Statistics
 
-Filter metrics by geographic region using `--region`.
+`historical`, `aggregate`, `usage` and both inspectors accept `--region`. On the first three it takes a single value;
+on the inspectors it is repeatable. `realtime` and `regions` accept no filtering flags at all.
 
 ```bash
 # List available regions
@@ -158,6 +232,9 @@ fastly stats regions
 
 # Filter stats to a specific region
 fastly stats historical --service-id SERVICE_ID --region europe --json --by day
+
+# Inspectors: repeat the flag for several regions
+fastly stats origin-inspector --service-id SERVICE_ID --region europe --region usa
 ```
 
 ### Regions
@@ -173,6 +250,7 @@ fastly stats historical --service-id SERVICE_ID --region europe --json --by day
 | `africa_std`       | Africa                |
 | `latam`            | Latin America         |
 | `mexico`           | Mexico                |
+| `saudi_arabia`     | Saudi Arabia          |
 | `southamerica_std` | South America         |
 
 ## Infrastructure Information
