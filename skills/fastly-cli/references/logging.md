@@ -254,8 +254,8 @@ Use this any time logs aren't reaching their destination — the error message o
 
 ### Conditional Logging
 
-`--response-condition` takes the **name of a condition that already exists on the service version**, not a VCL expression.
-Create the condition first with `fastly service vcl condition create`, then reference it by name:
+`--response-condition` takes the name of a condition that already exists on the service version, not a VCL expression.
+Create the condition first, then reference it by name:
 
 ```bash
 fastly service vcl condition create \
@@ -274,16 +274,17 @@ fastly service logging s3 create \
   # ... other options
 ```
 
-Both commands have to land on the same editable version. `--autoclone` on the first one clones the active version, so the second one targets that clone with `--version latest` rather than `--version active`.
+Both commands must land on the same editable version. `--autoclone` on the first clones the active version, so the
+second targets that clone with `--version latest`, not `--version active`.
 
 `--type` is one of `REQUEST`, `CACHE`, `RESPONSE`, `PREFETCH`. Logging endpoints attach to `RESPONSE` conditions.
-Leave `--response-condition` off entirely to log every request.
+Omit `--response-condition` to log every request.
 
 ### Placement
 
-`--placement` controls where in the generated VCL the logging call is emitted, which is a separate concern from conditions.
-Setting it to `none` suppresses the call entirely, and that is the only valid value for Compute services.
-On a Delivery service, pass an empty string to an `update` to put the endpoint back to automatic placement:
+`--placement` controls where in the generated VCL the logging call is emitted. It is unrelated to conditions.
+`none` suppresses the call, and is the only valid value for Compute services.
+On a Delivery service, pass an empty string to `update` to restore automatic placement:
 
 ```bash
 fastly service logging s3 update \

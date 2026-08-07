@@ -378,31 +378,41 @@ fastly ngwaf workspace rule delete --rule-id=RULE-ID [--workspace-id] [--json]
 
 ## Time Series Metrics
 
-Attack and request counters over a time range, at the account level or for a single workspace.
-Note the asymmetry: the account-level command is `list`, the workspace-level one is `get`.
+Attack and request counters over a time range. The account-level subcommand is `list`, the workspace-level one is `get`.
 
 ```bash
 # Account-level, grouped by workspace
 fastly ngwaf time-series list \
   --from=2026-08-01T00:00:00Z \
-  --to=2026-08-07T00:00:00Z \
-  --metrics=requests_total,requests_attack,requests_total_blocked \
+  --to=2026-08-08T00:00:00Z \
+  --metrics=requests_total,requests_attack \
   --dimensions=workspaces \
-  --granularity=3600 \
+  --granularity=86400 \
   --json
 
 # Workspace-level
 fastly ngwaf workspace time-series get \
   --workspace-id WORKSPACE_ID \
   --from=2026-08-01T00:00:00Z \
-  --metrics=XSS,SQLI,HTTP404 \
+  --to=2026-08-08T00:00:00Z \
+  --metrics=requests_total,requests_attack,requests_total_blocked \
+  --granularity=86400 \
   --json
 ```
 
-`--from` and `--metrics` are required on both. Dates are RFC 3339, not the plain `YYYY-MM-DD` that `fastly stats` accepts.
-Built-in metrics are `XSS`, `SQLI`, `HTTP404`, `requests_total`, `requests_attack` and `requests_total_blocked`; custom signal names work too.
-`--granularity` is a bucket size in seconds. Both commands claim a default of 86400 in `--help`, but the CLI only sends the value when you pass the flag, and the API then picks its own: the account-level `list` buckets by day while the workspace-level `get` buckets by hour. Pass `--granularity` explicitly whenever the bucket size matters.
-`--dimensions` only exists on the account-level command, where it accepts `workspaces` or `time` (default `time`).
+`--from` and `--metrics` are required on both. Timestamps are RFC 3339, not the `YYYY-MM-DD` that `fastly stats` takes.
+
+Metrics: `requests_total`, `requests_attack`, `requests_total_blocked`, `XSS`, `SQLI`, `HTTP404`, plus any custom signal name.
+
+`--dimensions` exists only on `list`, accepting `workspaces` or `time` (default `time`).
+
+Differences between the two, all of which break scripts:
+
+- Output shape. `get` returns flat objects keyed by metric with a `timestamp`. `list` nests them under `dimensions` and a `values` array, so parse with `.values | add`.
+- Bucket size. `--help` claims a default of 86400 on both, but the CLI only sends the value when the flag is passed: `list` then buckets by day, `get` by hour. Always pass `--granularity`.
+- Zeroes. `get` reports a quiet metric as `0`. `list` drops it from `values`, and returns `{"data":[],"meta":{"total":0}}` when nothing recorded. Asking `list` for `requests_attack,requests_total_blocked` on a workspace that blocked nothing returns only `requests_attack`. Use `get` to read zeroes.
+
+See the fastly-ngwaf skill for using these counters to check whether enabled rules are actually blocking.
 
 ## Alerts
 

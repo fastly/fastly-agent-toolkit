@@ -1,28 +1,24 @@
 # Notification Integrations and Audit Log Event Mappings
 
-Two command groups work together: `fastly integration` defines *where* a notification goes, and `fastly audit-log event-mapping` defines *what* triggers one.
+`fastly integration` defines where a notification goes. `fastly audit-log event-mapping` defines what triggers one.
 Create the integration first, then map audit events to its ID.
 
-These are account-level and do not take `--service-id` or `--version`.
+Both are account-level. Neither takes `--service-id` or `--version`.
 
 ## Integrations
 
 ```bash
-# What integration types this account supports
 fastly integration list-types --json
-
-# List, describe, delete
-fastly integration list --type=slack --limit=50 --json
+fastly integration list --type=slack --limit=50 --cursor=CURSOR --json
 fastly integration describe INTEGRATION_ID --json
 fastly integration delete INTEGRATION_ID
 ```
 
-`describe`, `delete`, `update` and the webhook signing-key commands take the integration ID as a **positional argument**, not a flag.
-`list` paginates with `--cursor` and `--limit`.
+`describe`, `delete`, `update`, `get-signing-key` and `rotate-signing-key` take the ID as a positional argument, not a flag.
 
-### Creating an integration
+### Create
 
-Each type is its own subcommand with its own required flags:
+One subcommand per type, each with its own required flags:
 
 ```bash
 fastly integration slack create --name=sec-alerts --webhook="https://hooks.slack.com/..."
@@ -41,13 +37,17 @@ fastly integration jiraissue create --name=jira \
   --project-key=SEC --issue-type=Task
 ```
 
-Every type also has `update`, taking the ID positionally: `fastly integration slack update INTEGRATION_ID --webhook=...`.
+Every type has a matching `update`, ID positional: `fastly integration slack update INTEGRATION_ID --webhook=...`.
 
-A mailing list address has to confirm before it receives anything: `fastly integration mail confirm someone@example.com`.
+`--description` is optional on every `create` and `update`. `--site` on datadog defaults to the US site.
 
-Webhook integrations sign their payloads. Fetch or rotate the key with:
+### Mailing lists and webhook signing
 
 ```bash
+# A mailing list address receives nothing until it confirms
+fastly integration mail confirm someone@example.com
+
+# Webhook integrations sign their payloads
 fastly integration webhook get-signing-key INTEGRATION_ID --json
 fastly integration webhook rotate-signing-key INTEGRATION_ID --json
 ```
@@ -55,11 +55,10 @@ fastly integration webhook rotate-signing-key INTEGRATION_ID --json
 ## Audit log event mappings
 
 ```bash
-# Discover the valid scope and event types before creating a mapping
+# Valid values for --scope-type and --event-type
 fastly audit-log event-mapping list-scope-types --json
 fastly audit-log event-mapping list-event-types --scope-type=vcl --json
 
-# Create a mapping
 fastly audit-log event-mapping create \
   --name="prod service changes" \
   --scope-type=vcl \
@@ -68,21 +67,28 @@ fastly audit-log event-mapping create \
   --integration-id=INTEGRATION_ID \
   --json
 
-# List and filter
 fastly audit-log event-mapping list --scope-type=vcl --integration-id=INTEGRATION_ID --json
-
-# Describe and delete take --id, not a positional argument
 fastly audit-log event-mapping describe --id=MAPPING_ID --json
 fastly audit-log event-mapping delete --id=MAPPING_ID
 ```
 
-`--scope-type` is one of `account`, `vcl`, `wasm`, `ngwaf`.
-Omit `--scope-id` to cover every resource of that scope type; repeat the flag (or pass a comma-separated list) to cover several.
-`--event-type` and `--integration-id` work the same way.
+`describe`, `delete` and `update` take `--id`, not a positional argument. This is the opposite of `fastly integration`.
 
-**`update` replaces the whole mapping.** It requires `--id`, `--name`, `--scope-type`, `--event-type` and `--integration-id` even when only one of them changes, so read the current mapping with `describe --json` first and pass everything back:
+`--scope-type` is one of `account`, `vcl`, `wasm`, `ngwaf`.
+
+`--scope-id`, `--event-type` and `--integration-id` are repeatable and also accept comma-separated lists.
+Omit `--scope-id` to cover every resource of that scope type.
+
+`list` filters on `--integration-id`, `--mapping-status`, `--name`, `--scope-id`, `--scope-type` and `--sort`.
+
+### update replaces the whole mapping
+
+It requires `--id`, `--name`, `--scope-type`, `--event-type` and `--integration-id` even to change one field.
+Read the current mapping first and pass everything back:
 
 ```bash
+fastly audit-log event-mapping describe --id=MAPPING_ID --json
+
 fastly audit-log event-mapping update \
   --id=MAPPING_ID \
   --name="prod service changes" \
@@ -96,6 +102,6 @@ fastly audit-log event-mapping update \
 
 Ask the user for explicit confirmation before running these commands:
 
-- `fastly integration delete` - Silently stops every mapping pointing at that integration from delivering
+- `fastly integration delete` - Every mapping pointing at that integration silently stops delivering
 - `fastly audit-log event-mapping delete` - Stops notifications for those events
-- `fastly integration webhook rotate-signing-key` - Breaks any receiver still verifying with the old key
+- `fastly integration webhook rotate-signing-key` - Breaks receivers still verifying with the old key

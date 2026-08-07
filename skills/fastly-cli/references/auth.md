@@ -217,9 +217,10 @@ fastly service list
 ```
 
 **Priority order**:
-1. `--token` flag (with a raw API token)
+1. `--token` flag (raw API token or stored token name)
 2. `FASTLY_API_TOKEN` environment variable
-3. Default stored token (configured via `fastly auth use`)
+3. `fastly.toml` profile
+4. Default stored token (configured via `fastly auth use`)
 
 The global `--token` flag accepts either a raw API token or the name of a stored token. Pass `default` to use the default stored token. There is no `--profile` flag.
 

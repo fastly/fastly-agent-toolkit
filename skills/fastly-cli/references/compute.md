@@ -211,8 +211,8 @@ The local server uses Viceroy to emulate the Fastly Compute environment.
 
 ### Pre-installing Viceroy
 
-`fastly compute serve` downloads Viceroy on first use, which is awkward inside a container build or an offline CI runner.
-`fastly compute install-tools` downloads it ahead of time and takes no flags:
+`fastly compute serve` downloads Viceroy on first use. To download it ahead of time, for a container build or an
+offline CI runner, use `install-tools`. It takes no flags:
 
 ```bash
 fastly compute install-tools

@@ -64,7 +64,7 @@ fastly service version stage --version=VERSION --service-id SERVICE_ID --autoclo
 fastly service version unstage --version=VERSION --service-id SERVICE_ID
 ```
 
-`stage` accepts `--autoclone` too, so `--version active --autoclone` clones the active version and stages the clone in one step.
+`stage` accepts `--autoclone`, so `--version active --autoclone` clones the active version and stages the clone in one step.
 
 Use the modern `fastly service version activate` subcommand. The older `fastly service-version activate` (hyphenated) form is deprecated. When you do not know the exact version number, target the most recent one with `--version latest`.
 
