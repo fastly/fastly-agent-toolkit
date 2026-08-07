@@ -44,14 +44,24 @@ Almost every mistake with Fastly stats comes from mixing these up. Internalize t
 Note the naming split: classic historical uses `from`/`to`/`by`; Inspector uses
 `start`/`end`/`downsample`. Same idea, different words — the API rejects the wrong one.
 
+> **Never infer a time base from an endpoint name.** `ts/h` is the last **120 seconds**, not an hour
+> — reading the `h` as "hour" inflates every per-unit-time figure by 30×. Derive the window from the
+> payload's own `recorded` timestamps and **print it beside every absolute figure**. Prefer ratios and
+> same-window comparisons over extrapolated rates: they survive a misjudged window, rates don't.
+>
+> **Check the aggregation shape before you sum.** Ratio fields (`hit_ratio`, `edge_hit_ratio`,
+> `origin_offload`) are **gauges** — summing them across samples yields a plausible-looking but
+> meaningless number. Recompute from the underlying counters:
+> [Aggregation shape](references/fields.md#aggregation-shape-counter-vs-gauge-vs-histogram).
+
 One worked call per shape:
 
 ```bash
-KEY="Fastly-Key: $(fastly auth token)"   # see Authentication below
+KEY="Fastly-Key: $(fastly auth token --quiet)"   # see Authentication below
 
 # Classic historical — one service, by day
 curl -sS -H "$KEY" \
-  "https://api.fastly.com/stats/service/$SID?from=yesterday&by=day"
+  "https://api.fastly.com/stats/service/$SID?from=1%20day%20ago&by=day"
 
 # Inspector — domain traffic grouped by domain, hourly
 curl -sS -H "$KEY" \
@@ -68,8 +78,9 @@ Full endpoint/parameter/field detail lives in the references:
 | Historical Stats API | [references/historical-stats-api.md](references/historical-stats-api.md) | Aggregated stats, usage/billing, regions — `/stats*` on `api.fastly.com` |
 | Origin & Domain Inspector | [references/inspector-api.md](references/inspector-api.md) | Per-origin or per-domain metrics, latency, `group_by`, cursor pagination |
 | Real-Time analytics API | [references/realtime-api.md](references/realtime-api.md) | Live per-second data, poll loops, `rt.fastly.com` |
-| Measurement field catalog | [references/fields.md](references/fields.md) | Looking up what a metric name means or which API exposes it |
-| Debugging | [references/debugging.md](references/debugging.md) | 401/403, empty data, inspector-not-enabled, NDJSON, stale Timestamp |
+| Measurement field catalog | [references/fields.md](references/fields.md) | Looking up what a metric name means, its aggregation shape, or shield/tier field directions |
+| Change verification method | [references/verification-method.md](references/verification-method.md) | Proving a config change did what you intended — baselines, controls, σ, cross-checks |
+| Debugging | [references/debugging.md](references/debugging.md) | 401/403, empty data, inspector-not-enabled, NDJSON, stale Timestamp, silently wrong scope |
 
 ## Authentication
 
@@ -78,11 +89,17 @@ Every raw API call needs the header `Fastly-Key: <API_TOKEN>`. The CLI reads `--
 services; usage/billing endpoints need account-level read access.
 
 Feed a token to `curl` without leaking it into the conversation. `fastly auth token` prints the
-active token only to a pipe/substitution (it refuses a TTY), which is exactly what you want:
+active token only to a pipe/substitution (it refuses a TTY), which is exactly what you want — but
+**always add `--quiet`**:
 
 ```bash
-curl -sS -H "Fastly-Key: $(fastly auth token)" "https://api.fastly.com/stats/regions"
+curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" "https://api.fastly.com/stats/regions"
 ```
+
+**`--quiet` is not optional.** Without it, a pending CLI upgrade appends an "A new version…" notice
+to stdout, contaminating the header and causing `curl: (43)` or a spurious HTTP 401 even though
+`fastly whoami` works. Intermittent, so it breaks scripts that worked yesterday — see
+[debugging.md](references/debugging.md#401-unauthorized).
 
 Token-safety rules (they exist because agent transcripts are logged and often shared):
 
@@ -90,7 +107,7 @@ Token-safety rules (they exist because agent transcripts are logged and often sh
   you need a specific stored token by name, capture it inside a substitution:
   `TOKEN=$(fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}')`.
 - Omit `curl -v` on authenticated calls — verbose mode echoes the `Fastly-Key` header.
-- Never `echo` the token or paste it into a message. Prefer `$(fastly auth token)` inline.
+- Never `echo` the token or paste it into a message. Prefer `$(fastly auth token --quiet)` inline.
 
 ## Time and units conventions
 
@@ -114,15 +131,13 @@ machines and regions.
   [references/historical-stats-api.md](references/historical-stats-api.md#usage--billing-endpoints)
   and Fastly's <https://docs.fastly.com/products/how-we-calculate-your-delivery-bill>.
 
-**Latency/timing lives in two places, measuring different things:**
+**Latency/timing lives in three places**, answering different questions — pick by which side you're
+investigating:
 
-- *Edge performance* — classic historical stats expose aggregate processing times `hits_time`,
-  `miss_time`, `pass_time` (seconds), i.e. how long Fastly spent serving requests at the edge.
-- *Origin performance* — Origin Inspector exposes per-origin response **latency histograms**
-  (buckets from ~0 ms to 60 s+), i.e. how slow your backends are.
-
-They answer different questions ("is the edge slow?" vs "is an origin slow?") and are both useful;
-pick based on which side you're investigating.
+- *Edge* — `hits_time`, `miss_time`, `pass_time` (aggregate seconds Fastly spent serving requests).
+- *Origin* — Origin Inspector's per-origin latency histograms (~0 ms to 60 s+ buckets).
+- *Per-POP* — `miss_histogram`, a `{millisecond_bucket: count}` dict. Often the **only** per-POP
+  latency source, since `miss_time` is frequently unpopulated per POP.
 
 ## Choose the right API
 
@@ -138,6 +153,8 @@ Pick the row that matches the question, then jump to the linked reference.
 | Usage broken down per service | `api` `GET /stats/usage_by_service` | `fastly stats usage --by-service` |
 | Month-to-date billable usage | `api` `GET /stats/usage_by_month` | (API only) |
 | Valid region codes | `api` `GET /stats/regions` | `fastly stats regions` |
+| POP catalog: code → region, shield name | `api` `GET /datacenters` | `fastly pops` |
+| One POP's history | `api` `GET /stats/service/{id}?datacenter=SJC` | (API only — no `--datacenter`) |
 | Per-origin metrics / origin latency | `api` `GET /metrics/origins/services/{id}` | `fastly stats origin-inspector -s ID` |
 | Per-domain metrics | `api` `GET /metrics/domains/services/{id}` | `fastly stats domain-inspector -s ID` |
 | Live per-second service data | `rt` `GET /v1/channel/{id}/ts/{ts}` | `fastly stats realtime -s ID` |
@@ -157,7 +174,7 @@ then `fastly.toml`) or `--service-name`.
 
 | Subcommand | Scope | Key flags |
 | --- | --- | --- |
-| `historical` | service | `--from`, `--to`, `--by minute\|hour\|day`, `--region`, `--field` |
+| `historical` | service | `--from`, `--to`, `--by minute\|hour\|day`, `--region`, `--field` (**no `--datacenter`** — use the API for per-POP) |
 | `aggregate` | account | `--from`, `--to`, `--by`, `--region` |
 | `usage` | account | `--from`, `--to`, `--by`, `--region`, `--by-service` |
 | `regions` | account | (none) |
@@ -181,36 +198,30 @@ fastly stats historical -s "$SID" --by day --from "7 days ago" --json \
 
 ## Building raw request URLs
 
-When you are not using the CLI (a script, another language, or handing a URL to someone), build
-the URL from three parts: host + path + query string. The references give the exact path and
-query params per endpoint; the pattern is always:
+Build from host + path + query string — see the worked call per shape above, and the references for
+exact params. `from`/`to`/`start`/`end` accept a Unix timestamp; the classic `/stats*` endpoints also
+accept Chronic-style relative strings (`yesterday`, `two weeks ago`), URL-encoding any spaces
+(`from=two%20weeks%20ago`).
 
-```bash
-# Historical: api.fastly.com, from/to/by, flat {status,meta,msg,data}
-curl -sS -H "Fastly-Key: $(fastly auth token)" \
-  "https://api.fastly.com/stats/service/$SID?from=2026-07-01T00:00:00Z&to=2026-07-08T00:00:00Z&by=day&region=europe"
-
-# Inspector: api.fastly.com, start/end/downsample/metric/group_by, cursor paginated
-curl -sS -H "Fastly-Key: $(fastly auth token)" \
-  "https://api.fastly.com/metrics/origins/services/$SID?start=2026-07-01T00:00:00Z&end=2026-07-02T00:00:00Z&downsample=hour&metric=responses,status_5xx&group_by=host"
-
-# Real-time: rt.fastly.com, poll ts/{n}, chain the returned Timestamp
-curl -sS -H "Fastly-Key: $(fastly auth token)" "https://rt.fastly.com/v1/channel/$SID/ts/0"
-```
-
-`from`/`to`/`start`/`end` accept a Unix timestamp; the classic `/stats*` endpoints also accept
-Chronic-style relative strings like `yesterday` or `two weeks ago`. URL-encode any spaces in
-relative strings (`from=two%20weeks%20ago`).
+**`from=yesterday` does not mean midnight** — it resolves to 12:00:00 UTC of the previous day,
+silently excluding that morning (`1 day ago` is a correct −24h). **Always read back
+`meta.from`/`meta.to`** to see the window the server used, and prefer computed timestamps when
+scripting. See [debugging.md](references/debugging.md#a-relative-window-silently-covers-the-wrong-hours).
 
 ## Common workflows
 
-**Cache hit ratio (last 24h, one service).** `hit_ratio` is already a 0–1 ratio:
+**Cache hit ratio (last 24h, one service).** `hit_ratio` is already a 0–1 ratio. Use `1 day ago`, not
+`yesterday` — the latter starts at noon:
 
 ```bash
-curl -sS -H "Fastly-Key: $(fastly auth token)" \
-  "https://api.fastly.com/stats/service/$SID?from=yesterday&by=hour" \
+curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
+  "https://api.fastly.com/stats/service/$SID?from=1%20day%20ago&by=hour" \
   | jq '.data[] | {start_time, hit_ratio}'
 ```
+
+For a **window** hit ratio rather than per-bucket values, recompute from the `hits`/`miss` counters —
+do not average the per-bucket `hit_ratio` values. Copy-paste snippet in
+[fields.md](references/fields.md#aggregation-shape-counter-vs-gauge-vs-histogram).
 
 **5xx error rate (last hour).** Classic historical exposes `status_5xx` and `requests`:
 
@@ -219,16 +230,15 @@ fastly stats historical -s "$SID" --by hour --from "1 hour ago" --json \
   | jq -s '.[-1] | {requests, status_5xx, pct: (.status_5xx / .requests * 100)}'
 ```
 
-**Bandwidth across all services (last month).** The CLI has no cross-service rollup; loop
-`fastly service list`. Zero-traffic services still appear in the list but may be omitted by the
-stats response — always drive the loop from the service list, defaulting missing sums to 0. Report
-in decimal GB (`/1e9`), not GiB (see Time and units conventions):
+**Bandwidth across all services (last month).** The CLI has no cross-service rollup. Drive the loop
+from `fastly service list`, not from a stats response — zero-traffic services are omitted from stats
+but must still be counted (hence `add // 0`). Report decimal GB (`/1e9`), not GiB:
 
 ```bash
 fastly service list --json | jq -r '.[] | "\(.ServiceID)|\(.Name)"' | while IFS='|' read -r id name; do
-  bytes=$(fastly stats historical -s "$id" --by day --from "30 days ago" --json \
-    | jq -s '[.[].bandwidth] | add // 0')
-  printf '%.2f GB\t%s\n' "$(echo "$bytes / 1000000000" | bc -l)" "$name"
+  gb=$(fastly stats historical -s "$id" --by day --from "30 days ago" --json \
+        | jq -s '([.[].bandwidth] | add // 0) / 1e9')
+  printf '%.3f GB\t%s\n' "$gb" "$name"     # 3dp: a low-traffic service is not 0
 done | sort -rn
 ```
 
@@ -236,15 +246,14 @@ This is raw edge `bandwidth`. If the goal is the **bill**, query billable usage 
 `fastly stats usage --by-service` or `GET /stats/usage_by_service` (add `billable_units=true` on
 `usage_by_month`) — bandwidth already in GB, requests already in units of 10,000.
 
-**Real-time requests-per-second.** Quickest path is the CLI — `fastly stats realtime -s ID --json`
-streams the same feed (NDJSON, one second per line) and handles `Timestamp` chaining for you. For
-a custom watch (per-POP breakdown, derived error rate), poll the raw endpoint: `ts/0` once, then
-feed the returned `Timestamp` back in a loop; each response yields one entry per elapsed second.
-Full loop in [references/realtime-api.md](references/realtime-api.md).
+**Real-time requests-per-second.** Quickest path is `fastly stats realtime -s ID --json` (NDJSON, one
+second per line; chains `Timestamp` for you). For a per-POP breakdown or derived error rate, poll the
+raw endpoint — or grab the last 120 s in one call with `ts/h`. See
+[references/realtime-api.md](references/realtime-api.md).
 
-**Per-domain traffic with pagination.** Inspector responses cap at `limit` rows (max 200) and
-return `meta.next_cursor`; pass it back as `cursor` until it is null. See
-[references/inspector-api.md](references/inspector-api.md).
+**Per-domain traffic with pagination.** Inspector caps at `limit` rows (max 200) and returns
+`meta.next_cursor`; feed it back as `cursor` until null.
+See [references/inspector-api.md](references/inspector-api.md).
 
 ## Pinpoint issues with POP-level (datacenter) data
 
@@ -253,27 +262,48 @@ service-wide number that looks healthy routinely hides a single POP erroring or 
 spike — the aggregate averages it away. Every source exposes POP-level granularity:
 
 - Real-time: the `datacenter` map in each record (metrics keyed by POP code).
-- Historical stats: `datacenter=SJC,LHR` filters, and `/stats` is reported per region.
+- Historical stats: `datacenter=SJC,LHR` filters — a **real filter**, so per-POP *history* exists too,
+  at `by=minute|hour|day`. Never send `region=` alongside it: `region` silently wins and you get
+  whole-region numbers with `meta.datacenter: null`. Assert `meta` echoes your filter.
 - Inspector: `group_by=datacenter` (or `region`) alongside `host`/`domain`.
 
 So when the question is "why is X bad", reach for POP granularity first — it turns "5xx are up"
 into "5xx are up *at LHR*", which is usually the actual lead.
 
-**Watch for Shield POPs in the breakdown.** If the service uses shielding, one POP is designated
-the shield — it sits between the edge POPs and your origin, so its entry in a `datacenter`
-breakdown represents edge-to-shield (origin-shielding) traffic, not client-facing traffic, and
-reads very differently from an edge POP. Identify it with `fastly pops` (the `SHIELD` column) and
-the service's shield setting; the `shield` stat field counts shield-served requests. Call the
-shield POP out explicitly when presenting per-POP numbers so it isn't mistaken for a client edge.
+**Capture a per-POP baseline *before* changing anything.** `by=minute` is retained only ~1 day and
+real-time only 120 seconds, so fine-grained "before" data ages out. Make the snapshot step 1 of any
+change verification — see
+[debugging.md](references/debugging.md#i-changed-something-and-cannot-recover-the-pre-change-per-pop-state).
+
+**Watch for Shield POPs.** A shield POP's `datacenter` entry carries edge-to-shield traffic, not
+client traffic, so it reads very differently from an edge POP. Identify candidates via `fastly pops`
+(`SHIELD` column) or `GET /datacenters` plus the backend `shield` settings, and call them out when
+presenting per-POP numbers.
+
+**To read the tier topology, compare `shield_fetches` against `origin_fetches` per POP** — nothing
+else says whether a POP forwards upstream to another tier (`shield_fetches` dominant) or terminates at
+origin (`origin_fetches` dominant). Three traps produce confidently wrong answers here, all documented
+with worked live numbers in the references:
+
+- **`shield_resp_body_bytes` vs `shield_fetch_resp_body_bytes`** differ by *direction* — bytes served
+  **as** a shield vs received **from** one. Conflating them yields a negative byte offload.
+  ([fields.md](references/fields.md#shield--tier-fields))
+- **`region` (`US-East`, `North-America`) is not `stats_region` (`usa`, `europe`)**, and `region=`
+  takes the latter. `North-America` holds only four Canadian POPs and **no US POPs**, so region-level
+  stats cannot isolate Canada — filter by POP code.
+  ([historical-stats-api.md](references/historical-stats-api.md#three-different-groupings-easily-confused))
+- **Verifying a change?** Baselines, control POPs, σ, and cross-checks are in
+  [verification-method.md](references/verification-method.md).
 
 ## Limits and cautions
 
-- **Origin Inspector and Domain Inspector are paid add-ons** and must be enabled per service. If
-  they are not, the endpoints return an error rather than empty data — see
-  [references/debugging.md](references/debugging.md).
-- **Real-time: one outstanding request at a time.** The endpoint long-polls and is cached with a
-  1-second TTL; sequential polling never hits limits, but parallel polling can be throttled.
-- **Zero-traffic services may be absent from stats responses.** Enumerate services from
-  `fastly service list`, not from a stats response, when you need full coverage.
-- **Historical data lags slightly and is subject to late aggregation.** The most recent bucket
-  can grow for a few minutes after its period ends; prefer real-time for up-to-the-second numbers.
+- **Origin/Domain Inspector are paid add-ons**, enabled per service; if not entitled the endpoints
+  error rather than return empty data ([debugging.md](references/debugging.md)).
+- **Real-time: one outstanding request at a time.** It long-polls with a 1-second TTL — sequential
+  polling is fine, parallel polling can be throttled.
+- **Zero-traffic services may be absent from stats responses.** Enumerate from
+  `fastly service list` when you need full coverage.
+- **Historical data lags.** The most recent bucket keeps growing for a few minutes after its period
+  ends — don't read the final in-progress bucket; use real-time for up-to-the-second numbers.
+- **A per-POP baseline is unrecoverable after the fact.** `by=minute` is retained ~1 day, real-time
+  120 s. Snapshot before you change anything.

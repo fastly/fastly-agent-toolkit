@@ -73,7 +73,7 @@ concurrent polls for the same service can be throttled.
 A minimal, correct loop that never busy-waits and never parallel-polls:
 
 ```bash
-KEY="Fastly-Key: $(fastly auth token)"
+KEY="Fastly-Key: $(fastly auth token --quiet)"
 ts=0
 while :; do
   resp=$(curl -sS -H "$KEY" "https://rt.fastly.com/v1/channel/$SID/ts/$ts")
@@ -104,15 +104,64 @@ does not surface as cleanly.
 
 ## Convenience history forms
 
-The origin/domain real-time endpoints also offer `ts/h` (last 120 seconds) and
-`ts/h/limit/{n}` (last `n` entries, `n` ≤ 120) — handy for backfilling a chart without a poll
-loop. See [inspector-api.md](inspector-api.md#real-time-rtfastlycom). The service-level
-`/v1/channel` endpoint is intended to be polled from `ts/0`.
+> **Never infer a time base from an endpoint name.** `ts/h` is **120 seconds**, not an hour. Derive
+> the window from the payload's own `recorded` timestamps (`min`/`max`) and print it next to every
+> absolute figure you report. Reading the `h` as "hour" inflates any per-unit-time figure by 30×.
+
+All three real-time endpoints — `/v1/channel`, `/v1/origins`, `/v1/domains` — support:
+
+```text
+GET /v1/channel/{service_id}/ts/h            # up to the last 120 seconds
+GET /v1/channel/{service_id}/ts/h/limit/{n}  # last n entries, n <= 120
+```
+
+`ts/h` on `/v1/channel` is **verified working** — it returns up-to-120 one-second records in a single
+call, which makes it the cheapest way to grab a two-minute per-POP snapshot without running a poll
+loop. `h` is a recognized token, not a coincidence of parsing: a bogus value returns HTTP 400
+`"unable to convert timestamp to int"`, whereas `ts/h` on an idle service returns HTTP 200 with
+`"Error": "No data available, please retry"`.
+
+`ts/h` returns only seconds that **had traffic** — a low-traffic service yields far fewer than 120
+records, so never assume `Data` has 120 entries or that `length` is your window in seconds.
+
+**Always derive and print the window.** Do it from the payload, never from the endpoint name:
+
+```bash
+curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
+  "https://rt.fastly.com/v1/channel/$SID/ts/h" \
+  | jq '{samples: (.Data|length),
+         from: ([.Data[].recorded]|min|strftime("%H:%M:%SZ")),
+         to:   ([.Data[].recorded]|max|strftime("%H:%M:%SZ")),
+         span_s: (([.Data[].recorded]|max) - ([.Data[].recorded]|min) + 1),
+         requests: ([.Data[].aggregated.requests // 0]|add)}'
+```
+
+```json
+{ "samples": 5, "from": "03:04:13Z", "to": "03:04:46Z", "span_s": 34, "requests": 125 }
+```
+
+125 requests over a **34-second** span — reporting that as an hourly rate, or dividing by 120, are
+both wrong. Only `span_s` from the payload gets it right.
+
+**Prefer ratios and same-window comparisons over extrapolated rates.** A hit ratio, a share of total
+traffic, or an A-vs-B split taken from one payload is immune to misjudging the window, because
+numerator and denominator come from the same samples. Only absolute per-unit-time framing breaks.
+When you must publish an absolute rate, show the derived window beside it.
+
+See also [inspector-api.md](inspector-api.md#real-time-rtfastlycom) for the origin/domain forms.
 
 ## Real-time vs historical field differences
 
 Real-time exposes largely the same measurements as historical stats, plus a few live-only
 counters (e.g. Fanout and KV-store operation counts). It does **not** offer arbitrary `by`/region
 query filtering — you get every second for the whole service and filter client-side using the
-`datacenter` breakdown. For flexible time windows, regions, or fields, use historical. Field
-meanings are catalogued in [fields.md](fields.md).
+`datacenter` breakdown. For flexible time windows, regions, or fields, use historical — including
+**per-POP history**, which the `datacenter=` filter does support (see
+[historical-stats-api.md](historical-stats-api.md#per-pop-history-works--datacenter-is-a-real-filter));
+real-time is not your only route to per-POP numbers, it is only the route to *live* ones.
+
+Field meanings and — critically for real-time — **aggregation shape** are catalogued in
+[fields.md](fields.md). Before summing anything across a `ts/h` series, check whether the field is a
+counter or a gauge: summing `origin_offload` or `hit_ratio` across samples produces a plausible-looking
+number that is meaningless. See
+[Aggregation shape](fields.md#aggregation-shape-counter-vs-gauge-vs-histogram).

@@ -82,7 +82,7 @@ Responses return at most `limit` timeseries rows. If `meta.next_cursor` is non-n
 next page with that value as `cursor`; stop when it is null.
 
 ```bash
-KEY="Fastly-Key: $(fastly auth token)"
+KEY="Fastly-Key: $(fastly auth token --quiet)"
 url="https://api.fastly.com/metrics/origins/services/$SID?start=2026-07-01T00:00:00Z&end=2026-07-02T00:00:00Z&downsample=hour&group_by=host&limit=200"
 cursor=""
 while :; do
