@@ -2,6 +2,27 @@
 
 Access historical, real-time, and aggregated metrics for Fastly services.
 
+## Rules That Decide Whether The Answer Is Right
+
+1. `bandwidth` is bytes delivered over the bucket, not bits and not a rate. Fastly reports and bills decimal units,
+   so GB here means 10^9 bytes, not GiB.
+2. A bucket is returned only if it falls wholly inside the window and has already been aggregated. Relative
+   windows are offsets from request time, so they open and close mid-bucket and both ragged ends are dropped:
+   `--from "N days ago" --by day` returns N-1 buckets, never N. Below `--by day`, publication lag costs the
+   newest buckets too, so the count is not stable between two identical calls. Pass explicit UTC boundaries
+   whenever the count matters (`--from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z` returns all 31 days of
+   July), and check the first and last `start_time`.
+3. `hit_ratio` is `hits / (hits + miss)`. It and `origin_offload` are per-bucket gauges: to cover several buckets,
+   sum the counters and recompute. Never sum or average the ratios.
+
+```bash
+# Cache hit ratio for one calendar month, recomputed from counters
+fastly stats historical -s SERVICE_ID --json --by day \
+  --from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z \
+  | jq -s '(map(.hits)|add // 0) as $h | (map(.miss)|add // 0) as $m
+           | {hits:$h, miss:$m, hit_ratio: (if $h+$m > 0 then $h/($h+$m) else null end)}'
+```
+
 ## Command Overview
 
 | Command                  | Description                    |
@@ -21,22 +42,22 @@ Access historical, real-time, and aggregated metrics for Fastly services.
 and `--json`, but nothing else: granularity and selection use different flag names on each side.
 Reaching for `--by` or `--field` on an inspector, or `--datacenter` on `historical`, fails with a usage error.
 
-| Flag                       | historical | aggregate | usage | domain-inspector | origin-inspector |
-| -------------------------- | ---------- | --------- | ----- | ---------------- | ---------------- |
-| `--from` / `--to`          | yes        | yes       | yes   | yes              | yes              |
-| `--by` (minute/hour/day)   | yes        | yes       | yes   | no               | no               |
-| `--downsample`             | no         | no        | no    | yes              | yes              |
-| `--field` (single field)   | yes        | no        | no    | no               | no               |
-| `--metric` (repeatable)    | no         | no        | no    | yes              | yes              |
-| `--region`                 | one value  | one value | one value | repeatable   | repeatable       |
-| `--datacenter`             | no         | no        | no    | repeatable       | repeatable       |
-| `--domain`                 | no         | no        | no    | repeatable       | no               |
-| `--host`                   | no         | no        | no    | no               | repeatable       |
-| `--group-by`               | no         | no        | no    | repeatable       | repeatable       |
-| `--limit` / `--cursor`     | no         | no        | no    | yes              | yes              |
-| `--by-service`             | no         | no        | yes   | no               | no               |
-| `--service-id` / `--service-name` | yes | no        | no    | yes              | yes              |
-| `--json`                   | yes        | yes       | yes   | yes              | yes              |
+| Flag                              | historical | aggregate | usage     | domain-inspector | origin-inspector |
+| --------------------------------- | ---------- | --------- | --------- | ---------------- | ---------------- |
+| `--from` / `--to`                 | yes        | yes       | yes       | yes              | yes              |
+| `--by` (minute/hour/day)          | yes        | yes       | yes       | no               | no               |
+| `--downsample`                    | no         | no        | no        | yes              | yes              |
+| `--field` (single field)          | yes        | no        | no        | no               | no               |
+| `--metric` (repeatable)           | no         | no        | no        | yes              | yes              |
+| `--region`                        | one value  | one value | one value | repeatable       | repeatable       |
+| `--datacenter`                    | no         | no        | no        | repeatable       | repeatable       |
+| `--domain`                        | no         | no        | no        | repeatable       | no               |
+| `--host`                          | no         | no        | no        | no               | repeatable       |
+| `--group-by`                      | no         | no        | no        | repeatable       | repeatable       |
+| `--limit` / `--cursor`            | no         | no        | no        | yes              | yes              |
+| `--by-service`                    | no         | no        | yes       | no               | no               |
+| `--service-id` / `--service-name` | yes        | no        | no        | yes              | yes              |
+| `--json`                          | yes        | yes       | yes       | yes              | yes              |
 
 `stats realtime` takes no filtering flags at all: only `--service-id` / `--service-name` and `--json`.
 `stats regions` takes no flags whatsoever, not even `--json`.
@@ -99,20 +120,20 @@ output of `historical` and `aggregate` (which carry well over a hundred each). T
 `stats usage` is shaped differently again: its JSON is an object keyed by region, and each region carries only
 `bandwidth`, `compute_requests` and `requests`.
 
-| Field        | Description               |
-| ------------ | ------------------------- |
-| `requests`   | Total requests            |
-| `hits`       | Cache hits                |
-| `miss`       | Cache misses              |
-| `pass`       | Requests passed to origin |
-| `bandwidth`  | Total bandwidth (bytes)   |
-| `status_1xx` | 1xx responses             |
-| `status_2xx` | 2xx responses             |
-| `status_3xx` | 3xx responses             |
-| `status_4xx` | 4xx responses             |
-| `status_5xx` | 5xx responses             |
-| `hit_ratio`  | Cache hit ratio           |
-| `errors`     | Error count               |
+| Field        | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| `requests`   | Total requests                                               |
+| `hits`       | Cache hits                                                   |
+| `miss`       | Cache misses                                                 |
+| `pass`       | Requests passed to origin                                    |
+| `bandwidth`  | Bytes delivered (decimal GB, not GiB)                        |
+| `status_1xx` | 1xx responses                                                |
+| `status_2xx` | 2xx responses                                                |
+| `status_3xx` | 3xx responses                                                |
+| `status_4xx` | 4xx responses                                                |
+| `status_5xx` | 5xx responses                                                |
+| `hit_ratio`  | `hits / (hits + miss)` per bucket; recompute, do not average |
+| `errors`     | Error count                                                  |
 
 ## Domain Inspector Statistics
 
@@ -274,10 +295,10 @@ Use IP ranges for:
 ### Check Cache Performance
 
 ```bash
-# Get hit ratio over last day
-fastly stats historical \
-  --service-id SERVICE_ID \
-  --from "24 hours ago" \
+# Hit ratio over the last 24 hours, recomputed from counters
+fastly stats historical --service-id SERVICE_ID --json --by hour --from "24 hours ago" \
+  | jq -s '(map(.hits)|add // 0) as $h | (map(.miss)|add // 0) as $m
+           | if $h+$m > 0 then $h/($h+$m) else null end'
 ```
 
 ### Monitor Error Rates
@@ -294,17 +315,19 @@ fastly stats realtime --service-id SERVICE_ID
 ### Bandwidth Analysis
 
 ```bash
-# Total bandwidth over last 7 days
+# Total bandwidth in GB over a closed calendar window
 fastly stats historical --service-id SERVICE_ID --json --by day \
-  --from "7 days ago" | jq -s '[.[].bandwidth] | add'
+  --from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z \
+  | jq -s '([.[].bandwidth] | add // 0) / 1e9'
 ```
 
 ### Regional Traffic Analysis
 
 ```bash
-# Bandwidth from Europe
-fastly stats historical --service-id SERVICE_ID --json --by day \
-  --region europe | jq -s '[.[].bandwidth] | add'
+# Bandwidth in GB from Europe
+fastly stats historical --service-id SERVICE_ID --json --by day --region europe \
+  --from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z \
+  | jq -s '([.[].bandwidth] | add // 0) / 1e9'
 ```
 
 ## JSON Output Format
@@ -318,10 +341,10 @@ fastly stats historical --service-id SERVICE_ID
 # JSON output — one JSON object per line
 fastly stats historical --service-id SERVICE_ID --json --by day
 
-# Sum bandwidth across all days
+# Sum bandwidth across all days, in GB
 fastly stats historical --service-id SERVICE_ID --json --by day \
-  --from "2026-02-01" --to "2026-03-01" \
-  | jq -s '[.[].bandwidth] | add'
+  --from 2026-02-01T00:00:00Z --to 2026-03-01T00:00:00Z \
+  | jq -s '([.[].bandwidth] | add // 0) / 1e9'
 
 # Extract per-day request counts
 fastly stats historical --service-id SERVICE_ID --json --by day \
@@ -330,14 +353,15 @@ fastly stats historical --service-id SERVICE_ID --json --by day \
 
 ## Cross-Service Aggregation
 
-The CLI has no built-in cross-service stats. Loop over services to compare:
+The CLI has no built-in cross-service stats. Loop over services to compare. Drive the loop from `service list`, not
+from a stats response: services with zero traffic in the window are omitted from stats output entirely.
 
 ```bash
 fastly service list --json | jq -r '.[] | "\(.ServiceID)|\(.Name)"' | while IFS='|' read -r id name; do
-  bw=$(fastly stats historical -s "$id" --json --by day \
-    --from "2026-02-01" --to "2026-03-01" \
-    | jq -s '[.[].bandwidth] | add // 0')
-  echo "${bw} ${name}"
+  gb=$(fastly stats historical -s "$id" --json --by day \
+    --from 2026-02-01T00:00:00Z --to 2026-03-01T00:00:00Z \
+    | jq -s '([.[].bandwidth] | add // 0) / 1e9')
+  printf '%.3f\t%s\n' "$gb" "$name"
 done | sort -rn
 ```
 

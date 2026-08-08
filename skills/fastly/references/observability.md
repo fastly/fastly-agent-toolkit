@@ -8,7 +8,11 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 **120-second real-time window.** The `/ts/h` endpoints return data for the 120 seconds preceding the latest available timestamp. Use `/ts/{timestamp}` with the returned `Timestamp` for continuous polling beyond this window.
 
-**Metric aggregation.** `bandwidth` is a computed total of multiple byte fields. `hit_ratio` is the ratio of cache hits to cache misses (between 0 and 1). `origin_offload` measures the fraction of bytes served from cache. These derived fields are provided by the API, not computed client-side.
+**Metric aggregation.** `bandwidth` is bytes delivered over the bucket, summed from several byte fields: not bits, not a rate. Fastly reports and bills decimal units, so GB here means 10^9 bytes, not GiB.
+
+**Ratios are per-bucket gauges.** `hit_ratio` is `hits / (hits + miss)`, not hits over misses. `origin_offload` is the fraction of bytes served from cache. The API computes both per bucket; to cover several buckets, sum the counters and recompute. Never sum or average the ratios.
+
+**Relative `from` drops buckets.** A bucket is returned only if it falls wholly inside the window and has already been aggregated. Relative values are offsets from the request time, so the window opens and closes mid-bucket and both ragged ends are discarded: `from=N+days+ago&by=day` returns N-1 buckets, never N. Below `day`, publication lag costs the newest buckets on top of that, so the count is not even stable between two identical calls. Explicit UTC boundaries return every bucket in the range. `from=yesterday` is 12:00 UTC, not midnight; `from=today` is now, so the window is empty. Confirm with `meta.from` and `meta.to`.
 
 **Domain Inspector, Origin Inspector, and Log Explorer & Insights require enablement.** These are optional upgrades that must be enabled per service before their endpoints return data.
 
@@ -18,46 +22,37 @@ Product slugs: `domain_inspector`, `origin_inspector`, `log_explorer_insights`. 
 
 ## Historical Stats
 
-Query cached statistics grouped by service, aggregated across services, or filtered by field. Supports `day`, `hour`, and `minute` resolution via the `by` parameter. Filter by `region`, `datacenter`, or `services`.
+Use `fastly stats` from the `fastly-cli` skill: `historical` for one service (`--field` to narrow to one metric), `aggregate` across the account, `usage` and `usage --by-service` for usage totals, `regions` for the region codes. It covers the whole `/stats` surface except the four cases below.
 
-| Action                          | Method | Endpoint                                    |
-| ------------------------------- | ------ | ------------------------------------------- |
-| Get stats (all services)        | `GET`  | `/stats`                                    |
-| Get single field (all services) | `GET`  | `/stats/field/{field}`                      |
-| Get aggregated stats            | `GET`  | `/stats/aggregate`                          |
-| Get stats for a service         | `GET`  | `/stats/service/{service_id}`               |
-| Get single field for a service  | `GET`  | `/stats/service/{service_id}/field/{field}` |
-| Get usage by region             | `GET`  | `/stats/usage`                              |
-| Get usage by service            | `GET`  | `/stats/usage_by_service`                   |
-| Get month-to-date usage         | `GET`  | `/stats/usage_by_month`                     |
-| Get region codes                | `GET`  | `/stats/regions`                            |
-| Get service stats summary       | `GET`  | `/service/{service_id}/stats/summary`       |
+| Need                          | Request                                                           |
+| ----------------------------- | ----------------------------------------------------------------- |
+| Per-POP history               | `/stats/service/{id}?datacenter=SJC,LHR&by=day`                   |
+| Billable usage for a month    | `/stats/usage_by_month?year=2026&month=07&billable_units=true`    |
+| Every service in one call     | `/stats` or `/stats/field/{field}`                                |
+| Per-POP summary, last 35 days | `/service/{id}/stats/summary?start_time={epoch}&end_time={epoch}` |
+
+`datacenter=` is missing from the CLI's SDK input type, not just from its flags, so no flag combination reaches it. `stats historical` always resolves a service ID and errors without one, which is why the two account-wide paths need `curl`. `usage_by_month` is the only source of billable units, which count delivery plus origin traffic and differ from raw edge bandwidth.
+
+`/service/{id}/stats/summary` follows none of the conventions above: `start_time` and `end_time` are required and must be epoch seconds (ISO-8601 returns `invalid start_time`), it is minutely-backed so the window cannot start more than 35 days back, and it answers `{"stats": {"<POP>": {...}}}` with no `data`/`meta`/`status` envelope. One aggregate per POP, not a time series, so it does not replace `datacenter=`.
 
 ```bash
-# Get historical stats for a service, last 7 days, daily resolution
+# Per-POP daily history for a closed month
 curl -s -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/stats/service/$SERVICE_ID?from=7+days+ago&by=day"
-
-# Get a single field across all services
-curl -s -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/stats/field/hit_ratio?from=1+day+ago&by=hour"
+  "https://api.fastly.com/stats/service/$SERVICE_ID?from=2026-07-01T00:00:00Z&to=2026-08-01T00:00:00Z&by=day&datacenter=SJC"
 ```
 
 ## Real-Time Stats
 
-Per-second stats for a single service. Hosted on `rt.fastly.com` (not `api.fastly.com`). Pass `0` as timestamp for the latest complete second. Use the returned `Timestamp` value as the next request's timestamp for seamless polling.
+Per-second stats for a single service, hosted on `rt.fastly.com` (not `api.fastly.com`).
 
-| Action                  | Method | Endpoint                                                                  |
-| ----------------------- | ------ | ------------------------------------------------------------------------- |
-| Get data from timestamp | `GET`  | `https://rt.fastly.com/v1/channel/{service_id}/ts/{timestamp_in_seconds}` |
-| Get last 120 seconds    | `GET`  | `https://rt.fastly.com/v1/channel/{service_id}/ts/h`                      |
-| Get last N entries      | `GET`  | `https://rt.fastly.com/v1/channel/{service_id}/ts/h/limit/{max_entries}`  |
+`fastly stats realtime` handles the common case: it does the `ts/0` then poll-with-returned-`Timestamp` loop for you and streams one flat JSON object per second, so it needs no filtering flags and takes none. Two things it does not do:
 
-```bash
-# Subscribe to real-time stats (get latest second, then poll with returned Timestamp)
-curl -s -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://rt.fastly.com/v1/channel/$SERVICE_ID/ts/0"
-```
+| Need                            | Request                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| 120 s of per-POP data, one call | `https://rt.fastly.com/v1/channel/{service_id}/ts/h`                     |
+| Bounded batch                   | `https://rt.fastly.com/v1/channel/{service_id}/ts/h/limit/{max_entries}` |
+
+`ts/h` is the 120 seconds preceding the latest available timestamp, not an hour, and the `h` invites exactly that mistake. Entries arrive under `Data[]` (each `{recorded, aggregated, datacenter}`), one per second that carried traffic, so neither the entry count nor the covered span reaches 120 on a quiet service. Compute the span from the `recorded` values and report it beside any rate derived from them; a rate divided by an assumed 120 is wrong by whatever the gap happens to be.
 
 ## Metrics Platform
 
@@ -73,9 +68,10 @@ Metric set: `ttfb` -- metrics include `ttfb_edge_p50_us`, `ttfb_origin_p95_us`, 
 
 Per-domain edge metrics (requests, bytes, status codes, hit ratio, origin offload). **Must be enabled per service via the enablement API.** Uses `start`/`end` (ISO 8601) and `downsample` (`minute`, `hour`, `day`). Can `group_by` domain, region, or datacenter. Absolute times in historical API are UTC.
 
+Historical is `fastly stats domain-inspector`. Only the real-time side needs the API:
+
 | Action                                   | Method | Endpoint                                                                 |
 | ---------------------------------------- | ------ | ------------------------------------------------------------------------ |
-| Get historical domain data               | `GET`  | `/metrics/domains/services/{service_id}`                                 |
 | Get real-time domain data from timestamp | `GET`  | `https://rt.fastly.com/v1/domains/{service_id}/ts/{start_timestamp}`     |
 | Get real-time domain data (last 120s)    | `GET`  | `https://rt.fastly.com/v1/domains/{service_id}/ts/h`                     |
 | Get real-time domain data (limited)      | `GET`  | `https://rt.fastly.com/v1/domains/{service_id}/ts/h/limit/{max_entries}` |
@@ -84,9 +80,10 @@ Per-domain edge metrics (requests, bytes, status codes, hit ratio, origin offloa
 
 Per-origin metrics (responses, bytes, status codes, latency buckets). **Must be enabled per service via the enablement API.** Can `group_by` host, region, or datacenter. Includes latency histogram buckets (0-1ms through 60000ms+). Absolute times in historical API are UTC.
 
+Historical is `fastly stats origin-inspector`. Only the real-time side needs the API:
+
 | Action                                   | Method | Endpoint                                                                 |
 | ---------------------------------------- | ------ | ------------------------------------------------------------------------ |
-| Get historical origin data               | `GET`  | `/metrics/origins/services/{service_id}`                                 |
 | Get real-time origin data from timestamp | `GET`  | `https://rt.fastly.com/v1/origins/{service_id}/ts/{start_timestamp}`     |
 | Get real-time origin data (last 120s)    | `GET`  | `https://rt.fastly.com/v1/origins/{service_id}/ts/h`                     |
 | Get real-time origin data (limited)      | `GET`  | `https://rt.fastly.com/v1/origins/{service_id}/ts/h/limit/{max_entries}` |
