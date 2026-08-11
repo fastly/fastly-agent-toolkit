@@ -13,7 +13,7 @@ It is a skills-only package, so it does not include an `mcp.json` configuration.
 - `fastly`: Working with the Fastly platform, including services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.
 - `fastly-cli`: Using the Fastly CLI to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
 - `fastly-fiddle`: Testing VCL against real Fastly edge infrastructure with Fastly Fiddle, covering assertion-based tests, the Fiddle HTTP API, shareable bug reproductions, and CI integration.
-- `fastly-stats`: Retrieving Fastly traffic, analytics, and usage metrics via the CLI or raw HTTP, covering the Historical Stats, Real-Time analytics, and Origin/Domain Inspector APIs with full endpoint and response schemas.
+- `fastly-stats`: Fastly traffic numbers via the CLI or raw HTTP, covering the Historical Stats, Real-Time analytics, and Origin/Domain Inspector APIs, and owning the unit, window, and aggregation conventions that decide whether a reported figure is right.
 - `falco`: VCL development with Falco, covering linting, testing, simulation, formatting, REPL, and Terraform integration.
 - `fastlike`: Running Fastly Compute locally with Fastlike (Go-based), covering backend configuration, builds, and testing.
 - `viceroy`: Running Fastly Compute locally with Viceroy (WASM-based), covering serving, configuration, testing, and SDK adaptation.

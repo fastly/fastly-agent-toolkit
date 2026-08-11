@@ -1,152 +1,110 @@
-# Debugging Fastly Stats
+# Stats debugging
 
-Symptom-keyed fixes for the stats/metrics APIs and `fastly stats` CLI. Each heading is what you
-observe; the body is the cause and the fix.
+Each heading is what you observe.
 
-## 401 Unauthorized
+## 401, or `curl: (43)`, while `fastly whoami` succeeds
 
-The `Fastly-Key` header is missing, malformed, or the token is invalid/expired. Confirm the CLI
-is authenticated (`fastly whoami`) and that raw calls send the header:
-`-H "Fastly-Key: $(fastly auth token --quiet)"`. Do not wrap the token in quotes inside the header value,
-and do not send it as a query param.
-
-### 401 (or `curl: (43)`) while `fastly whoami` succeeds — the missing `--quiet`
-
-If the CLI is clearly authenticated but every raw `curl` fails, the cause is almost always a **bare
-`$(fastly auth token)` without `--quiet`**. When a CLI upgrade is pending, that command appends an
-"A new version of the Fastly CLI is available" notice to stdout — measured at 6 lines / 174 bytes,
-versus 32 bytes with `--quiet`. Captured in a substitution, the extra lines land inside the header
-value and produce one of two confusing failures:
-
-- `curl: (43) A libcurl function was given a bad argument` — embedded newlines in the header, so the
-  request is never even sent (HTTP code `000`).
-- HTTP 401 `{"msg":"Provided credentials are missing or invalid"}` — or, on `rt.fastly.com`,
-  HTTP 403 `{"Error":"invalid authentication"}`.
-
-```bash
-curl -sS -H "Fastly-Key: $(fastly auth token)"           ...   # 401/curl:(43) when an update is pending
-curl -sS -H "Fastly-Key: $(fastly auth token --quiet)"   ...   # correct
-```
-
-`--quiet` means "silence all output except direct command output", which is exactly the guarantee you
-need in a substitution. The failure is **intermittent** — it appears only while an update happens to
-be pending — so identical code can work one day and fail the next. Verify with a cheap authenticated
-call before blaming your query:
+A bare `$(fastly auth token)` without `--quiet`. When a CLI upgrade is pending that command
+appends an "A new version is available" notice to stdout, which lands inside the header value:
+embedded newlines give `curl: (43)` and the request is never sent, or the server sees a mangled
+key and returns 401 (403 `{"Error":"invalid authentication"}` on `rt.fastly.com`). It is
+intermittent, so identical code works one day and fails the next.
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' \
   -H "Fastly-Key: $(fastly auth token --quiet)" https://api.fastly.com/current_user   # expect 200
 ```
 
-## 403 Forbidden (but the token works elsewhere)
+## 403 while the token works elsewhere
 
-The token authenticates but lacks scope for this resource. Historical service stats need read
-access to that service; `usage`/`usage_by_service`/`usage_by_month` need account-level read. A
-token scoped to a single service will 403 on account-wide usage endpoints. Use a token with the
-right scope, or query per-service instead of account-wide.
+Scope. Historical service stats need read access to that service; `usage`, `usage_by_service` and
+`usage_by_month` need account-level read. A service-scoped token 403s on account-wide usage.
 
-## Inspector returns an error instead of data (or 404 / "not enabled")
+## Empty data or zero rows
 
-Origin Inspector and Domain Inspector are **paid add-ons enabled per service**. If the service
-is not entitled, `/metrics/origins/...` or `/metrics/domains/...` returns an error rather than an
-empty series. Verify the product is enabled for the service (via the Fastly UI or products API)
-before assuming your query is wrong. This is the most common Inspector surprise.
+- Day buckets and a relative window. A bucket is emitted only for a period wholly inside the
+  window, so `from=1 day ago&by=day` returns nothing at all and `7 days ago` returns 6 rows.
+  Pass explicit UTC boundaries for calendar windows, or use `by=hour`.
+- A Compute service, read through `requests`. Compute traffic lands in `compute_requests` and
+  leaves `requests` at 0, so a healthy service looks idle. Sum both.
+- `by=minute` too far back. Minute granularity is retained roughly one day; widen to `hour`.
+- Inspector not enabled. See below, this one does not look like an error.
+- Zero-traffic service. A service with no traffic in the window legitimately returns nothing, and
+  is omitted entirely from account-wide responses. Enumerate from `fastly service list --json`.
+- Over-filtered. A `region`, `datacenter`, `host` or `domain` filter matching no traffic yields
+  empty results; drop filters to confirm data exists.
+- Window in the future, or a relative string sent to Inspector, which does not accept them.
 
-## Empty `data` / zero rows
+## Inspector returns success with an empty array
 
-Usually one of:
-
-- **Window too narrow or in the future.** Check `from`/`to` (or `start`/`end`) resolve to a real
-  past range. Relative strings only work on classic `/stats*`, not Inspector.
-- **`by=minute` too far back.** Minute granularity is only retained for roughly the last day.
-  Widen to `hour` or `day` for older windows.
-- **Zero-traffic service.** A service with no traffic in the window legitimately returns nothing.
-- **Over-filtered.** A `region`/`datacenter`/`host`/`domain` filter that matches no traffic
-  yields empty results — drop filters to confirm data exists.
-
-## Missing services when aggregating across an account
-
-Stats responses can omit services that had zero traffic in the window, so iterating over a stats
-response misses them. Always enumerate from `fastly service list --json` and default missing sums
-to 0 (`jq '... | add // 0'`). See the cross-service workflow in the main SKILL.md.
-
-## `fastly stats ... --json` output won't parse as one JSON document
-
-The CLI emits **NDJSON**: one JSON object per line, with no surrounding array. Piping it straight
-into a tool that expects a single document fails. Slurp first:
+Origin Inspector and Domain Inspector are paid add-ons enabled per service. When the product is
+off the endpoint still answers HTTP 200 with `"status":"success"` and `"data":[]`, which is
+indistinguishable from a service that had no traffic. Check the entitlement before concluding
+there is nothing to see:
 
 ```bash
-fastly stats historical -s "$SID" --by day --json | jq -s '.'        # -> array
-fastly stats historical -s "$SID" --by day --json | jq -s 'add'      # aggregate
+fastly products -s "$SID"     # look for Domain Inspector / Origin Inspector = true
 ```
 
-This is a CLI artifact only — the raw HTTP API returns a normal JSON array in `data`.
+## `--json` output will not parse as one document
+
+The CLI emits NDJSON, one object per line, no surrounding array. Slurp first:
+
+```bash
+fastly stats historical -s "$SID" --by day --json | jq -s '.'
+```
+
+This is a CLI artifact. The raw HTTP API returns a normal JSON array in `data`.
 
 ## Inspector rejects `--by` or `--field`
 
-The Inspector subcommands (`domain-inspector`, `origin-inspector`) and their HTTP endpoints use a
-**different vocabulary** from classic stats:
-
-- granularity is `--downsample` / `downsample=` (not `--by` / `by=`)
-- fields are `--metric` / `metric=` (not `--field` / `field=`), repeatable, max 10
-
-Using the classic flag names against an inspector command/endpoint fails or is ignored.
+Inspector uses `--downsample` / `downsample=` for granularity and `--metric` / `metric=`
+(repeatable, max 10) for fields. Classic stats uses `--by` and `--field`. `historical` has no
+`--datacenter`; the inspectors do. Mixing the vocabularies fails with a usage error.
+`fastly stats regions` takes no flags at all, not even `--json`.
 
 ## Only partial Inspector results
 
-Inspector paginates. A response returns at most `limit` timeseries rows (max 200) and a
-`meta.next_cursor`. If you read only the first page you silently truncate. Loop, feeding
-`next_cursor` back as `cursor`, until it is null — see
-[inspector-api.md](inspector-api.md#cursor-pagination).
+Inspector paginates at `limit` rows, max 200, and returns `meta.next_cursor`. Reading only the
+first page silently truncates. Loop, feeding `next_cursor` back as `cursor`, until it is empty.
 
 ## Real-time: 404, or the same second forever
 
-Two distinct mistakes:
+First call must use `ts/0`. After that, chain the response's `Timestamp` into the next path
+segment; reusing an old timestamp replays or stalls, and computing `ts+1` drifts off the server
+clock. The endpoint long-polls with a 1-second TTL, so a request taking about a second is normal.
+Poll one request at a time; concurrent polls for the same service can be throttled.
 
-- **First call must use `ts/0`.** Guessing a timestamp can 404 or return nothing.
-- **Chain the response `Timestamp`; don't increment your own counter.** Reusing an old timestamp
-  replays or stalls; computing `ts+1` drifts off the server's clock. Always set the next path
-  segment from the previous response's `Timestamp` field.
+On a service with no live traffic the answer is HTTP 200 with
+`{"Data":[],"Timestamp":...,"Error":"No data available, please retry"}`. That `Error` is in the
+body, not the status line, so a check that only inspects the HTTP code sees success and then
+divides by an empty array.
 
-## Real-time throttling / slow responses
+## The newest bucket looks too low
 
-The endpoint long-polls (it blocks until new data) and is cached with a 1-second TTL. That is
-normal — a request can take up to ~1s to return. Poll **one request at a time**; firing several
-concurrent polls for the same service can be rate-limited. Respect `AggregateDelay` — the newest
-second isn't final until that many seconds have passed.
+Historical aggregation lags: the latest bucket keeps growing after its period ends. Minute data is
+usually available within 2-15 minutes, hourly within 15 minutes of the hour, daily around 2am UTC
+the following day. Do not read the final in-progress bucket, and note that below `by=day` the row
+count is not stable between two identical calls. Use real-time for up-to-the-second numbers.
 
-## Numbers look "too low" for the most recent bucket
+## A relative window covers the wrong hours
 
-Historical aggregation lags. The latest `hour`/`minute` bucket keeps growing for a few minutes
-after its period ends, so a just-closed bucket can under-report. For up-to-the-second accuracy
-use the [real-time API](realtime-api.md); for stable historical numbers, don't read the final
-in-progress bucket.
+`from=yesterday` resolves to 12:00:00 UTC of the previous day, not midnight, so any total is
+short by a morning. `from=today` means now, not `00:00`. `N days ago` and `N hours ago` are exact
+offsets from now. Read back `meta.from` / `meta.to`, and prefer computed Unix timestamps or
+explicit ISO-8601 for anything published.
 
-## `region` or `datacenter` filter returns nothing
+## HTTP 200, right shape, wrong data
 
-Region codes are lowercase tokens (`usa`, `europe`, `asia_india`, …) — get the live list from
-`GET /stats/regions` or `fastly stats regions`. POP/datacenter codes are **uppercase** (`SJC`,
-`LHR`); list them with `fastly pops` or `GET /datacenters`. A bad POP code fails loudly rather than
-silently: lowercase (`datacenter=den`) or unknown (`datacenter=ZZZ`) both return
-`{"status":"error","msg":"invalid datacenter"}`.
+The dangerous filter failure returns a full plausible array at a scope you did not ask for.
 
-Note the **`region=` param takes `stats_region` values** (`usa`, `europe`), not the `region` values
-from `/datacenters` (`US-East`, `North-America`). They are different taxonomies — see
-[historical-stats-api.md](historical-stats-api.md#three-different-groupings-easily-confused).
+- `region` silently overrides `datacenter` when both are sent: HTTP 200, whole-region numbers, and
+  a `meta` that echoes `region` while omitting the `datacenter` key entirely. Never send both.
+- `region=` takes `stats_region` values (`usa`, `europe`), not the `region` values from
+  `/datacenters` (`US-East`, `North-America`). Different taxonomies.
 
-## Numbers look plausible but the scope is wrong (HTTP 200, right shape, wrong data)
-
-The dangerous filter failure is not the one that returns nothing — it is the one that returns a
-full, plausible `data` array at a scope you did not ask for. Known cases:
-
-- **`region` silently overrides `datacenter`.** Send both and the POP filter is dropped: HTTP 200,
-  `meta.datacenter: null`, and whole-region numbers. `?datacenter=DEN` gave 214 requests;
-  `?datacenter=DEN&region=usa` gave 392 — the unfiltered total. Never send both.
-- **Wrong taxonomy in `region=`.** Passing a `/datacenters` `region` value like `North-America` is
-  not the same scope as you'd guess even when it is accepted — and `North-America` contains only
-  four Canadian POPs, no US POPs at all.
-
-**The defense: assert `meta` echoes the filter you sent.** The numbers themselves will not tell you.
+The defense is to assert `meta` echoes the filter you sent; the numbers themselves will not tell
+you.
 
 ```bash
 curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
@@ -154,79 +112,49 @@ curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
   | jq 'if .meta.datacenter == "DEN" then .data else error("filter dropped: \(.meta)") end'
 ```
 
-Cross-check when the stakes are high: sum a per-POP series and compare it to the unfiltered total,
-or to a region-level series. Sweeping every POP code reconciled exactly (392 = 392) on a live
-service; agreement within a couple of percent is normal for region-vs-POP-sum comparisons, and you
-should state the agreement you got rather than assume it.
+Cross-check when the stakes are high: a per-POP sum reconciles exactly with the unfiltered total
+on classic historical stats.
 
-## I changed something and cannot recover the pre-change per-POP state
+## `region` or `datacenter` returns nothing
 
-Per-POP history **does** exist — `datacenter=` is a real filter on `/stats/service/{id}` and works
-with `by=minute|hour|day` (see
-[historical-stats-api.md](historical-stats-api.md#per-pop-history-works--datacenter-is-a-real-filter)).
-But `by=minute` is retained only for roughly the last day, and real-time holds only the last 120
-seconds, so minute-resolution "before" data ages out fast.
+Region codes are lowercase tokens; get the live list from `fastly stats regions`. POP codes are
+uppercase; list them with `fastly pops`. A lowercase or unknown POP code fails loudly with
+`{"status":"error","msg":"invalid datacenter"}` rather than silently.
 
-**Capture a per-POP baseline before you change anything.** Make it step 1 of any change
-verification, not an afterthought — after the window passes, the fine-grained pre-change state is
-gone and you are left arguing from `by=hour` or from memory.
+## `invalid start_time` on the per-POP summary endpoint
+
+`/service/{id}/stats/summary` requires epoch seconds for `start_time` and `end_time`; ISO-8601 is
+rejected even though every other endpoint accepts it. It is minutely-backed, so the window cannot
+start more than 35 days back.
+
+## A before/after comparison moved, but did the change cause it
+
+Per-POP history exists, but `by=minute` is retained roughly one day and real-time only 120
+seconds, so capture the baseline before you change anything: it is the only irreversible step.
 
 ```bash
-# Step 1 of any change: snapshot every POP at minute resolution, with the window recorded
 KEY="Fastly-Key: $(fastly auth token --quiet)"
 CODES=$(curl -sS -H "$KEY" https://api.fastly.com/datacenters | jq -r '.[].code' | paste -sd, -)
 NOW=$(date -u +%s)
 curl -sS -H "$KEY" \
   "https://api.fastly.com/stats/service/$SID?from=$((NOW-3600))&to=$NOW&by=minute&datacenter=$CODES" \
-  > "baseline-$NOW.json"     # timestamp in the filename; the window is not recoverable later
+  > "baseline-$NOW.json"
 ```
 
-## A before/after comparison moved — but did the change cause it?
+Then, in order of how much they buy you:
 
-Three checks that separate signal from drift, in order of how much they buy you:
+- Include untouched control POPs in the same window. If they moved as much as the treatment POPs,
+  you measured something ambient.
+- Quantify the step in sigma against several baseline samples, not in percent. A percentage
+  silently treats ambient drift as zero.
+- Prefer a metric that goes from zero to nonzero: no baseline model, no confound.
+- Replicate every headline number in a second sample a few minutes later.
+- Sanity-check derived values against their valid range. A negative byte offload or an
+  `origin_offload` of 119.99 means the arithmetic is wrong.
+- Note cache warm-up. A new tier's hit ratio shortly after deployment is a floor, not a steady
+  state; re-read at T+24h.
 
-- **Use untouched control POPs in the same window.** POPs you did not change should hold flat. If
-  controls moved as much as the treatment POPs, you measured something ambient, not your change.
-- **Quantify the step in σ against a measured baseline, not in percent.** Take several baseline
-  samples, compute the standard deviation, and express the change as multiples of it. A step of
-  "+21.8%" is unpersuasive when an unrelated POP drifted +9.0% in the same window; the same step
-  stated as 12σ against a measured σ is not arguable.
-- **Prefer a zero-to-nonzero transition where one exists.** A metric going 0 → nonzero needs no
-  baseline model and has no confound. When designing a change, decide *in advance* which metric will
-  give the cleanest before/after.
+## Token printed into the transcript
 
-Two confounds worth naming explicitly:
-
-- **Cache warm-up.** A newly-added tier's hit ratio shortly after deployment is a floor, not a
-  steady state. Re-read at T+24 h before treating it as the new normal.
-- **Unreplicated headline numbers.** Take two samples a few minutes apart and confirm they agree
-  before publishing; a single real-time sample can catch a transient.
-
-## `from`/`to` parsing errors
-
-Classic `/stats*` accepts Unix timestamps and Chronic relative strings (`yesterday`,
-`two weeks ago`); URL-encode spaces (`from=two%20weeks%20ago`). Inspector `start`/`end` accept
-ISO-8601 (`2026-07-01T00:00:00Z`) or Unix timestamps but **not** relative strings. Using a
-relative string against Inspector is a common cause of a 400.
-
-## A relative window silently covers the wrong hours
-
-`from=yesterday` resolves to **12:00:00 UTC** of the previous day, not midnight — so it silently
-excludes that morning and any total you report is short. `from=today` likewise means "now", not
-`00:00`. Measured live at 03:17 UTC on 2026-08-07:
-
-```text
-from=yesterday   -> meta.from = 2026-08-06 12:00:00 UTC   # noon
-from=today       -> meta.from = 2026-08-07 03:17:54 UTC   # now
-from=1 day ago   -> meta.from = 2026-08-06 03:17:55 UTC   # exactly -24h, as expected
-```
-
-`N days ago` / `N hours ago` behave as you'd expect (exact offsets from now); the calendar words are
-the surprise. **Read back `meta.from`/`meta.to`** — the response always tells you the window it
-actually used — and prefer computed Unix timestamps for anything scripted or published.
-
-## Token accidentally printed
-
-If a token reached the transcript (e.g. via `fastly auth show --reveal` or `curl -v`), treat it
-as compromised and rotate it: revoke via the Fastly UI / auth API and re-authenticate. Prevent
-recurrence by using `$(fastly auth token --quiet)` inline and never `-v` on authenticated calls.
+Treat it as compromised and rotate it. Prevent recurrence with `$(fastly auth token --quiet)`
+inline, never `fastly auth show --reveal` bare, never `-v` on an authenticated call.
