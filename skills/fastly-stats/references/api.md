@@ -33,14 +33,14 @@ is rejected.
 Query parameters on `/stats`, `/stats/aggregate`, `/stats/field/{field}` and the
 `/stats/service/*` forms:
 
-| Param        | Notes                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------- |
+| Param        | Notes                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------- |
 | `from`       | Unix timestamp, ISO-8601, or a Chronic string (`1 day ago`). `yesterday` resolves to noon UTC. |
-| `to`         | Same formats. Defaults to now.                                                                |
-| `by`         | `minute`, `hour` or `day`. No `month`. Minute data is retained roughly one day.               |
-| `region`     | One `stats_region` code. Silently overrides `datacenter` when both are sent.                  |
-| `datacenter` | Comma-separated uppercase POP codes. A real filter; composes with any `by`.                   |
-| `services`   | `/stats` only: comma-separated service IDs.                                                   |
+| `to`         | Same formats. Defaults to now.                                                                 |
+| `by`         | `minute`, `hour` or `day`. No `month`. Minute data is retained roughly one day.                |
+| `region`     | One `stats_region` code. Silently overrides `datacenter` when both are sent.                   |
+| `datacenter` | Comma-separated uppercase POP codes. A real filter; composes with any `by`.                    |
+| `services`   | `/stats` only: comma-separated service IDs.                                                    |
 
 `data` grouping depends on the endpoint: `/stats` gives an object keyed by service ID,
 `/stats/aggregate` a single array, `/stats/service/{id}` an array of period rows. Each row carries
@@ -78,7 +78,7 @@ Each POP carries four independent taxonomies and only one of them is what `regio
 | `stats_region`   | `usa`, `europe`, `asia`, `anzac`         | What `region=` takes                          |
 | `region`         | `US-East`, `EU-Central`, `North-America` | POP topology label, not accepted by `region=` |
 | `group`          | `United States`, `Europe`, `India`       | Coarse reporting grouping                     |
-| `billing_region` | `North America`, `Europe`, `Australia`   | Invoice grouping                               |
+| `billing_region` | `North America`, `Europe`, `Australia`   | Invoice grouping                              |
 
 `North-America` holds four Canadian POPs (`YYC`, `YUL`, `YYZ`, `YVR`) and no US POPs, and every
 one of them reports `stats_region = usa`. Region-level stats cannot isolate Canada, so filter by
@@ -99,8 +99,8 @@ GET /metrics/domains/services/{service_id}
 | ------------ | --------------------------------------------------------------------------------- |
 | `start`      | Inclusive. ISO-8601 with `Z`, or Unix timestamp. No relative strings.             |
 | `end`        | Exclusive. Same formats.                                                          |
-| `downsample` | `minute`, `hour` or `day`. This is the Inspector's `by`.                           |
-| `metric`     | Comma-separated metric names. This is the Inspector's `field`.                     |
+| `downsample` | `minute`, `hour` or `day`. This is the Inspector's `by`.                          |
+| `metric`     | Comma-separated metric names. This is the Inspector's `field`.                    |
 | `group_by`   | Origin: `host`, `region`, `datacenter`. Domain: `domain`, `region`, `datacenter`. |
 | `region`     | Comma-separated region filter.                                                    |
 | `datacenter` | Comma-separated uppercase POP codes.                                              |
@@ -152,10 +152,15 @@ from `recorded`:
 ```bash
 curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
   "https://rt.fastly.com/v1/channel/$SID/ts/h" \
-  | jq '{samples: (.Data|length),
-         span_s: (([.Data[].recorded]|max) - ([.Data[].recorded]|min) + 1),
-         requests: ([.Data[].aggregated.requests // 0]|add)}'
+  | jq 'if (.Data|length) == 0 then {samples: 0, span_s: null, requests: 0, error: .Error}
+        else {samples: (.Data|length),
+              span_s: (([.Data[].recorded]|max) - ([.Data[].recorded]|min) + 1),
+              requests: ([.Data[] | (.aggregated.requests // 0)
+                                    + (.aggregated.compute_requests // 0)]|add)} end'
 ```
+
+Guard the empty case first: on a quiet service `max` and `min` over an empty array both return
+`null` and the subtraction aborts the filter with `null (null) cannot be subtracted`.
 
 Real-time offers no `by` or region filtering: you get every second for the whole service and
 filter client-side from the `datacenter` map. For flexible windows, regions or fields, including

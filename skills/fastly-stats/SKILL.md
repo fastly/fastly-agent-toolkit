@@ -12,11 +12,12 @@ Raw API below.
 
 1. Bytes to GB is decimal SI: `bytes / 1e9`. TB is `/ 1e12`. Never `2^30`. Fastly bills in
    decimal units, so a GiB figure is wrong by 7.4% and still reads as a plausible number.
-2. For a calendar window, pass explicit UTC boundaries: `--from 2026-07-01T00:00:00Z
-   --to 2026-08-01T00:00:00Z` returns every day bucket in July. A bucket is emitted only when the
-   whole period falls inside the window, and a relative window opens and closes mid-bucket, so
-   `--from "N days ago" --by day` returns N-1 buckets, never N, and `"1 day ago"` returns none at
-   all. Relative strings are safe at `--by hour`, not at `--by day`.
+2. For a calendar window, pass explicit UTC boundaries:
+   `--from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z` returns every day bucket in July. A
+   bucket is emitted only when the whole period falls inside the window, and a relative window
+   opens and closes mid-bucket, so `--from "N days ago" --by day` returns N-1 buckets, never N,
+   and `"1 day ago"` returns none at all. Relative strings are safe at `--by hour`, not at
+   `--by day`.
 3. On the raw API, `from=yesterday` means 12:00:00 UTC, not midnight, and `from=today` means now.
    `N days ago` / `N hours ago` are exact offsets. Read back `meta.from` / `meta.to`.
 4. `hit_ratio`, `edge_hit_ratio` and `origin_offload` are gauges. Never sum or average them
@@ -34,8 +35,8 @@ Raw API below.
 
 ## Pick the command
 
-| You need                             | Command                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------- |
+| You need                             | Command                                                                    |
+| ------------------------------------ | -------------------------------------------------------------------------- |
 | One service over a past window       | `fastly stats historical -s ID --from T --to T --by day`                   |
 | One field only                       | `fastly stats historical -s ID --field bandwidth`                          |
 | All services, one row of totals      | `fastly stats aggregate --from T --to T --by day`                          |
@@ -125,11 +126,11 @@ Five things the CLI cannot do. Everything else has a CLI command above.
 
 | Need                                 | Request                                                                          |
 | ------------------------------------ | -------------------------------------------------------------------------------- |
-| Per-POP history on classic stats     | `GET api.fastly.com/stats/service/{id}?datacenter=SJC,LHR&by=day`                 |
-| Month-to-date billable usage         | `GET api.fastly.com/stats/usage_by_month?year=2026&month=07&billable_units=true`  |
-| POP `region` / `stats_region` fields | `GET api.fastly.com/datacenters`                                                  |
-| Live per-origin or per-domain data   | `GET rt.fastly.com/v1/{origins,domains}/{id}/ts/0`                                |
-| 120 s per-POP snapshot in one call   | `GET rt.fastly.com/v1/channel/{id}/ts/h`                                          |
+| Per-POP history on classic stats     | `GET api.fastly.com/stats/service/{id}?datacenter=SJC,LHR&by=day`                |
+| Month-to-date billable usage         | `GET api.fastly.com/stats/usage_by_month?year=2026&month=07&billable_units=true` |
+| POP `region` / `stats_region` fields | `GET api.fastly.com/datacenters`                                                 |
+| Live per-origin or per-domain data   | `GET rt.fastly.com/v1/{origins,domains}/{id}/ts/0`                               |
+| 120 s per-POP snapshot in one call   | `GET rt.fastly.com/v1/channel/{id}/ts/h`                                         |
 
 `datacenter=` is missing from the CLI's SDK input type, not just from its flags, so no flag
 combination reaches per-POP history. Account-wide `/stats` and `/stats/field/{field}` also need
