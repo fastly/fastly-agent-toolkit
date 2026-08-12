@@ -50,13 +50,21 @@ Query parameters on `/stats`, `/stats/aggregate`, `/stats/field/{field}` and the
 
 `/stats/usage` and `/stats/usage_by_service` take `from` / `to` / `by` / `region` and answer with
 an object keyed by `stats_region`, each region carrying only `bandwidth`, `requests` and
-`compute_requests`. These are raw units.
+`compute_requests`. Raw units, and `requests` excludes Compute traffic, so an account total must add
+`compute_requests` per region.
+
+`region` is accepted here and ignored. `?region=europe` returns all eleven regions, `data`
+byte-identical to the unfiltered response, `meta.region` echoing `europe`. Same on
+`/stats/usage_by_service`, whose `data` is keyed by region then by service ID. Only
+`fastly stats usage --region` filters, client-side.
 
 `/stats/usage_by_month` takes `year` (4-digit), `month` (2-digit) and `billable_units`. Its `data`
-is `{customer_id, services, total}`, both `services` and `total` keyed by region. With
-`billable_units=true` bandwidth comes back in GB and requests in units of 10,000, matching the
-invoice: a `requests` of `1.4452` means 14,452 requests. Billable figures count delivery to
-clients plus traffic to origins, so they exceed raw edge `bandwidth`. See
+is `{customer_id, services, total}`, both `services` and `total` keyed by region.
+
+`billable_units=true` rescales and nothing else: `bandwidth` / 1e9, `requests` and
+`compute_requests` / 10,000, so a `requests` of `1.4452` means 14,452. For one month
+`/stats/usage`, the per-service `/stats` sum and `/stats/usage_by_month` report the same byte total.
+`bandwidth` already counts origin-bound request bytes, so the billable figure is not larger. See
 <https://docs.fastly.com/products/how-we-calculate-your-delivery-bill>.
 
 `/service/{id}/stats/summary` follows none of the conventions above. `start_time` and `end_time`
@@ -117,11 +125,29 @@ Both Inspectors are paid add-ons enabled per service. When the product is off th
 answers HTTP 200 with `"status":"success"` and `"data":[]`, indistinguishable from a service that
 had no traffic. Check `fastly products -s ID` first.
 
-Inspector metric names are prefixed by source: `all_`, `compute_`, `waf_`. Strip the prefix to
-look a name up in [fields.md](fields.md). Origin Inspector adds latency histogram buckets
-(`all_latency_0_to_1ms` through `all_latency_60000ms`), which is where origin response time lives.
-Edge processing time is a different measurement and comes from classic `hits_time` / `miss_time` /
-`pass_time`.
+The two paths do not share an envelope. Success is `{data, meta, status:"success"}`, `status` a
+string, `meta` echoing the defaults `limit: 100`, `sort`, `group_by`, `filters: {}`,
+`next_cursor: ""`. Rejection is HTTP 400 with an RFC 7807 body, `status` a number, no `msg` either
+way:
+
+```json
+{"type":"https://fastly.help/metrics/validation-error","title":"Request parameters were invalid.",
+ "status":400,"errors":[{"property":"start","reason":"failed to parse 'start' time"}],
+ "detail":"Parameters with invalid values: 'start'"}
+```
+
+Branch on `.status == "success"`, not on `.status`. Read causes from `errors[].reason`. Content-Type
+is `application/json` on both paths.
+
+Metric names take a source prefix (`all_`, `compute_`, `waf_`) or none: `metric=responses` and
+`metric=all_responses` both validate. Strip the prefix to look a name up in
+[fields.md](fields.md). An unknown name is a 400, `Unrecognized metric names: '...'`, and names are
+validated even where the product is off, so a 400 says nothing about entitlement. No cap on how
+many: 20 in one call come back echoed in `meta.metric`, despite the CLI help's 10.
+
+Origin Inspector adds latency histogram buckets (`all_latency_0_to_1ms` through
+`all_latency_60000ms`), which is where origin response time lives. Edge processing time is a
+different measurement and comes from classic `hits_time` / `miss_time` / `pass_time`.
 
 Real-time per-domain and per-origin data lives on `rt.fastly.com` instead:
 `/v1/domains/{id}/ts/{ts}` and `/v1/origins/{id}/ts/{ts}`, both taking the `ts/h` and
@@ -146,21 +172,25 @@ field, not an HTTP error.
 
 `Data[]` holds one record per elapsed second: `recorded`, `aggregated` (all-POP totals keyed by
 metric name), and `datacenter` (the same metrics keyed by POP code). `ts/h` returns only seconds
-that had traffic, so `Data | length` is a sample count, not a window in seconds. Compute the span
-from `recorded`:
+that had traffic, so `Data | length` is a sample count, not a window in seconds, and the `recorded`
+span is not one either: it stops at the last second that had traffic. Divide a rate by 120, the
+lookback `ts/h` covers. The span is still worth reading, as the tell for how bursty the traffic is:
 
 ```bash
 curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
   "https://rt.fastly.com/v1/channel/$SID/ts/h" \
-  | jq 'if (.Data|length) == 0 then {samples: 0, span_s: null, requests: 0, error: .Error}
-        else {samples: (.Data|length),
+  | jq 'if (.Data|length) == 0 then {samples: 0, window_s: 120, requests: 0, rps: 0, error: .Error}
+        else {samples: (.Data|length), window_s: 120,
               span_s: (([.Data[].recorded]|max) - ([.Data[].recorded]|min) + 1),
               requests: ([.Data[] | (.aggregated.requests // 0)
-                                    + (.aggregated.compute_requests // 0)]|add)} end'
+                                    + (.aggregated.compute_requests // 0)]|add)}
+             | . + {rps: (.requests / .window_s)} end'
 ```
 
 Guard the empty case first: on a quiet service `max` and `min` over an empty array both return
-`null` and the subtraction aborts the filter with `null (null) cannot be subtracted`.
+`null` and the subtraction aborts the filter with `null (null) cannot be subtracted`. The newest
+`recorded` runs about 8 seconds behind the wall clock, which is `AggregateDelay`, so the window is
+the 120 seconds ending then rather than ending now.
 
 Real-time offers no `by` or region filtering: you get every second for the whole service and
 filter client-side from the `datacenter` map. For flexible windows, regions or fields, including
