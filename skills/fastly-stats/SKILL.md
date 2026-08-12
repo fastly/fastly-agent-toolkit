@@ -5,7 +5,7 @@ description: "Fastly traffic numbers: cache hit ratio, bandwidth, request counts
 
 # Fastly stats
 
-Prefer the `fastly` CLI. Drop to `curl` only for the five things the CLI cannot do, listed under
+Prefer the `fastly` CLI. Drop to `curl` only for the seven things the CLI cannot do, listed under
 Raw API below.
 
 ## Rules that decide whether the answer is right
@@ -22,8 +22,9 @@ Raw API below.
    `N days ago` / `N hours ago` are exact offsets. Read back `meta.from` / `meta.to`.
 4. `hit_ratio`, `edge_hit_ratio` and `origin_offload` are gauges. Never sum or average them
    across buckets. Recompute from the summed counters: `hits / (hits + miss)`.
-5. `ts/h` on `rt.fastly.com` is the last 120 seconds, not an hour. Derive the window from the
-   payload's own `recorded` timestamps and print it beside any absolute rate.
+5. `ts/h` on `rt.fastly.com` covers the last 120 seconds, not an hour, and returns only the seconds
+   that carried traffic. Divide a rate by 120 there, or by the window you bounded when sampling
+   with the CLI; never by the sample count or the `recorded` span. Print the window beside the rate.
 6. `fastly stats ... --json` emits NDJSON, one object per line, no array. Slurp with `jq -s`
    before aggregating. The raw HTTP API returns a normal array in `data`.
 7. Stats responses omit services with zero traffic in the window. Enumerate from
@@ -32,6 +33,10 @@ Raw API below.
    a period closes.
 9. On a Compute service the traffic lands in `compute_requests` and `requests` stays 0. Summing
    `requests` alone reports zero traffic for a service that is serving fine. Check both.
+10. Status codes split the same way. Use `all_status_*`, never bare `status_*` or
+    `compute_resp_status_*`: `status_5xx` is 0 on Compute, `compute_resp_status_5xx` is absent on
+    VCL, `all_status_5xx` is right on both. No `all_requests` exists, so denominators still need
+    `requests + compute_requests`.
 
 ## Pick the command
 
@@ -50,11 +55,12 @@ Raw API below.
 | Live per-second data                 | `fastly stats realtime -s ID --json`                                       |
 
 `historical`, `aggregate` and `usage` take `--by minute|hour|day` and `--field`. The two
-inspectors take `--downsample` and `--metric` (repeatable, max 10) instead, plus `--group-by`,
+inspectors take `--downsample` and `--metric` (repeatable) instead, plus `--group-by`,
 `--datacenter`, `--limit`, `--cursor`, and `--domain` or `--host`. Mixing the two vocabularies
 fails with a usage error. `historical` has no `--datacenter`; `realtime` takes no filters at all,
-and `regions` takes no flags whatsoever, not even `--json`. Full flag matrix:
-`fastly-cli/references/stats.md`.
+and `regions` takes no flags whatsoever, not even `--json`. The documented `--metric` cap of 10 is
+not enforced; 20 names in one call are accepted and echoed in `meta.metric`. Full flag matrix: the
+`fastly-cli` skill's stats reference.
 
 Service-scoped subcommands take `-s` / `--service-id` or `--service-name`, falling back to
 `FASTLY_SERVICE_ID` then `fastly.toml`.
@@ -70,13 +76,13 @@ fastly stats historical -s "$SID" --by day \
            | {hits:$h, miss:$m, hit_ratio: (if $h+$m > 0 then $h/($h+$m) else null end)}'
 ```
 
-5xx count and its share of requests over a month:
+5xx count and share over a month, correct on both service types:
 
 ```bash
 fastly stats historical -s "$SID" --by day \
   --from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z --json \
   | jq -s '{requests: (map((.requests // 0) + (.compute_requests // 0))|add // 0),
-            status_5xx: (map(.status_5xx)|add // 0)}
+            status_5xx: (map(.all_status_5xx // 0)|add // 0)}
            | . + {pct: (if .requests > 0 then .status_5xx/.requests*100 else null end)}'
 ```
 
@@ -92,49 +98,63 @@ fastly service list --json | jq -r '.[] | "\(.ServiceID)|\(.Name)"' | while IFS=
 done | sort -rn
 ```
 
-Account-wide totals for a month. `fastly stats usage --json` returns one object keyed by region,
-so sum the leaves:
+Account totals for a month. `fastly stats usage --json` returns one object keyed by region, so sum
+the leaves. Dropping `compute_requests` here omits every Compute service from the total:
 
 ```bash
 fastly stats usage --from 2026-07-01T00:00:00Z --to 2026-08-01T00:00:00Z --json \
-  | jq '{bandwidth_gb: (([.[].bandwidth]|add)/1e9), requests: ([.[].requests]|add)}'
+  | jq '{bandwidth_gb: (([.[].bandwidth]|add)/1e9),
+         requests: ([.[] | .requests + .compute_requests]|add)}'
 ```
 
-That is raw edge bandwidth. For the invoice figure use `GET /stats/usage_by_month` with
-`billable_units=true`: it counts delivery to clients plus traffic to origins, returns bandwidth
-already in GB and requests already in units of 10,000, so a `requests` of `1.4452` means 14,452.
+`billable_units=true` on `GET /stats/usage_by_month` rescales, it does not switch quantity:
+`bandwidth` / 1e9, `requests` and `compute_requests` / 10,000, so a `requests` of `1.4452` means
+14,452. For one month `/stats/usage`, the per-service `/stats` sum and `/stats/usage_by_month` all
+report the same byte total, so a mismatch is an arithmetic bug, not a billing subtlety.
 
-Live request rate with the window it is averaged over. `fastly stats realtime --json` streams one
-flat object per second, `{recorded, aggregated, datacenter}`, with no `Data` wrapper and no
-`Timestamp`; that wrapper exists only on the raw `rt.fastly.com` payload. Take a bounded sample
-and divide by the span you actually observed:
+Live request rate. `fastly stats realtime --json` streams one flat object per second,
+`{recorded, aggregated, datacenter}`, no `Data` wrapper and no `Timestamp`; those exist only on the
+raw `rt.fastly.com` payload. It prints nothing on a quiet service and never exits, so `head -n`
+deadlocks. Bound it by wall clock and divide by that bound:
 
 ```bash
-fastly stats realtime -s "$SID" --json | head -20 \
-  | jq -s '{samples: length,
-            span_s: (([.[].recorded]|max) - ([.[].recorded]|min) + 1),
-            requests: (map((.aggregated.requests // 0) + (.aggregated.compute_requests // 0))|add)}
-           | . + {rps: (.requests / .span_s)}'
+SECS=20
+OUT=$(mktemp)
+fastly stats realtime -s "$SID" --json > "$OUT" & P=$!
+sleep "$SECS"; kill "$P" 2>/dev/null; wait "$P" 2>/dev/null
+jq -s --argjson w "$SECS" \
+  '{samples: length, window_s: $w,
+    requests: (map((.aggregated.requests // 0) + (.aggregated.compute_requests // 0))|add // 0)}
+   | . + {rps: (.requests / $w)}' "$OUT"
+rm -f "$OUT"
 ```
 
-Report the span next to the rate. Ratios and same-window comparisons survive a misjudged window;
+Report the window beside the rate. Do not derive it from `recorded` min/max: only seconds with
+traffic are emitted, so on bursty traffic that span is a fraction of what you watched and the rate
+comes out several times too high. Ratios and same-window comparisons survive a misjudged window;
 extrapolated rates do not.
+
+One-shot alternative, returns immediately even with no data:
+`GET rt.fastly.com/v1/channel/{id}/ts/h`, the traffic-bearing seconds of the last 120.
 
 ## Raw API
 
-Five things the CLI cannot do. Everything else has a CLI command above.
+Seven things the CLI cannot do. Everything else has a CLI command above.
 
-| Need                                 | Request                                                                          |
-| ------------------------------------ | -------------------------------------------------------------------------------- |
-| Per-POP history on classic stats     | `GET api.fastly.com/stats/service/{id}?datacenter=SJC,LHR&by=day`                |
-| Month-to-date billable usage         | `GET api.fastly.com/stats/usage_by_month?year=2026&month=07&billable_units=true` |
-| POP `region` / `stats_region` fields | `GET api.fastly.com/datacenters`                                                 |
-| Live per-origin or per-domain data   | `GET rt.fastly.com/v1/{origins,domains}/{id}/ts/0`                               |
-| 120 s per-POP snapshot in one call   | `GET rt.fastly.com/v1/channel/{id}/ts/h`                                         |
+| Need                                    | Request                                                                          |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| Per-POP history on classic stats        | `GET api.fastly.com/stats/service/{id}?datacenter=SJC,LHR&by=day`                |
+| Every service broken out in one call    | `GET api.fastly.com/stats?from=T&to=T&by=day`                                    |
+| One field across every service          | `GET api.fastly.com/stats/field/{field}?from=T&to=T&by=day`                      |
+| Month-to-date billable usage            | `GET api.fastly.com/stats/usage_by_month?year=2026&month=07&billable_units=true` |
+| POP `region` / `stats_region` fields    | `GET api.fastly.com/datacenters`                                                 |
+| Live per-origin or per-domain data      | `GET rt.fastly.com/v1/{origins,domains}/{id}/ts/0`                               |
+| 120 s per-POP snapshot in one call      | `GET rt.fastly.com/v1/channel/{id}/ts/h`                                         |
 
-`datacenter=` is missing from the CLI's SDK input type, not just from its flags, so no flag
-combination reaches per-POP history. Account-wide `/stats` and `/stats/field/{field}` also need
-`curl`, because `stats historical` always resolves a service ID and errors without one.
+`datacenter=` is absent from the CLI's SDK input type, not just its flags, so no flag combination
+reaches per-POP history. The two account-wide rows need `curl` because `stats historical` always
+resolves a service ID and errors without one; `fastly stats aggregate` is not a substitute, it sums
+every service into one series instead of breaking them out.
 
 Auth is the header `Fastly-Key: <token>`. Feed it from the CLI and keep `--quiet`: without it a
 pending upgrade notice lands inside the header value and produces `curl: (43)` or a spurious 401.
@@ -155,6 +175,9 @@ Errors, empty data and wrong-scope symptoms: [references/debugging.md](reference
 
 - `region=` takes `stats_region` values (`usa`, `europe`), not the `region` values from
   `/datacenters` (`US-East`, `North-America`). Get the live list from `fastly stats regions`.
+- `region=` is ignored on `/stats/usage` and `/stats/usage_by_service`: `meta` echoes it and all
+  eleven regions come back, byte-identical to the unfiltered response. `fastly stats usage --region`
+  filters client-side, so the CLI and the raw URL disagree. Filter usage responses yourself.
 - Sending `region` and `datacenter` together returns HTTP 200 with the POP filter dropped
   silently: `meta` echoes `region` and omits `datacenter` entirely, and the numbers are
   whole-region. Never send both, and assert `meta` carries the filter you sent.

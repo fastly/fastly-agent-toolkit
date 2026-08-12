@@ -21,9 +21,11 @@ Covers: services, backends, domains, VCL snippets, cache purging, Compute/WASM d
 | Logging        | [logging.md](references/logging.md)             | Log streaming to S3, GCS, Datadog, Splunk, Kafka, 25+ providers                          |
 | NGWAF          | [ngwaf.md](references/ngwaf.md)                 | Next-Gen WAF workspaces, IP/country lists, rules, signals, thresholds, alerts            |
 | Notifications  | [notifications.md](references/notifications.md) | Slack/PagerDuty/webhook integrations, audit log event mappings                            |
-| Stats          | [stats.md](references/stats.md)                 | Historical/real-time metrics, cache hit ratios, error rates, bandwidth, regional traffic |
+| Stats          | [stats.md](references/stats.md)                 | Which `fastly stats` subcommand takes which flag, and where the two flag sets diverge    |
 | Stores         | [stores.md](references/stores.md)               | KV Stores, Config Stores, Secret Stores, resource links                                  |
 | TLS            | [tls.md](references/tls.md)                     | Platform TLS, Let's Encrypt subscriptions, custom certs, mutual TLS                      |
+
+For endpoint choice, unit and window conventions and worked queries, use the **fastly-stats** skill.
 
 ## Command Structure
 

@@ -1,12 +1,27 @@
 # Measurement fields
 
-Classic historical and real-time use bare names (`requests`, `bandwidth`, `status_5xx`).
-Inspector prefixes each by source (`all_`, `compute_`, `waf_`); strip the prefix to look it up
-here. Sparse or zero fields are omitted from a response rather than returned as 0.
+`all_`, `compute_` and `waf_` are source prefixes, not an Inspector convention. Classic historical
+and real-time carry them beside the bare names. A bare name counts VCL delivery only, the `all_`
+twin counts every source: that is why `status_5xx` reads 0 on a Compute service while
+`all_status_5xx` reads the real count. Inspector takes either form (`metric=responses`,
+`metric=all_responses`).
+
+Classic `/stats` carries `all_status_1xx` through `all_status_5xx`, `all_hit_requests`,
+`all_miss_requests`, `all_pass_requests`, `all_error_requests`, `all_edge_hit_requests`,
+`all_edge_miss_requests`. No `all_requests`, no `all_bandwidth`.
+
+Presence, which decides whether a filter needs a default:
+
+| Field                                                | Present                                                |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| `requests`, `compute_requests`, `status_1xx`..`5xx`  | Every row, 0 when the service type cannot produce them |
+| `all_status_1xx`..`all_status_5xx`                   | Only when that class saw traffic; always add `// 0`    |
+| `compute_resp_status_*`                              | Compute rows only, absent on VCL                       |
+| Anything else sparse or zero                         | Omitted rather than returned as 0                      |
 
 To test whether a name is real, ask for it alone:
 `GET /stats/service/{id}/field/{name}` returns `{"status":"error","msg":"Unknown field: ..."}`
-for a name that does not exist. Full list:
+for a name that does not exist. 200 for `all_status_5xx`, 400 for `all_bandwidth`. Full list:
 <https://www.fastly.com/documentation/reference/api/metrics-stats/historical-stats/>
 
 ## Aggregation shape
@@ -62,10 +77,10 @@ The `// 0` and the zero guard matter: an empty window otherwise fails with
 | `request_collapse_usable_count`                 | counter   | Collapsed requests that reused the in-flight fetch; note the `_count` suffix |
 | `request_collapse_unusable_count`               | counter   | Collapsed requests that became separate origin fetches                       |
 
-A Compute service reports its traffic in `compute_requests` and leaves `requests` at 0, in both
-historical rows and real-time `aggregated`. Its status codes arrive as `compute_resp_status_4xx`
-and `all_status_4xx` rather than `status_4xx`. Summing only `requests` across a mixed account
-therefore under-reports; add both counters.
+On a Compute service `compute_requests` carries the traffic and `requests` is 0, in historical rows
+and real-time `aggregated` alike; add both counters. Status codes arrive as `all_status_4xx` and
+`compute_resp_status_4xx`, `status_4xx` at 0. Use `all_status_*`: `compute_resp_status_*` is absent
+from VCL rows and fails there the way `status_*` fails on Compute.
 
 `miss_histogram` is often the only per-POP latency source, since `miss_time` is frequently
 unpopulated per POP. It is not exposed by `/stats/service/{id}/field/miss_histogram`, which
@@ -81,8 +96,13 @@ All byte fields are counters, so sum them freely.
 `origin_fetch_resp_body_bytes`, `origin_fetch_resp_header_bytes`, `billed_body_bytes`,
 `billed_header_bytes`.
 
-Convert with decimal SI: `/1e9` for GB, `/1e12` for TB. Never `2^30`. Raw `bandwidth` is edge
-traffic, not the invoice; billable figures come from the usage endpoints.
+Convert with decimal SI: `/1e9` for GB, `/1e12` for TB. Never `2^30`.
+
+`bandwidth` = client response bytes + upstream request bytes. It reconciles exactly on a VCL
+service: `resp_header_bytes` + `resp_body_bytes` + `bereq_header_bytes` + `bereq_body_bytes`, or
+equivalently `header_size` + `body_size` + `bereq_header_bytes`. Inbound `req_header_bytes` is not
+in it. The origin-bound side is already counted, so the billable total does not exceed `bandwidth`.
+What `billable_units=true` changes is in the usage section of api.md.
 
 ## Status codes
 
@@ -91,6 +111,10 @@ Class summaries `status_1xx` through `status_5xx`, plus specific counters `statu
 `status_403`, `status_404`, `status_416`, `status_429`, `status_500`, `status_501`, `status_502`,
 `status_503`, `status_504`, `status_505`. A class total counts every code in that class, including
 ones without a dedicated field.
+
+Every class summary has an `all_` twin, `all_status_1xx` through `all_status_5xx`. Use it unless you
+specifically want the VCL-only figure. Per-code counters have no twin (`all_status_503` is
+`Unknown field`), so per-code detail on a Compute service comes from `compute_resp_status_503`.
 
 ## Shield and tier fields
 

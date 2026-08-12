@@ -26,14 +26,15 @@ Scope. Historical service stats need read access to that service; `usage`, `usag
   window, so `from=1 day ago&by=day` returns nothing at all and `7 days ago` returns 6 rows.
   Pass explicit UTC boundaries for calendar windows, or use `by=hour`.
 - A Compute service, read through `requests`. Compute traffic lands in `compute_requests` and
-  leaves `requests` at 0, so a healthy service looks idle. Sum both.
+  leaves `requests` at 0, so a healthy service looks idle. Sum both. Status codes too: `status_5xx`
+  is 0 and the count is in `all_status_5xx`, which also works on a VCL service.
 - `by=minute` too far back. Minute granularity is retained roughly one day; widen to `hour`.
 - Inspector not enabled. See below, this one does not look like an error.
 - Zero-traffic service. A service with no traffic in the window legitimately returns nothing, and
   is omitted entirely from account-wide responses. Enumerate from `fastly service list --json`.
 - Over-filtered. A `region`, `datacenter`, `host` or `domain` filter matching no traffic yields
   empty results; drop filters to confirm data exists.
-- Window in the future, or a relative string sent to Inspector, which does not accept them.
+- Window in the future.
 
 ## Inspector returns success with an empty array
 
@@ -45,6 +46,26 @@ there is nothing to see:
 ```bash
 fastly products -s "$SID"     # look for Domain Inspector / Origin Inspector = true
 ```
+
+## Inspector answers 400 with a `type` and no `msg`
+
+RFC 7807 body, not the classic `{status, msg}`:
+
+```json
+{"type":"https://fastly.help/metrics/validation-error","title":"Request parameters were invalid.",
+ "status":400,"errors":[{"property":"start","reason":"failed to parse 'start' time"}],
+ "detail":"Parameters with invalid values: 'start'"}
+```
+
+`status` is `400` here and the string `"success"` on the happy path, so branch on
+`.status == "success"`. Cause is in `errors[].reason`; there is no `msg` either way. Two failures
+land here rather than in the empty-data list above:
+
+- Relative string in `start` or `end`. ISO-8601 with `Z` or a Unix timestamp only:
+  `failed to parse 'start' time`. The CLI rejects it earlier with
+  `invalid --from value: cannot parse "1 day ago" as RFC3339 or Unix timestamp`.
+- Unrecognized `metric` name: `Unrecognized metric names: '...'`. Validated even where the product
+  is disabled, so this says nothing about entitlement.
 
 ## `--json` output will not parse as one document
 
@@ -59,9 +80,10 @@ This is a CLI artifact. The raw HTTP API returns a normal JSON array in `data`.
 ## Inspector rejects `--by` or `--field`
 
 Inspector uses `--downsample` / `downsample=` for granularity and `--metric` / `metric=`
-(repeatable, max 10) for fields. Classic stats uses `--by` and `--field`. `historical` has no
+(repeatable) for fields. Classic stats uses `--by` and `--field`. `historical` has no
 `--datacenter`; the inspectors do. Mixing the vocabularies fails with a usage error.
-`fastly stats regions` takes no flags at all, not even `--json`.
+`fastly stats regions` takes no flags at all, not even `--json`. The documented `--metric` cap of 10
+is not enforced; 20 names in one call go through, so do not split a request to stay under it.
 
 ## Only partial Inspector results
 
@@ -79,6 +101,22 @@ On a service with no live traffic the answer is HTTP 200 with
 `{"Data":[],"Timestamp":...,"Error":"No data available, please retry"}`. That `Error` is in the
 body, not the status line, so a check that only inspects the HTTP code sees success and then
 divides by an empty array.
+
+## `fastly stats realtime` prints nothing and never returns
+
+It emits only seconds that carried traffic and polls forever, so on a quiet service `| head -20`
+never reaches its count and the pipeline deadlocks. Bound it by wall clock:
+
+```bash
+OUT=$(mktemp)
+fastly stats realtime -s "$SID" --json > "$OUT" & P=$!
+sleep 20; kill "$P" 2>/dev/null; wait "$P" 2>/dev/null
+jq -s 'length' "$OUT"     # 0 is a legitimate answer
+```
+
+One-shot alternative that returns immediately: `GET rt.fastly.com/v1/channel/{id}/ts/h`. If a
+stream does end empty, `max - min` over `recorded` fails with
+`null (null) cannot be subtracted`; guard it or divide by the window you chose.
 
 ## The newest bucket looks too low
 
@@ -102,6 +140,10 @@ The dangerous filter failure returns a full plausible array at a scope you did n
   a `meta` that echoes `region` while omitting the `datacenter` key entirely. Never send both.
 - `region=` takes `stats_region` values (`usa`, `europe`), not the `region` values from
   `/datacenters` (`US-East`, `North-America`). Different taxonomies.
+- `region=` is ignored outright on `/stats/usage` and `/stats/usage_by_service`. All eleven regions
+  return, `data` byte-identical to unfiltered, `meta.region` echoing what you sent, so the `meta`
+  assertion below does not catch this one. `fastly stats usage --region` filters client-side, so CLI
+  and raw URL differ; filter the response yourself.
 
 The defense is to assert `meta` echoes the filter you sent; the numbers themselves will not tell
 you.

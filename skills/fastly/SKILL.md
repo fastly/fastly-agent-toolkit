@@ -21,7 +21,7 @@ Prefer the `fastly` CLI over raw API calls — see the **fastly-cli** skill. Whe
 | Service management     | [service-management.md](references/service-management.md)         | Creating/managing services, versions, domains, settings; clone-modify-activate workflow                                                                                   |
 | VCL services           | [vcl-services.md](references/vcl-services.md)                     | Customizing site behavior with VCL — writing/uploading custom VCL, configuring snippets, conditions, headers, edge dictionaries, or cache/gzip settings                   |
 | Compute                | [compute.md](references/compute.md)                               | Implementing edge logic with Compute — deploying packages, managing config/KV/secret stores, using cache APIs                                                             |
-| Observability          | [observability.md](references/observability.md)                   | Querying stats, viewing real-time analytics, using domain/origin inspectors, configuring alerts or log explorer                                                           |
+| Observability          | [observability.md](references/observability.md)                   | TTFB percentiles from the metrics platform, alert definitions and history, log explorer queries                                                                           |
 | Load balancing         | [load-balancing.md](references/load-balancing.md)                 | Distributing traffic across origins — configuring backends, directors, pools, or health checks; choosing between backends and pools                                       |
 | ACLs                   | [acls.md](references/acls.md)                                     | Restricting access by IP — managing VCL ACLs, Compute ACLs, or IP block lists; adding/removing access control entries                                                     |
 | NGWAF                  | [ngwaf.md](references/ngwaf.md)                                   | Protecting against web attacks — setting up Next-Gen WAF, post-cache bot management, rules, signals, attack monitoring, or Signal Sciences integration                    |
@@ -33,6 +33,8 @@ Prefer the `fastly` CLI over raw API calls — see the **fastly-cli** skill. Whe
 | Client-Side Protection | [client-side-protection.md](references/client-side-protection.md) | Protecting against rogue third-party scripts (Magecart, formjacking, skimmers) — monitoring scripts on web pages, managing script authorization, configuring CSP policies |
 | Other features         | [other-features.md](references/other-features.md)                 | Pubsub, fanout/real-time messaging, IP lists, POPs, HTTP/3, Image Optimizer, events, notifications                                                                        |
 | Edge phase ordering    | [edge-phases.md](references/edge-phases.md)                       | Understanding edge request/response ordering, debugging feature interactions                                                                                              |
+
+Traffic numbers are not in this table. Cache hit ratio, bandwidth, request and status-code counts, error rates, real-time request rate, origin latency, per-domain traffic, account usage and billing totals belong to the **fastly-stats** skill.
 
 ## Quick Start: Simple Caching Proxy
 
