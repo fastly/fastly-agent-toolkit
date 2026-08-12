@@ -26,7 +26,7 @@ usage error.
 | `--by` (minute/hour/day)          | yes        | yes       | yes       | no               | no               |
 | `--downsample`                    | no         | no        | no        | yes              | yes              |
 | `--field` (single field)          | yes        | no        | no        | no               | no               |
-| `--metric` (repeatable, max 10)   | no         | no        | no        | yes              | yes              |
+| `--metric` (repeatable)           | no         | no        | no        | yes              | yes              |
 | `--region`                        | one value  | one value | one value | repeatable       | repeatable       |
 | `--datacenter`                    | no         | no        | no        | repeatable       | repeatable       |
 | `--domain`                        | no         | no        | no        | repeatable       | no               |
@@ -41,7 +41,8 @@ usage error.
 `--json`. `stats regions` takes no flags whatsoever, not even `--json`.
 
 The repeatable flags are joined with commas before the request goes out, so repeating the flag and
-passing one comma-separated value are equivalent.
+passing one comma-separated value are equivalent. The documented `--metric` cap of 10 is enforced by
+neither the CLI nor the API: 20 names in one call come back echoed in `meta.metric`.
 
 `--json` emits NDJSON, one object per line with no wrapping array. Use `jq -s` to slurp before
 aggregating.
