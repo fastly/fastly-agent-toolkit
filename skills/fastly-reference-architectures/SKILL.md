@@ -53,5 +53,5 @@ excellent entries — quality and a low re-review burden over exhaustive coverag
 ## Not this skill
 
 How a specific Fastly tool, CLI, or API works: see `fastly`, `fastly-cli`,
-`fastly-stats`, `falco`, `fastlike`, `viceroy`, `xvcl`, `fastly-fiddle`. This skill shows
-assembled, working systems, not primitives.
+`fastly-stats`, `falco`, `fastlike`, `fastly-ngwaf`, `viceroy`, `xvcl`, `fastly-fiddle`.
+This skill shows assembled, working systems, not primitives.
