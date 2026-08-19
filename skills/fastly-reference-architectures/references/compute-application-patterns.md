@@ -3,8 +3,8 @@
 ## fastly-edge-ab-testing — A/B testing at the edge
 - **Repo:** github.com/Fcuervo21/fastly-edge-ab-testing
 - **Source:** community (Fcuervo21)
-- **Demonstrates:** variant assignment and routing for A/B tests done in Compute, not in application code behind the origin.
-- **Watch out for:** none known as of last verification; thin description — skim the README on re-verification for the bucketing mechanism used.
+- **Demonstrates:** cookie-based bucket allocation and full response synthesis for A/B tests done entirely in Compute, not in application code behind the origin.
+- **Watch out for:** none known as of last verification.
 - **Last verified:** 2026-08-19
 
 ## compute-mcp-demo — protocol gateway pattern
@@ -21,9 +21,9 @@
 - **Watch out for:** none known as of last verification.
 - **Last verified:** 2026-08-19
 
-## edge-mcp — official reference implementation, explicitly unmaintained
+## edge-mcp — stateless MCP server in Rust Compute
 - **Repo:** github.com/fastly/edge-mcp
 - **Source:** official (fastly org)
-- **Demonstrates:** implementing the stateless MCP protocol revision as a Rust Compute application, from Fastly's own devrel org.
-- **Watch out for:** The README states explicitly this is a 'point-in-time example' built against the MCP 2026-07-28 specification and 'will not be maintained beyond the initial implementation' — expect no updates, bug fixes, or security patches. Check the current MCP spec version before modeling new code on it.
+- **Demonstrates:** implementing the stateless MCP protocol revision as a Rust Compute application.
+- **Watch out for:** The README states explicitly this is a "point-in-time example" built against the MCP 2026-07-28 specification and "will not be maintained beyond the initial implementation" — expect no updates, bug fixes, or security patches. Check the current MCP spec version before modeling new code on it.
 - **Last verified:** 2026-08-19

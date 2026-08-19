@@ -10,6 +10,6 @@
 ## fastly-bulk-redirects — bulk redirect / delivery routing
 - **Repo:** github.com/Fcuervo21/fastly-bulk-redirects
 - **Source:** community (Fcuervo21)
-- **Demonstrates:** managing a large redirect table as a delivery/routing concern at the edge, rather than one-off VCL redirect rules.
-- **Watch out for:** none known as of last verification; thin description, so skim the README on re-verification to confirm the redirect-loading mechanism it uses.
+- **Demonstrates:** storing a large source-to-destination redirect table in Config Store and serving lookups from a Compute edge worker, instead of an origin-side `map` block, app middleware, or per-redirect VCL rules.
+- **Watch out for:** none known as of last verification.
 - **Last verified:** 2026-08-19
