@@ -1,6 +1,6 @@
 ---
 name: fastly-reference-architectures
-description: "Curated, Fastly-endorsed GitHub repositories that demonstrate working reference architectures on the Fastly platform, from a single Compute application up through systems combining multiple Fastly products (Compute, WAF/NGWAF, KV store, real-time logging, shielding). Use when designing a new solution on Fastly and a worked example of the target pattern would help, or when implementing and a concrete assembled reference would clarify the shape of the code. Not for documentation of how a specific Fastly tool or API works on its own — see the tool-specific skills for that."
+description: "Curated GitHub repositories — Fastly-official or individually vouched for by a named reviewer — that demonstrate working reference architectures on the Fastly platform, from a single Compute application up through systems combining multiple Fastly products (Compute, Fanout, KV Store, Object Storage, real-time logging). Use when designing a new solution on Fastly and a worked example of the target pattern would help, or when implementing and a concrete assembled reference would clarify the shape of the code. Not for documentation of how a specific Fastly tool or API works on its own — see the tool-specific skills for that."
 ---
 
 # Fastly reference architectures
@@ -23,11 +23,11 @@ comment or issue) rather than editing the entry yourself.
 
 | You're looking for a pattern for... | File |
 | --- | --- |
-| Authentication, authorization, or security combos (WAF/NGWAF + Compute + rate limiting) | [references/edge-auth-and-security.md](references/edge-auth-and-security.md) |
-| Cache-key design, shielding, purge strategies | [references/caching-and-delivery.md](references/caching-and-delivery.md) |
-| A single Compute application (KV-backed apps, image/video processing, A/B testing at the edge) | [references/compute-application-patterns.md](references/compute-application-patterns.md) |
+| Authentication, access control, or ML-based security classification at the edge | [references/edge-auth-and-security.md](references/edge-auth-and-security.md) |
+| Origin shielding topology and redirect/routing tables at the edge | [references/caching-and-delivery.md](references/caching-and-delivery.md) |
+| A single Compute application (A/B testing, protocol gateways, real-time fan-out, MCP servers) | [references/compute-application-patterns.md](references/compute-application-patterns.md) |
 | A system combining 3+ Fastly products into one architecture | [references/multi-service-architectures.md](references/multi-service-architectures.md) |
-| Logging pipelines, real-time stats dashboards, alerting | [references/observability-and-ops.md](references/observability-and-ops.md) |
+| Log-streaming analytics dashboards and bulk content operations against Object Storage | [references/observability-and-ops.md](references/observability-and-ops.md) |
 
 ## Entry format
 
@@ -50,8 +50,15 @@ either the repo is from an official Fastly org, or a named person is willing to 
 their judgment to it via the `Source` field. Keep each file to a handful of genuinely
 excellent entries — quality and a low re-review burden over exhaustive coverage.
 
+The initial set of `community` entries came from an internal Fastly Solutions
+Engineering recommendation list; in every case the `Source` field names the repo's own
+author, not an independent third-party reviewer. Treat that as a starting point, not the
+bar going forward — a new entry ideally carries a reviewer distinct from the repo's
+author, and any existing entry can be re-vetted or removed through the same PR process
+as everything else here.
+
 ## Not this skill
 
 How a specific Fastly tool, CLI, or API works: see `fastly`, `fastly-cli`,
-`fastly-stats`, `falco`, `fastlike`, `fastly-ngwaf`, `viceroy`, `xvcl`, `fastly-fiddle`.
+`fastly-stats`, `fastly-ngwaf`, `falco`, `fastlike`, `viceroy`, `xvcl`, `fastly-fiddle`.
 This skill shows assembled, working systems, not primitives.
