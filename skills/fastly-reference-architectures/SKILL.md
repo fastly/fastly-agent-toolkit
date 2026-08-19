@@ -34,7 +34,7 @@ comment or issue) rather than editing the entry yourself.
 Every entry in every reference file uses this schema:
 
 ```markdown
-### <repo name> — <one-line pattern summary>
+## <repo name> — <one-line pattern summary>
 - **Repo:** github.com/org/repo
 - **Source:** official (fastly org / fastly-devrel) | community (name who vetted it)
 - **Demonstrates:** the specific pattern worth copying, not just "a Compute app"
