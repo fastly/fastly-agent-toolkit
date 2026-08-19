@@ -10,7 +10,7 @@
 ## fastly-serverless-checkers — Compute + Fanout + KV Store
 - **Repo:** github.com/chrisbuckley/fastly-serverless-checkers
 - **Source:** community (chrisbuckley)
-- **Demonstrates:** real-time multiplayer game state (Fanout for push, KV Store for persistence) with no backend servers.
+- **Demonstrates:** real-time multiplayer game logic running in Compute, with Fanout for push updates and KV Store for persistence — all three products, no backend servers.
 - **Watch out for:** none known as of last verification.
 - **Last verified:** 2026-08-19
 
