@@ -25,5 +25,5 @@
 - **Repo:** github.com/fastly/edge-mcp
 - **Source:** official (fastly org)
 - **Demonstrates:** implementing the stateless MCP protocol revision as a Rust Compute application, from Fastly's own devrel org.
-- **Watch out for:** THE REPO ITSELF SAYS IT WILL NOT BE MAINTAINED. This is exactly the "still green, quietly stale" risk the skill's freshness mechanism can't catch on its own (it isn't archived, and pushedAt is recent) — the `Watch out for` field must state this explicitly and verbatim, not just "none known," so nobody models new code against a protocol revision that has since moved on without checking the current MCP spec version first.
+- **Watch out for:** The README states explicitly this is a 'point-in-time example' built against the MCP 2026-07-28 specification and 'will not be maintained beyond the initial implementation' — expect no updates, bug fixes, or security patches. Check the current MCP spec version before modeling new code on it.
 - **Last verified:** 2026-08-19
