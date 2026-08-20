@@ -6,5 +6,3 @@ description: "Curated GitHub repositories demonstrating working reference archit
 # Fastly reference architectures
 
 Example projects running on Fastly (git repositories): [references/examples.md](references/examples.md)
-
-Add or remove entries via PR. CI checks that every linked repo is still live and not archived.
