@@ -8,4 +8,4 @@ validate:
 skillscheck:
 	uvx skillscheck@0.9.6 --strict skills
 
-ci: skillscheck validate
+ci: validate skillscheck
