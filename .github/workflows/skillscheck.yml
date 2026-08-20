@@ -12,6 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10.0.1
 
-      - run: uvx skillscheck@0.9.6 --strict skills
+      - run: uvx skillscheck@0.9.7 --strict skills
