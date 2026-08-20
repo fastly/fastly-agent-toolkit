@@ -140,9 +140,9 @@ Branch on `.status == "success"`, not on `.status`. Read causes from `errors[].r
 is `application/json` on both paths.
 
 Metric names take a source prefix (`all_`, `compute_`, `waf_`) or none: `metric=responses` and
-`metric=all_responses` both validate. Strip the prefix to look a name up in
-[fields.md](fields.md). An unknown name is a 400, `Unrecognized metric names: '...'`, and names are
-validated even where the product is off, so a 400 says nothing about entitlement. No cap on how
+`metric=all_responses` both validate. Strip the prefix to look a name up in the Field names and
+aggregation shape reference. An unknown name is a 400, `Unrecognized metric names: '...'`, and names
+are validated even where the product is off, so a 400 says nothing about entitlement. No cap on how
 many: 20 in one call come back echoed in `meta.metric`, despite the CLI help's 10.
 
 Origin Inspector adds latency histogram buckets (`all_latency_0_to_1ms` through
