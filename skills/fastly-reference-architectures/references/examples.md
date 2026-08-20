@@ -4,7 +4,6 @@
 | --- | --- | --- |
 | [google-apple-github-auth](https://github.com/bharwani/google-apple-github-auth) | Social login via Google/Apple (OIDC) and GitHub (OAuth2), verified entirely at the edge | Compute |
 | [fastly-compute-news-with-content-paywall](https://github.com/saschanowak/fastly-compute-news-with-content-paywall) | Paywall / access-control gating for content | Compute |
-| [injection-classifier-poc](https://github.com/fastly/injection-classifier-poc) | Prompt-injection ML classifier (proof of concept, not maintained) | Compute |
 | [vcl_shielding](https://github.com/bharwani/vcl_shielding) | Custom origin shielding topology via peering/IX | VCL |
 | [fastly-bulk-redirects](https://github.com/Fcuervo21/fastly-bulk-redirects) | Bulk redirect table in Config Store, served by an edge worker | Compute |
 | [fastly-edge-ab-testing](https://github.com/Fcuervo21/fastly-edge-ab-testing) | Cookie-based A/B test bucket allocation | Compute |
