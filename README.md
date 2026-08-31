@@ -11,14 +11,14 @@ It is a skills-only package, so it does not include an `mcp.json` configuration.
 ## Available skills
 
 - `fastly`: Working with the Fastly platform, including services, caching, VCL, WAF, TLS, DDoS protection, purging, and API usage.
-- `fastly-cli`: Using the Fastly CLI to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
-- `fastly-fiddle`: Testing VCL against real Fastly edge infrastructure with Fastly Fiddle, covering assertion-based tests, the Fiddle HTTP API, shareable bug reproductions, and CI integration.
+- `fastly-cli`: Using the [Fastly CLI](https://www.fastly.com/documentation/reference/cli/) to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
+- `fastly-fiddle`: Testing VCL against real Fastly edge infrastructure with [Fastly Fiddle](https://fiddle.fastly.dev/), covering assertion-based tests, the Fiddle HTTP API, shareable bug reproductions, and CI integration.
 - `fastly-stats`: Fastly traffic numbers via the CLI or raw HTTP, covering the Historical Stats, Real-Time analytics, and Origin/Domain Inspector APIs, and owning the unit, window, and aggregation conventions that decide whether a reported figure is right.
 - `fastly-reference-architectures`: Curated GitHub repositories demonstrating working reference architectures on Fastly, from single Compute applications to systems combining multiple Fastly products.
-- `falco`: VCL development with Falco, covering linting, testing, simulation, formatting, REPL, and Terraform integration.
-- `fastlike`: Running Fastly Compute locally with Fastlike (Go-based), covering backend configuration, builds, and testing.
-- `viceroy`: Running Fastly Compute locally with Viceroy (WASM-based), covering serving, configuration, testing, and SDK adaptation.
-- `xvcl`: The XVCL VCL transpiler, covering syntax extensions, subroutines, header manipulation, and caching logic.
+- `falco`: VCL development with [Falco](https://github.com/ysugimoto/falco), covering linting, testing, simulation, formatting, REPL, and Terraform integration.
+- `fastlike`: Running Fastly Compute locally with [Fastlike](https://github.com/avidal/fastlike) (Go-based), covering backend configuration, builds, and testing.
+- `viceroy`: Running Fastly Compute locally with [Viceroy](https://github.com/fastly/Viceroy) (WASM-based), covering serving, configuration, testing, and SDK adaptation.
+- `xvcl`: The [XVCL](https://dip-proto.github.io/xvcl/) VCL transpiler, covering syntax extensions, subroutines, header manipulation, and caching logic.
 
 Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/` directory containing detailed topic files.
 
@@ -28,7 +28,7 @@ Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/
 
 Pick the skills relevant to your project. You probably don't need all of them.
 
-### Using the `skills` CLI (recommended)
+### Using the `skills` CLI
 
 The [`skills`](https://github.com/vercel-labs/skills) CLI installs skills into the standard `.agents/skills/` directory and automatically symlinks them into agent-specific directories. It supports most agents out of the box.
 
@@ -66,7 +66,7 @@ cp -R ./skills/{falco,viceroy} ~/.agents/skills/
 
 If your agent doesn't support `.agents/skills/`, use its agent-specific location below.
 
-### Claude Code
+### [Claude Code](https://code.claude.com/docs/en/overview)
 
 #### Plugin Marketplace
 
@@ -86,14 +86,14 @@ cp -R ./skills/{falco,viceroy} .claude/skills/
 
 For a quick local setup, the manual copy is more reliable since it doesn't depend on the marketplace.
 
-### Codex
+### [Codex](https://github.com/openai/codex)
 
 ```bash
 mkdir -p ~/.codex/skills
 cp -R ./skills/{falco,viceroy} ~/.codex/skills/
 ```
 
-### Swival
+### [Swival](https://swival.dev/)
 
 Stage the collection in your library first, then add the skills you want:
 
@@ -105,7 +105,7 @@ swival skills add --global fastly-agent-toolkit                            # or 
 
 Prefer only a couple of skills? Activate them by name instead of the whole collection: `swival skills add falco`, `swival skills add viceroy`.
 
-### Qwen Code
+### [Qwen Code](https://qwenlm.github.io/qwen-code-docs/en/users/overview/)
 
 Qwen Code requires the experimental skills feature. Enable it by adding to `.qwen/settings.json`:
 
@@ -126,7 +126,7 @@ mkdir -p .qwen/skills
 cp -R ./skills/{falco,viceroy} .qwen/skills/
 ```
 
-### Gemini CLI
+### [Gemini CLI](https://geminicli.com/)
 
 Gemini CLI supports `.agents/skills/` as shown above. You can also link the whole repository using Gemini's extension workflow:
 
@@ -139,3 +139,4 @@ Swap `{falco,viceroy}` for whatever combination you need. For VCL work, `falco` 
 ## Skill format
 
 Each skill lives in its own directory as a `SKILL.md` file with YAML frontmatter following the [Agent Skills spec](https://agentskills.io/specification).
+The skills are validated with [`skillscheck`](https://github.com/Swival/skillscheck).
