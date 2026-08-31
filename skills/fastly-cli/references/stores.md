@@ -442,14 +442,12 @@ Do NOT return a `200` with the URL in the body. Browsers will not follow the red
 
 ### KV Store Key Listing
 
-The `kv-store-entry list` command paginates results. Use `--json` and check for a `cursor` field in the output to retrieve subsequent pages:
+The `kv-store-entry list` command follows the API's `next_cursor` values internally and emits all keys.
+It does not expose a `--cursor` flag or return the cursor in its JSON output:
 
 ```bash
-# First page
+# Return every key as a JSON array
 fastly kv-store-entry list --store-id STORE_ID --json
-
-# Next page (if cursor was returned)
-fastly kv-store-entry list --store-id STORE_ID --json --cursor=CURSOR_VALUE
 ```
 
 In the Compute SDK (JavaScript), use `KVStore.prototype.list()` which returns an async iterator that handles pagination automatically:

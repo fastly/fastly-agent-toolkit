@@ -78,6 +78,23 @@ Accepted values are `unknown` (default), `healthy`, and `unhealthy` — case-ins
 
 Dynamic backends created at runtime (using the Rust or JavaScript SDK) require a health check probe to be configured. Without a probe, dynamic backends will not function correctly. Configure probes via the SDK's `BackendBuilder` when creating dynamic backends programmatically.
 
+## WebSocket Passthrough
+
+`fastly compute serve` enables local WebSocket passthrough by default. To simulate a service without the WebSockets feature, disable it in `fastly.toml`:
+
+```toml
+[local_server.websockets_passthrough]
+enable = false
+```
+
+This section is interpreted by the Fastly CLI, which passes the effective value to Viceroy.
+Disabling requires Viceroy 0.21.0 or later.
+If the CLI has an older cached Viceroy, run `fastly compute serve --viceroy-check`.
+
+The CLI's bare `--experimental-websockets-passthrough` flag only re-enables passthrough and overrides `enable = false`.
+It has no working negative form.
+For a direct Viceroy invocation, use `--enable-local-websocket-passthrough=false` instead of relying on this manifest section.
+
 ## Dictionaries / Config Stores
 
 Key-value configuration data. Both `dictionaries` and `config_stores` work identically.

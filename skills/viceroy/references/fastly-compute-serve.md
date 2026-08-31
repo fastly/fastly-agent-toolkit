@@ -51,16 +51,20 @@ viceroy serve [OPTIONS] <WASM_FILE>
 
 ### Advanced Options
 
-| Option                              | Description                                              |
-| ----------------------------------- | -------------------------------------------------------- |
-| `--experimental_modules wasi-nn`    | Enable experimental WASI-NN module                       |
-| `--unknown-import-behavior <MODE>`  | Handle unknown imports: `link-error` (default) or `trap` |
-| `--local-pushpin-proxy-port <PORT>` | Enable Pushpin real-time messaging support               |
-| `--wasm-exceptions`                 | Enable the Wasm Exception Handling proposal              |
-| `--wasm-gc`                         | Enable the Wasm GC proposal                              |
-| `--wasm-cm-gc`                      | Enable component-model GC integration                    |
+| Option                                               | Description                                              |
+| ---------------------------------------------------- | -------------------------------------------------------- |
+| `--experimental_modules wasi-nn`                     | Enable experimental WASI-NN module                       |
+| `--enable-local-websocket-passthrough=<BOOL>`        | Enable or disable local WebSocket passthrough            |
+| `--unknown-import-behavior <MODE>`                   | Handle unknown imports: `link-error` (default) or `trap` |
+| `--local-pushpin-proxy-port <PORT>`                  | Enable Pushpin real-time messaging support               |
+| `--wasm-exceptions`                                  | Enable the Wasm Exception Handling proposal              |
+| `--wasm-gc`                                          | Enable the Wasm GC proposal                              |
+| `--wasm-cm-gc`                                       | Enable component-model GC integration                    |
 
 The three Wasm feature flags are off by default — production Fastly Compute does not enable them yet. Turn them on only when experimenting with toolchains (e.g. recent Kotlin/Java/Scala targets) that emit GC or exception-handling instructions.
+
+The WebSocket passthrough option was added in Viceroy 0.21.0 and defaults to `true`.
+Set it to `false` to make WebSocket handoff report `unsupported` to the guest, which lets the application exercise its disabled-feature path.
 
 ## Testing the Server
 
@@ -97,7 +101,6 @@ WARN no configuration provided, invoke with `-C <TOML_FILE>` to provide a config
 This means Viceroy is running without backends, dictionaries, or other services. Create a `fastly.toml` file to configure these.
 
 ### Slow execution
-If tests run slowly, the WASM may be compiled in debug mode. Ensure you're using release builds:
-```bash
-fastly compute build --release
-```
+If tests run slowly, the WASM may be compiled in debug mode.
+Check that `[scripts].build` in `fastly.toml` invokes the language toolchain's release or optimized build, then run `fastly compute build`.
+The Fastly CLI itself has no `compute build --release` flag.

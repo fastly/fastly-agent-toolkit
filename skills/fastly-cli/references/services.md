@@ -318,7 +318,7 @@ fastly service dictionary-entry create --dictionary-id=DICT_ID --key=KEY --value
 fastly service dictionary-entry delete --dictionary-id=DICT_ID --key=KEY --service-id SERVICE_ID
 fastly service dictionary-entry describe --dictionary-id=DICT_ID --key=KEY --service-id SERVICE_ID
 fastly service dictionary-entry list --dictionary-id=DICT_ID --service-id SERVICE_ID [--json]
-fastly service dictionary-entry update --dictionary-id=DICT_ID --service-id SERVICE_ID [--file] [--id] [--key] [--value]
+fastly service dictionary-entry update --dictionary-id=DICT_ID --service-id SERVICE_ID [--file FILE] [--key KEY] [--value VALUE]
 ```
 
 ## Rate Limiting

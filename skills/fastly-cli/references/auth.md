@@ -85,7 +85,8 @@ fastly auth delete old-token
 
 ### Stored Token Configuration
 
-Tokens are stored in `~/.config/fastly/config.toml`.
+Tokens are stored in the platform-specific CLI config file.
+Use `fastly config --location` to print its exact path.
 
 ## Active Token Output and Token Management
 
@@ -117,7 +118,8 @@ fastly auth revoke --id TOKEN_ID
 fastly auth revoke --file token-ids.txt
 ```
 
-If the revoked token was stored locally, the CLI removes the matching entry from `~/.config/fastly/config.toml`. Revoking the default stored token may also reassign the default token, or leave no default configured.
+If the revoked token was stored locally, the CLI removes the matching entry from the config file reported by `fastly config --location`.
+Revoking the default stored token may also reassign the default token, or leave no default configured.
 
 ## API Tokens (Deprecated)
 
@@ -311,9 +313,8 @@ View and manage CLI configuration.
 # Display current config
 fastly config
 
-# Config file location
-# macOS/Linux: ~/.config/fastly/config.toml
-# Windows: %APPDATA%\fastly\config.toml
+# Print the platform-specific config file location
+fastly config --location
 ```
 
 ## Dangerous Operations

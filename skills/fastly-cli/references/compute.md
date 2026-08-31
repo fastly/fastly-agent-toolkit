@@ -25,8 +25,11 @@ fastly compute init
 # Non-interactive with defaults
 fastly compute init --accept-defaults
 
-# From starter kit or template
-fastly compute init -f https://github.com/fastly/compute-starter-kit-rust-default
+# From the current starter kit catalog
+fastly compute init --from starter-kit/javascript/typescript-default
+
+# From an arbitrary Git template
+fastly compute init --from https://github.com/ORG/REPOSITORY
 
 # From existing service
 fastly compute init --from SERVICE_ID
@@ -48,15 +51,24 @@ fastly compute init -a "developer@example.com"
 
 **Key flags**:
 - `-p, --directory` - Destination directory for the new project
-- `-f, --from` - Git repository URL, local path, archive URL, or service ID
+- `-f, --from` - Starter kit identifier, Git repository URL, local path, archive URL, or service ID
 - `-l, --language` - Language for the project
 - `-a, --author` - Author string for the project
 
 The `--from` flag accepts:
+- Starter kit identifiers in the form `starter-kit/<language>/<name>`
 - Git repository URLs
 - Local directory paths
 - URLs to .zip/.tar.gz archives
 - Existing Fastly service IDs
+
+In Fastly CLI v16 and later, the interactive picker fetches all eligible starter kits for the selected language from Fastly's live catalog.
+This requires network access.
+The CLI filters out kits that are hidden from the CLI or require a newer CLI version, and puts the language's default kit first.
+
+When `--from` is a service ID, the CLI selects the active packaged version, or the newest packaged version if none is active.
+It can restore the original starter source only when that package is version 1 and has usable `cloned_from` metadata.
+For later service versions, it creates the project manifest but deliberately does not fetch starter source, so this is not a general source-code clone operation.
 
 ## Build a Package
 
@@ -180,6 +192,9 @@ fastly compute serve --skip-build
 # Enable Pushpin for Fanout local testing
 fastly compute serve --experimental-enable-pushpin
 
+# Explicitly re-enable WebSocket passthrough when fastly.toml disables it
+fastly compute serve --experimental-websockets-passthrough
+
 # Profile the Wasm guest under Viceroy
 fastly compute serve --profile-guest --profile-guest-dir ./profiles
 
@@ -201,6 +216,7 @@ fastly compute serve --viceroy-args "--log-level=debug"
 - `--pushpin-path` - Path to Pushpin binary
 - `--pushpin-proxy-port` - Pushpin proxy port
 - `--pushpin-publish-port` - Pushpin publish port
+- `--experimental-websockets-passthrough` - Explicitly enable WebSocket passthrough and override a manifest setting of `false`
 - `--profile-guest` - Profile the Wasm guest under Viceroy
 - `--profile-guest-dir` - Directory for per-request profiles
 - `--viceroy-args` - Additional arguments passed to Viceroy
@@ -208,6 +224,17 @@ fastly compute serve --viceroy-args "--log-level=debug"
 - `--viceroy-path` - Path to a user-installed Viceroy binary
 
 The local server uses Viceroy to emulate the Fastly Compute environment.
+
+WebSocket passthrough is enabled by default. To disable it, use the manifest setting:
+
+```toml
+[local_server.websockets_passthrough]
+enable = false
+```
+
+The CLI flag is positive-only and cannot disable passthrough.
+Do not use `--no-experimental-websockets-passthrough` or assign `false` to the flag because the current parser rejects both forms.
+Disabling requires Viceroy 0.21.0 or later; use `fastly compute serve --viceroy-check` if an older managed Viceroy is cached.
 
 ### Pre-installing Viceroy
 
@@ -384,12 +411,13 @@ fastly compute deploy --env stage
 fastly compute deploy
 ```
 
-### Clone and Modify Existing Service
+### Initialize from a Starter-Based Service
 ```bash
 fastly compute init --from EXISTING_SERVICE_ID
-# Make changes
-fastly compute publish
 ```
+
+Check that the command actually fetched the original starter source before editing or publishing.
+Packages on service versions later than 1 do not use this source-recovery path.
 
 ## Unit-Testing Guest Code
 
