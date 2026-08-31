@@ -30,8 +30,8 @@ Clients load the root [`plugin.json`](plugin.json) manifest and discover the ski
 - `fastly-stats`: Fastly traffic numbers via the CLI or raw HTTP, covering the Historical Stats, Real-Time analytics, and Origin/Domain Inspector APIs, and owning the unit, window, and aggregation conventions that decide whether a reported figure is right.
 - `fastly-reference-architectures`: Curated GitHub repositories demonstrating working reference architectures on Fastly, from single Compute applications to systems combining multiple Fastly products.
 - `falco`: VCL development with [Falco](https://github.com/ysugimoto/falco), covering linting, testing, simulation, formatting, REPL, and Terraform integration.
-- `fastlike`: Running Fastly Compute locally with [Fastlike](https://github.com/avidal/fastlike) (Go-based), covering backend configuration, builds, and testing.
-- `viceroy`: Running Fastly Compute locally with [Viceroy](https://github.com/fastly/Viceroy) (WASM-based), covering serving, configuration, testing, and SDK adaptation.
+- `fastlike`: Running Fastly Compute locally with [Fastlike](https://github.com/avidal/fastlike), covering backend configuration, builds, and testing.
+- `viceroy`: Running Fastly Compute locally with [Viceroy](https://github.com/fastly/Viceroy), covering serving, configuration, testing, and SDK adaptation.
 - `xvcl`: The [XVCL](https://dip-proto.github.io/xvcl/) VCL transpiler, covering syntax extensions, subroutines, header manipulation, and caching logic.
 
 Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/` directory containing detailed topic files.
