@@ -2,11 +2,25 @@
 
 A collection of skills for AI coding agents to work with the Fastly platform and edge computing tools.
 
+- [Fastly Agent Toolkit](#fastly-agent-toolkit)
+  - [Agent Plugins](#agent-plugins)
+  - [Available skills](#available-skills)
+  - [Usage](#usage)
+    - [Using the `skills` CLI](#using-the-skills-cli)
+    - [Manual copy](#manual-copy)
+    - [Claude Code](#claude-code)
+      - [Plugin Marketplace](#plugin-marketplace)
+      - [Manual](#manual)
+    - [Codex](#codex)
+    - [Swival](#swival)
+    - [Qwen Code](#qwen-code)
+    - [Gemini CLI](#gemini-cli)
+  - [Skill format](#skill-format)
+
 ## Agent Plugins
 
 This repository is a portable [Agent Plugin](https://agent-plugins.org/specification).
 Clients load the root [`plugin.json`](plugin.json) manifest and discover the skills in `skills/`.
-It is a skills-only package, so it does not include an `mcp.json` configuration.
 
 ## Available skills
 
