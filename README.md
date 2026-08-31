@@ -16,6 +16,7 @@ A collection of skills for AI coding agents to work with the Fastly platform and
     - [Qwen Code](#qwen-code)
     - [Gemini CLI](#gemini-cli)
   - [Skill format](#skill-format)
+  - [Contributing new skills](#contributing-new-skills)
 
 ## Agent Plugins
 
@@ -154,3 +155,7 @@ Swap `{falco,viceroy}` for whatever combination you need. For VCL work, `falco` 
 
 Each skill lives in its own directory as a `SKILL.md` file with YAML frontmatter following the [Agent Skills spec](https://agentskills.io/specification).
 The skills are validated with [`skillscheck`](https://github.com/Swival/skillscheck).
+
+## Contributing new skills
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
