@@ -91,7 +91,7 @@ Available on most commands:
 - For shell substitutions or pipes that need the active API token, prefer `fastly auth token`; it prints the token only to non-terminal stdout and refuses to write it directly to a terminal
 - In AI contexts, never run `fastly auth show --reveal` bare. If you specifically need a stored token by name rather than the currently active token, use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` only inside a shell substitution
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
-- Config: `~/.config/fastly/config.toml` (stored tokens), `fastly.toml` (project)
+- Config: use `fastly config --location` to find the platform-specific CLI config file; `fastly.toml` is the project manifest
 
 ## Common Flag Examples
 
@@ -177,7 +177,9 @@ The `--override-host` value is the Host header sent to the origin. The `--ssl-ce
 
 ## Service List Completeness
 
-When enumerating services (e.g., for bandwidth stats), always use `fastly service list --json` and check for pagination. Services with zero traffic still appear in the list. Loop over ALL service IDs from the list — do not rely on stats APIs that omit zero-traffic services.
+When enumerating services (e.g., for bandwidth stats), use `fastly service list --json`.
+The command follows API pagination internally and returns all pages unless you explicitly start from a later `--page`.
+Services with zero traffic still appear in the list, so loop over every returned service ID instead of relying on stats APIs that omit zero-traffic services.
 
 ## New VCL Service Setup Workflow
 

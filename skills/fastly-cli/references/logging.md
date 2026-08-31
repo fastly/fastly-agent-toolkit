@@ -55,7 +55,7 @@ fastly service logging s3 create \
   --service-id SERVICE_ID \
   --version 1 \
   --name s3-logs \
-  --bucket-name my-fastly-logs \
+  --bucket my-fastly-logs \
   --access-key YOUR_AWS_ACCESS_KEY \
   --secret-key YOUR_AWS_SECRET_KEY \
   --path "/logs/%Y/%m/%d/" \
@@ -71,7 +71,7 @@ fastly service logging gcs create \
   --service-id SERVICE_ID \
   --version 1 \
   --name gcs-logs \
-  --bucket-name my-fastly-logs \
+  --bucket my-fastly-logs \
   --user service-account@project.iam.gserviceaccount.com \
   --secret-key "$(cat service-account.json)" \
   --path "/logs/%Y/%m/%d/" \
@@ -126,8 +126,6 @@ fastly service logging elasticsearch create \
   --name es-logs \
   --url https://your-cluster.es.amazonaws.com \
   --index fastly-logs \
-  --user elastic \
-  --password YOUR_PASSWORD \
   --format '{"@timestamp":"%{begin:%Y-%m-%dT%H:%M:%SZ}t","client_ip":"%h"}'
 ```
 

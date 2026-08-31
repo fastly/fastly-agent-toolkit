@@ -180,7 +180,7 @@ fastly tls-custom activation disable --id ACTIVATION_ID
 fastly tls-custom domain list
 
 # Filter by certificate
-fastly tls-custom domain list --filter-tls-certificate-id CERT_ID
+fastly tls-custom domain list --filter-cert CERT_ID
 ```
 
 ## TLS Configuration Options
