@@ -15,3 +15,11 @@
 | [infiniteboard](https://github.com/anaramirezmorones/infiniteboard) | Collaborative infinite whiteboard | Compute, Fanout, KV Store, Object Storage |
 | [fastly-log-analytics](https://github.com/fastly/fastly-log-analytics) | Request-level log analytics dashboard | Compute, Object Storage |
 | [fos-migrator](https://github.com/benjaminshaver/fos-migrator) | Bulk content migration into Object Storage | Compute, Object Storage |
+| [pypi-infra](https://github.com/pypi/infra) | PyPI's production Fastly config: origin shielding, purge auth, multi-sink logging | VCL |
+| [trusted-server](https://github.com/IABTechLab/trusted-server) | IAB Tech Lab's edge ad/identity runtime: consent decoding, first-party auction orchestration | Compute, KV Store, Secret Store, Config Store |
+| [security-use-cases](https://github.com/fastly/security-use-cases) | NGWAF-aware caching and edge rate limiting patterns | VCL, Next-Gen WAF, Edge Rate Limiting |
+| [pubsub](https://github.com/fastly/pubsub) | Publish/subscribe broker: SSE and MQTT subscribers, JWT-gated | Compute, Fanout, KV Store, Config Store, Secret Store |
+| [terraform-fastly-service](https://github.com/mastodon/terraform-fastly-service) | mastodon.social's VCL pattern library: purge auth, tarpitting, apex redirects | VCL |
+| [edgeml-recommender](https://github.com/fastly/edgeml-recommender) | Vector similarity search over KV Store, HNSW graphs precompiled into edge storage | Compute, KV Store |
+| [fastly-content-fanout](https://github.com/guardian/fastly-content-fanout) | EventBridge-to-Fanout live content push over WebSocket/SSE | Compute, Fanout |
+| [helix-mixer](https://github.com/adobe-rnd/helix-mixer) | Config-driven multi-origin edge composition proxy | Compute |
