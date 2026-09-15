@@ -15,3 +15,7 @@
 | [infiniteboard](https://github.com/anaramirezmorones/infiniteboard) | Collaborative infinite whiteboard | Compute, Fanout, KV Store, Object Storage |
 | [fastly-log-analytics](https://github.com/fastly/fastly-log-analytics) | Request-level log analytics dashboard | Compute, Object Storage |
 | [fos-migrator](https://github.com/benjaminshaver/fos-migrator) | Bulk content migration into Object Storage | Compute, Object Storage |
+| [trusted-server](https://github.com/IABTechLab/trusted-server) | Moves third-party ad-tech JavaScript (Prebid auction, identity resolution, consent management) into a first-party edge service to avoid browser third-party restrictions | Compute, KV Store, Secret Store, Config Store |
+| [security-use-cases](https://github.com/fastly/security-use-cases) | NGWAF-aware caching and edge rate limiting patterns | VCL, Next-Gen WAF, Edge Rate Limiting |
+| [pubsub](https://github.com/fastly/pubsub) | Publish/subscribe broker: SSE and MQTT subscribers, JWT-gated | Compute, Fanout, KV Store, Config Store, Secret Store |
+| [helix-mixer](https://github.com/adobe-rnd/helix-mixer) | Universal reverse proxy (Cloudflare Workers + Fastly Compute) routing requests to different backends via configurable URL-glob patterns | Compute |
