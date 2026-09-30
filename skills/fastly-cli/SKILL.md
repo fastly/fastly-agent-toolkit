@@ -11,6 +11,17 @@ Covers: services, backends, domains, VCL snippets, cache purging, Compute/WASM d
 
 # Fastly CLI Overview
 
+## Prerequisites
+
+Requires the `fastly` CLI; API operations also need network access to Fastly.
+For installation, see <https://www.fastly.com/documentation/reference/cli/>.
+JSON examples also need `jq`; origin checks use `curl` and `openssl`.
+Compute builds need the project's language toolchain and dependencies.
+
+Use credentials already configured in the user's local CLI or environment.
+If authentication is missing, have the user complete `fastly auth login --sso` locally or configure `FASTLY_API_TOKEN` outside chat.
+Never ask for an API key in chat, print a token, or enable shell tracing on authenticated commands.
+
 ## References
 
 | Topic          | File                                            | Use when...                                                                              |
@@ -97,7 +108,7 @@ Available on most commands:
 
 These are the flags that cause the most confusion. Copy-paste these patterns directly.
 
-### Autocloning (use this every time you modify a service)
+### Autocloning (existing service versions)
 
 ```bash
 # --autoclone automatically clones a locked version before making changes.
@@ -109,7 +120,8 @@ fastly service domain create --service-id $SID --version active --autoclone \
   --name cdn.example.com
 ```
 
-Always pass `--autoclone` when creating, updating, or deleting backends, domains, snippets, VCL, conditions, headers, or any other version-scoped resource. It is safe to use even on unlocked versions (it simply does nothing if the version is already editable).
+Pass `--autoclone` when creating, updating, or deleting backends, domains, snippets, VCL, conditions, headers, or other version-scoped resources on an existing service.
+For a brand new service, configure the unlocked `--version 1` without `--autoclone`, then validate and activate once, as shown in the new-service workflow below.
 
 ### Boolean flags (--use-ssl, --use-ssl is NOT --use-ssl true)
 

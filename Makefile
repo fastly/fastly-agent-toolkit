@@ -1,4 +1,4 @@
-.PHONY: validate skillscheck ci
+.PHONY: validate skillscheck ci package
 
 all: ci
 
@@ -9,3 +9,6 @@ skillscheck:
 	uvx skillscheck@0.9.7 --strict skills
 
 ci: validate skillscheck
+
+package: ci
+	uv run --no-project python scripts/package.py

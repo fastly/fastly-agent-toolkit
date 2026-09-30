@@ -9,10 +9,18 @@ Audits NGWAF workspaces to verify critical templated rules are configured and en
 
 ## Quick Start
 
-Run the bundled assessment script (requires `jq` and `FASTLY_API_KEY`):
+The bundled assessment requires Bash, `curl`, `jq`, network access to `api.fastly.com`, and a locally configured `FASTLY_API_KEY` with NGWAF read access.
+The manual workflow also requires the `fastly` CLI.
+Configure credentials in the user's local environment or CLI configuration.
+Never ask the user to paste an API key into chat or print it in command output.
+
+Set `NGWAF_SKILL_DIR` to the absolute directory containing this `SKILL.md`, using the installed skill location supplied by the client.
+This is a variable you assign, not a client-provided environment variable.
+Run the helper from the user's working directory:
 
 ```bash
-./scripts/assess_ngwaf_rules.sh
+NGWAF_SKILL_DIR=/absolute/path/to/fastly-ngwaf
+bash "$NGWAF_SKILL_DIR/scripts/assess_ngwaf_rules.sh"
 ```
 
 For manual inspection or partial audits, work through the steps below with the `fastly` CLI.
@@ -161,10 +169,11 @@ step 3 can be checked for real traffic by signal name. Query those through `get`
 
 | Error                             | Cause                        | Fix                                            |
 | --------------------------------- | ---------------------------- | ---------------------------------------------- |
-| `FASTLY_API_KEY not set`          | Environment variable missing | `export FASTLY_API_KEY=<token>`                |
+| `FASTLY_API_KEY not set`          | Environment variable missing | Configure the key locally, outside chat       |
 | `API call failed with status 403` | Token lacks NGWAF scope      | Verify token has `global:read` permission      |
 | `No workspaces found`             | NGWAF not provisioned        | Enable NGWAF on the account first              |
 | `jq is not installed`             | Missing dependency           | `brew install jq` or `apt-get install -y jq`   |
+| `curl is not installed`           | Missing dependency           | Install `curl` with the system package manager |
 
 ## API References
 

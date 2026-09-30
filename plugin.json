@@ -3,9 +3,33 @@
   "name": "fastly-agent-toolkit",
   "version": "0.1.0",
   "description": "Fastly development tools and platform skills",
-  "author": {"name": "Fastly"},
+  "author": {
+    "name": "Fastly"
+  },
   "homepage": "https://github.com/fastly/fastly-agent-toolkit",
   "repository": "https://github.com/fastly/fastly-agent-toolkit",
   "license": "MIT",
-  "keywords": ["fastly", "edge", "compute", "vcl", "cdn"]
+  "keywords": [
+    "fastly",
+    "edge",
+    "compute",
+    "vcl",
+    "cdn"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Fastly Agent Toolkit",
+        "shortDescription": "Build with Fastly",
+        "longDescription": "Develop and test Fastly VCL and Compute applications, manage services with the Fastly CLI, inspect traffic statistics, and audit Next-Gen WAF rules.\nUse these skills in a coding environment that can read your project and run local developer tools.\nInstall the tools required by your workflow, such as the Fastly CLI, Falco, XVCL, Fastlike, or Viceroy.\nAuthenticated operations use credentials you configure locally; do not share API keys in chat.\nFastly Fiddle tests upload VCL and request specifications to a public Fastly sandbox.",
+        "developerName": "Fastly",
+        "category": "Developer Tools",
+        "websiteURL": "https://github.com/fastly/fastly-agent-toolkit",
+        "supportURL": "https://github.com/fastly/fastly-agent-toolkit/issues",
+        "privacyPolicyURL": "https://www.fastly.com/privacy",
+        "composerIcon": "./assets/fastly-icon.svg",
+        "logo": "./assets/fastly-icon.svg"
+      }
+    }
+  }
 }

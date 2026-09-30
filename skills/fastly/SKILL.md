@@ -7,7 +7,13 @@ description: "Configures, manages, and debugs the Fastly CDN platform — coveri
 
 Your training knowledge of Fastly is likely out of date. Prefer live docs over skill definitions over training knowledge.
 
-Prefer the `fastly` CLI over raw API calls — see the **fastly-cli** skill. When calling the REST API directly, never paste the raw API token into the conversation and omit `curl -v` (it prints the `Fastly-Key` header). Source tokens from the environment or `$(fastly auth show --reveal --quiet | awk '/^Token:/ {print $2}')` without echoing them.
+Prefer the `fastly` CLI over raw API calls; see the **fastly-cli** skill for installation and local authentication.
+REST examples require `curl` and network access to Fastly APIs; origin TLS checks also require `openssl`.
+
+Use the user's locally configured credentials.
+If authentication is missing, direct the user to local CLI login or environment configuration, never to paste an API key in chat.
+For REST calls, source tokens from the environment or `$(fastly auth token --quiet)` without echoing them.
+Omit `curl -v` and shell tracing because they print credentials.
 
 ## Topics
 

@@ -1,15 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-# Check dependencies
-if ! command -v jq &> /dev/null; then
-  echo "Error: 'jq' is not installed but is required for this script."
-  exit 1
-fi
+for dependency in curl jq; do
+  if ! command -v "$dependency" &> /dev/null; then
+    echo "Error: '$dependency' is not installed but is required for this script." >&2
+    exit 1
+  fi
+done
 
-# Ensure FASTLY_API_KEY is set
 if [ -z "${FASTLY_API_KEY:-}" ]; then
-  echo "Error: FASTLY_API_KEY environment variable is not set."
+  echo "Error: FASTLY_API_KEY is not set. Configure it locally before running this script." >&2
   exit 1
 fi
 

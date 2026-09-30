@@ -17,6 +17,26 @@ Fastly Fiddle is a web-based sandbox at <https://fiddle.fastly.dev> that compile
 **Demo CI runner**: <https://github.com/fastly/demo-fiddle-ci>
 **API base**: `https://fiddle.fastly.dev` (undocumented but stable; no auth required for public fiddles)
 
+## Prerequisites and public uploads
+
+The helper requires Bash, `curl` 7.76 or newer, `jq`, and network access to `fiddle.fastly.dev`.
+If a tool is missing, name it and provide installation guidance before running the helper.
+
+Creating or updating a fiddle uploads its VCL, origins, request headers, request bodies, and tests to a public service, including with `--lint-only`.
+Only publish when the user has authorized a public Fiddle upload or shareable reproduction.
+For a request limited to local testing, use Falco and keep the spec local.
+Never include credentials or private project data in a fiddle.
+
+Set `FIDDLE_SKILL_DIR` to the absolute directory containing this `SKILL.md`, using the installed skill location supplied by the client:
+
+```bash
+FIDDLE_SKILL_DIR=/absolute/path/to/fastly-fiddle
+```
+
+This is a variable you assign, not a client-provided environment variable.
+Keep the user's project as the working directory so inputs such as `fiddle.json` and `spec.json` remain project-relative.
+Bundled scripts and examples use `FIDDLE_SKILL_DIR` instead.
+
 ## When Fiddle, when Falco
 
 | Need                                                  | Use                                |
@@ -53,7 +73,7 @@ agents killed by a wall-clock limit:
 ### Lint-only (the common case): compile check, no execution
 
 ```bash
-scripts/run-fiddle.sh --lint-only fiddle.json
+bash "$FIDDLE_SKILL_DIR/scripts/run-fiddle.sh" --lint-only fiddle.json
 # {fiddle_id, url, valid, lintStatus}. Exit 0 = compiles, 2 = lint error
 # (details on stderr). No /execute, no SSE, no edge-sync wait.
 ```
@@ -74,14 +94,14 @@ helper handles publish → execute → SSE → completion-detection in one call,
 with a bounded `--max-wait` (default 180s per attempt) so it can't hang:
 
 ```bash
-scripts/run-fiddle.sh examples/robots.json
+bash "$FIDDLE_SKILL_DIR/scripts/run-fiddle.sh" "$FIDDLE_SKILL_DIR/examples/robots.json"
 # Prints fiddle URL, then pass/fail JSON per assertion (including body_preview
 # and status by default). Exits non-zero on failure. Pass --no-bodies for
 # compact output.
 
 # Iterate against an already-published fiddle without paying edge-sync again:
-scripts/run-fiddle.sh --id <fiddle-id>                 # re-execute (warmest, ~2s)
-scripts/run-fiddle.sh --id <fiddle-id> spec.json       # PUT then execute
+bash "$FIDDLE_SKILL_DIR/scripts/run-fiddle.sh" --id <fiddle-id>           # re-execute (warmest, ~2s)
+bash "$FIDDLE_SKILL_DIR/scripts/run-fiddle.sh" --id <fiddle-id> spec.json # PUT then execute
 ```
 
 The equivalent raw-curl flow, for reference or when the helper isn't available:

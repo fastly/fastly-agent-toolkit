@@ -2,6 +2,10 @@
 
 Manage authentication, stored tokens, and user access.
 
+The user configures credentials locally through the CLI or their environment.
+If authentication is missing or expired, explain the local login step; never ask for a token in chat.
+Do not read credential files into the conversation, print token values, or enable shell tracing on commands that use them.
+
 ## Quick Start
 
 ```bash
@@ -14,8 +18,6 @@ fastly whoami
 # View stored tokens
 fastly auth list
 
-# Print the active API token to a pipe or shell substitution
-fastly auth token | pbcopy
 ```
 
 ## Login
@@ -44,7 +46,7 @@ Stored tokens let you keep multiple credentials for different accounts or enviro
 If you need the currently active token for a `curl` command or shell substitution, prefer:
 
 ```bash
-TOKEN=$(fastly auth token)
+TOKEN=$(fastly auth token --quiet)
 ```
 
 `fastly auth token` writes only to non-terminal stdout. It refuses to print the token directly to a terminal, so use it in a pipe or command substitution rather than as a standalone command.
@@ -73,9 +75,6 @@ fastly auth use staging
 # Show details for a stored token (metadata only, no secret)
 fastly auth show staging
 
-# Show the token value — AVOID in AI agent contexts
-fastly auth show --reveal staging
-
 # Show the default token
 fastly auth show
 
@@ -94,7 +93,7 @@ Use `fastly auth token` when you need the active API token in a script:
 
 ```bash
 # Pass the current token to curl without printing it to the terminal
-curl -H "Fastly-Key: $(fastly auth token)" https://api.fastly.com/current_customer
+curl -H "Fastly-Key: $(fastly auth token --quiet)" https://api.fastly.com/current_customer
 ```
 
 `fastly auth token` is for outputting the currently active token only. It refuses to print to a TTY, so it must be used in a pipe or shell substitution.
@@ -208,13 +207,10 @@ fastly user delete --id USER_ID
 
 ## Environment Variables
 
-Authentication can also be set via environment variables:
+The user can also configure `FASTLY_API_TOKEN` in their local environment or CI secret store, outside chat.
+Once it is set, commands use it automatically:
 
 ```bash
-# Set token via environment
-export FASTLY_API_TOKEN="your-api-token"
-
-# Now CLI commands use this token
 fastly service list
 ```
 

@@ -55,6 +55,9 @@ go install fastlike.dev/cmd/fastlike@latest
 
 ## Quick Start
 
+The `bin/fastlike` examples use a source build.
+Use its absolute path from your project directory, or `fastlike` for an installed binary.
+
 ```bash
 # Minimal: WASM + single backend. The wasm path is positional.
 bin/fastlike -backend localhost:8000 app.wasm

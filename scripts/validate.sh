@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
+
 set -euo pipefail
 
 CLAUDE_CODE_VERSION="${CLAUDE_CODE_VERSION:-2.1.112}"
@@ -171,6 +172,8 @@ if [[ -d "skills" ]]; then
     fi
 fi
 
+echo "=== Validating OpenAI submission bundle ==="
+uv run --no-project python scripts/package.py --check
 
 if [[ $errors -gt 0 ]]; then
     echo "Error: $errors validation failure(s) found" >&2

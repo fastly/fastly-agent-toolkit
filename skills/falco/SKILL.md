@@ -149,6 +149,9 @@ format:
 
 Required when using `-r, --remote` flag.
 
+Configure API credentials locally, outside chat.
+Never ask for an API key in a conversation or print its value.
+
 ## References
 
 | Topic                    | File                                                                            | Use when...                                                   |

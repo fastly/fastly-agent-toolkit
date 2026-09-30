@@ -5,6 +5,8 @@ A collection of skills for AI coding agents to work with the Fastly platform and
 - [Fastly Agent Toolkit](#fastly-agent-toolkit)
   - [Agent Plugins](#agent-plugins)
   - [Available skills](#available-skills)
+  - [Runtime requirements](#runtime-requirements)
+  - [Support and privacy](#support-and-privacy)
   - [Usage](#usage)
     - [Using the `skills` CLI](#using-the-skills-cli)
     - [Manual copy](#manual-copy)
@@ -29,6 +31,7 @@ Clients load the root [`plugin.json`](plugin.json) manifest and discover the ski
 - `fastly-cli`: Using the [Fastly CLI](https://www.fastly.com/documentation/reference/cli/) to manage services, compute apps, logging, WAF, TLS, key-value stores, and stats.
 - `fastly-fiddle`: Testing VCL against real Fastly edge infrastructure with [Fastly Fiddle](https://fiddle.fastly.dev/), covering assertion-based tests, the Fiddle HTTP API, shareable bug reproductions, and CI integration.
 - `fastly-stats`: Fastly traffic numbers via the CLI or raw HTTP, covering the Historical Stats, Real-Time analytics, and Origin/Domain Inspector APIs, and owning the unit, window, and aggregation conventions that decide whether a reported figure is right.
+- `fastly-ngwaf`: Auditing Next-Gen WAF workspaces for missing or disabled protection rules and checking whether attack traffic is being blocked.
 - `fastly-reference-architectures`: Curated GitHub repositories demonstrating working reference architectures on Fastly, from single Compute applications to systems combining multiple Fastly products.
 - `falco`: VCL development with [Falco](https://github.com/ysugimoto/falco), covering linting, testing, simulation, formatting, REPL, and Terraform integration.
 - `fastlike`: Running Fastly Compute locally with [Fastlike](https://github.com/avidal/fastlike), covering backend configuration, builds, and testing.
@@ -38,6 +41,38 @@ Clients load the root [`plugin.json`](plugin.json) manifest and discover the ski
 Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/` directory containing detailed topic files.
 
 **Important:** SKILL.md files reference companion files in their `references/` directory. Make sure your agent is allowed to read from these directories, otherwise it won't be able to follow the references and will miss important context.
+
+## Runtime requirements
+
+These skills are intended for coding environments that can read project files and run commands.
+Install the tools for the workflows you use; installing the plugin does not install its developer tools or connect a Fastly account.
+
+| Workflow                                  | Requirements                                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Fastly CLI and traffic statistics         | Fastly CLI and locally configured authentication; `curl` and `jq` for raw API examples     |
+| NGWAF assessment script                   | Bash, `curl`, `jq`, and a locally configured `FASTLY_API_KEY` with access to the workspace |
+| VCL linting, unit tests, and simulation   | Falco; installation requires Homebrew or Go                                                |
+| XVCL compilation                          | uv with `uvx` and access to the XVCL package; Falco for the local checks                   |
+| Local Compute development                 | Fastlike or Viceroy, plus the build tools and WASM targets required by the application     |
+| Fastly Fiddle tests                       | Bash, `curl` 7.76 or newer, `jq`, and network access to Fastly Fiddle                      |
+| Documentation and reference architectures | A browser or HTTP client; Git when cloning examples or tool sources                        |
+
+Each skill describes its prerequisites and installation options.
+Package installation and source builds may need network access.
+Bundled scripts and examples are resolved from the installed skill directory, while your project files stay relative to your project's working directory.
+
+Set up Fastly authentication yourself using the CLI's interactive login or local configuration.
+Do not paste API keys into a conversation, include them in project files, or share command output that reveals them.
+Choose credentials with only the permissions needed for the task.
+
+## Support and privacy
+
+For questions about these skills or to report a bug, open an issue in the [GitHub issue tracker](https://github.com/fastly/fastly-agent-toolkit/issues).
+Report security issues privately through the process in [SECURITY.md](SECURITY.md).
+
+Read [Privacy and data handling](PRIVACY.md) for details about local credentials, account data, and public Fiddle uploads.
+Fastly's [privacy policy](https://www.fastly.com/privacy) and [terms of service](https://www.fastly.com/terms) describe the applicable Fastly policies and service terms.
+The skills are available under the [MIT license](LICENSE).
 
 ## Usage
 

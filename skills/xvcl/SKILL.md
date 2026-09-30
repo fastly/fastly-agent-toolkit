@@ -9,14 +9,19 @@ Trigger on: XVCL, .xvcl files, VCL transpiler, VCL metaprogramming, #const/#for/
 
 Do NOT trigger for: debugging existing .vcl files without XVCL, Fastly API/CLI ops, Fastly Compute, or Terraform — even if they mention VCL.
 
+If the user explicitly requests plain VCL, keep `.vcl` files and do not introduce XVCL.
+Follow explicitly requested tools and test modes instead of the default examples.
+
 # Writing VCL with XVCL
 
 XVCL is a VCL transpiler that adds metaprogramming to Fastly VCL. Write `.xvcl` files, compile to `.vcl`, then test with Falco or deploy to Fastly. All XVCL constructs are resolved at compile time — zero runtime overhead.
 
 ## Quick Start
 
+Compilation requires `uvx`, provided by uv; the local checks use Falco.
+
 ```bash
-# Compile (no install needed with uvx)
+# Compile with uvx
 uvx xvcl main.xvcl -o main.vcl
 
 # Lint the output
@@ -28,7 +33,8 @@ falco simulate main.vcl
 # Then test with: curl http://localhost:3124/
 ```
 
-When the user asks to "run locally" or "test locally", always compile **and** run `falco simulate` — linting alone doesn't run the VCL.
+Unless the user explicitly requests another test mode, compile and run `falco simulate` for local execution.
+Linting alone does not execute the VCL.
 
 ## Minimal Working Example
 

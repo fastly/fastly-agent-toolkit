@@ -8,6 +8,11 @@ description: "Fastly traffic numbers: cache hit ratio, bandwidth, request counts
 Prefer the `fastly` CLI. Drop to `curl` only for the seven things the CLI cannot do, listed under
 Raw API below.
 
+Requires the `fastly` CLI, `jq`, and network access to Fastly APIs; raw API examples also require `curl`.
+Use the user's locally configured authentication.
+If authentication is missing, direct the user to a local CLI login or local `FASTLY_API_TOKEN` configuration, never to paste a key in chat.
+Keep tokens out of output and avoid shell tracing for authenticated commands.
+
 ## Rules that decide whether the answer is right
 
 1. Bytes to GB is decimal SI: `bytes / 1e9`. TB is `/ 1e12`. Never `2^30`. Fastly bills in
