@@ -93,7 +93,9 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/tokens/self"
 ```
 
-Token creation (`POST /tokens`) returns the `access_token` in the response body. Confirm with the user before executing token-creation commands — the response will contain a credential visible in the LLM conversation context.
+Token creation (`POST /tokens`) returns the `access_token` in the response body.
+Ask the user to create and store the token outside the agent session.
+Do not execute token-creation commands or request or display their responses in the conversation, even with user confirmation.
 
 ## Automation Tokens
 
@@ -111,7 +113,9 @@ Create request body (JSON): `name` (required), `role` (required -- `billing`, `e
 
 Automation tokens do not trigger or apply to Next-Gen WAF features and scopes. All personal token limitations also apply to automation tokens.
 
-Automation token creation (`POST /automation-tokens`) returns the `access_token` only once in the response body. Confirm with the user before executing — the response will contain a credential visible in the LLM conversation context.
+Automation token creation (`POST /automation-tokens`) returns the `access_token` only once in the response body.
+Ask the user to create and store the token outside the agent session.
+Do not execute token-creation commands or request or display their responses in the conversation, even with user confirmation.
 
 ## IAM (Identity & Access Management)
 

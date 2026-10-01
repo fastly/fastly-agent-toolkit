@@ -249,7 +249,9 @@ curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/dom
   -d '{"name":"my-project.global.ssl.fastly.net"}'
 ```
 
-To get `$FASTLY_API_TOKEN` for REST calls, prefer `FASTLY_API_TOKEN=$(fastly auth token)` inside a shell substitution or use the existing `FASTLY_API_TOKEN` environment variable directly. Only use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` when you specifically need a stored token by name; omitting the token name fails when the CLI is authenticated via `FASTLY_API_TOKEN` or another non-stored source.
+To get `$FASTLY_API_TOKEN` for REST calls, use `FASTLY_API_TOKEN=$(fastly auth token)` or use the existing `FASTLY_API_TOKEN` environment variable directly.
+For a specific stored token, use `FASTLY_API_TOKEN=$(fastly auth token --token TOKEN_NAME)`.
+Keep token values out of command output and shell traces.
 
 ## Healthchecks
 

@@ -177,7 +177,7 @@ span is not one either: it stops at the last second that had traffic. Divide a r
 lookback `ts/h` covers. The span is still worth reading, as the tell for how bursty the traffic is:
 
 ```bash
-curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
+curl -sS -H "Fastly-Key: $(fastly auth token)" \
   "https://rt.fastly.com/v1/channel/$SID/ts/h" \
   | jq 'if (.Data|length) == 0 then {samples: 0, window_s: 120, requests: 0, rps: 0, error: .Error}
         else {samples: (.Data|length), window_s: 120,

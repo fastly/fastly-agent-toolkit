@@ -12,7 +12,7 @@ REST examples require `curl` and network access to Fastly APIs; origin TLS check
 
 Use the user's locally configured credentials.
 If authentication is missing, direct the user to local CLI login or environment configuration, never to paste an API key in chat.
-For REST calls, source tokens from the environment or `$(fastly auth token --quiet)` without echoing them.
+For REST calls, source tokens from the environment or `$(fastly auth token)` without echoing them.
 Omit `curl -v` and shell tracing because they print credentials.
 
 ## Topics

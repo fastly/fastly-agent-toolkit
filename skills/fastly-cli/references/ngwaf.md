@@ -46,7 +46,8 @@ curl -X DELETE -H "Fastly-Key: $(fastly auth token)" \
 fastly ngwaf workspace update --workspace-id WORKSPACE_ID --blockingMode log
 ```
 
-**IMPORTANT**: Prefer `$(fastly auth token)` to get the currently active API token for curl commands. It only writes to non-terminal stdout, so use it in a pipe or shell substitution. If you specifically need a stored token by name, use `$(fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}')`. NEVER run `fastly auth show --reveal` directly — it prints the full token value into the conversation, exposing credentials.
+Use `$(fastly auth token)` to get the active API token for curl commands, or `$(fastly auth token --token TOKEN_NAME)` for a specific stored token.
+The command refuses terminal output, but agent-captured stdout may be non-terminal, so never run it standalone or echo its result.
 
 ## Workspaces
 

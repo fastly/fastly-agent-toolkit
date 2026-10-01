@@ -2,19 +2,6 @@
 
 Each heading is what you observe.
 
-## 401, or `curl: (43)`, while `fastly whoami` succeeds
-
-A bare `$(fastly auth token)` without `--quiet`. When a CLI upgrade is pending that command
-appends an "A new version is available" notice to stdout, which lands inside the header value:
-embedded newlines give `curl: (43)` and the request is never sent, or the server sees a mangled
-key and returns 401 (403 `{"Error":"invalid authentication"}` on `rt.fastly.com`). It is
-intermittent, so identical code works one day and fails the next.
-
-```bash
-curl -sS -o /dev/null -w '%{http_code}\n' \
-  -H "Fastly-Key: $(fastly auth token --quiet)" https://api.fastly.com/current_user   # expect 200
-```
-
 ## 403 while the token works elsewhere
 
 Scope. Historical service stats need read access to that service; `usage`, `usage_by_service` and
@@ -149,7 +136,7 @@ The defense is to assert `meta` echoes the filter you sent; the numbers themselv
 you.
 
 ```bash
-curl -sS -H "Fastly-Key: $(fastly auth token --quiet)" \
+curl -sS -H "Fastly-Key: $(fastly auth token)" \
   "https://api.fastly.com/stats/service/$SID?from=$FROM&to=$TO&by=day&datacenter=DEN" \
   | jq 'if .meta.datacenter == "DEN" then .data else error("filter dropped: \(.meta)") end'
 ```
@@ -175,7 +162,7 @@ Per-POP history exists, but `by=minute` is retained roughly one day and real-tim
 seconds, so capture the baseline before you change anything: it is the only irreversible step.
 
 ```bash
-KEY="Fastly-Key: $(fastly auth token --quiet)"
+KEY="Fastly-Key: $(fastly auth token)"
 CODES=$(curl -sS -H "$KEY" https://api.fastly.com/datacenters | jq -r '.[].code' | paste -sd, -)
 NOW=$(date -u +%s)
 curl -sS -H "$KEY" \
@@ -198,5 +185,6 @@ Then, in order of how much they buy you:
 
 ## Token printed into the transcript
 
-Treat it as compromised and rotate it. Prevent recurrence with `$(fastly auth token --quiet)`
-inline, never `fastly auth show --reveal` bare, never `-v` on an authenticated call.
+Treat it as compromised and rotate it.
+Prevent recurrence with `$(fastly auth token)` inline, never a standalone token command or `-v` on an authenticated curl call.
+Agent-captured stdout may be non-terminal, so the CLI's terminal-output guard does not prevent exposure in a transcript.

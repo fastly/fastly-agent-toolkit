@@ -99,8 +99,8 @@ Available on most commands:
 - CLI version is `fastly version` (not `fastly --version`)
 - POP/shield lookup is `fastly pops`; it has no `list` subcommand and no `--json`; use the `SHIELD` column value (not POP `CODE`) for `--shield`
 - Auth: `fastly auth login --sso` to login, or set `FASTLY_API_TOKEN` env var
-- For shell substitutions or pipes that need the active API token, prefer `fastly auth token`; it prints the token only to non-terminal stdout and refuses to write it directly to a terminal
-- In AI contexts, never run `fastly auth show --reveal` bare. If you specifically need a stored token by name rather than the currently active token, use `fastly auth show TOKEN_NAME --reveal --quiet | awk '/^Token:/ {print $2}'` only inside a shell substitution
+- For commands that need the active API token, use `$(fastly auth token)`; select a specific stored token with `$(fastly auth token --token TOKEN_NAME)`
+- `auth token` refuses terminal output, but agent-captured stdout may be non-terminal; never run it standalone or echo its result
 - Logging is under `service logging` (e.g. `fastly service logging s3 create`)
 - Config: use `fastly config --location` to find the platform-specific CLI config file; `fastly.toml` is the project manifest
 
