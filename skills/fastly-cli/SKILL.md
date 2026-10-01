@@ -94,7 +94,7 @@ Available on most commands:
 - Version targeting: `--version active`, `--version latest`, `--version staged`, or `--version N`
 - Use `--autoclone` to auto-clone locked versions
 - Use `--json` for scripted output, `--non-interactive --accept-defaults` for CI/CD
-- **JSON output uses PascalCase fields** (`.Name`, `.ServiceID`, `.ActiveVersion`), not lowercase
+- JSON field names vary by command; inspect output before writing `jq` selectors.
 - `ActiveVersion` shape varies; prefer `--version active`, or parse with `jq -r '.ActiveVersion.Number // .ActiveVersion'`
 - CLI version is `fastly version` (not `fastly --version`)
 - POP/shield lookup is `fastly pops`; it has no `list` subcommand and no `--json`; use the `SHIELD` column value (not POP `CODE`) for `--shield`
