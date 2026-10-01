@@ -8,15 +8,13 @@ A collection of skills for AI coding agents to work with the Fastly platform and
   - [Runtime requirements](#runtime-requirements)
   - [Support and privacy](#support-and-privacy)
   - [Usage](#usage)
-    - [Using the `skills` CLI](#using-the-skills-cli)
     - [Manual copy](#manual-copy)
     - [Claude Code](#claude-code)
-      - [Plugin Marketplace](#plugin-marketplace)
-      - [Manual](#manual)
     - [Codex](#codex)
     - [Swival](#swival)
     - [Qwen Code](#qwen-code)
     - [Gemini CLI](#gemini-cli)
+    - [Using the `skills` CLI](#using-the-skills-cli)
   - [Skill format](#skill-format)
   - [Contributing new skills](#contributing-new-skills)
 
@@ -83,24 +81,6 @@ The skills are available under the [MIT license](LICENSE).
 
 Pick the skills relevant to your project. You probably don't need all of them.
 
-### Using the `skills` CLI
-
-The [`skills`](https://github.com/vercel-labs/skills) CLI installs skills into the standard `.agents/skills/` directory and automatically symlinks them into agent-specific directories. It supports most agents out of the box.
-
-Install into the current project:
-
-```bash
-bunx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
-# or with node:
-npx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
-```
-
-Install globally (available across all projects via `~/.agents/skills/`):
-
-```bash
-bunx skills add -g github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
-```
-
 ### Manual copy
 
 If your agent supports the `.agents/skills/` convention, this is the most portable option. Agents that use this location include Amp, Cline, Codex, Cursor, Gemini CLI, GitHub Copilot, Kimi Code, OpenCode, Replit Agent, Swival, and Warp.
@@ -121,34 +101,24 @@ cp -R ./skills/{falco,viceroy} ~/.agents/skills/
 
 If your agent doesn't support `.agents/skills/`, expand the agent-specific instructions below.
 
-<details>
-<summary>Agent-specific installation</summary>
+Agent-specific installation
 
 ### [Claude Code](https://code.claude.com/docs/en/overview)
 
-#### Plugin Marketplace
+Install the bundled skills as a plugin:
 
 ```bash
 claude plugin install fastly-agent-toolkit@claude-plugins-official
 claude plugin list
-
-# If this fails, add skills manually in the next section.
 ```
-
-#### Manual
-
-```bash
-mkdir -p .claude/skills
-cp -R ./skills/{falco,viceroy} .claude/skills/
-```
-
-For a quick local setup, the manual copy is more reliable since it doesn't depend on the marketplace.
 
 ### [Codex](https://github.com/openai/codex)
 
+Install the bundled skills as a plugin:
+
 ```bash
-mkdir -p ~/.codex/skills
-cp -R ./skills/{falco,viceroy} ~/.codex/skills/
+codex plugin marketplace add https://github.com/fastly/fastly-agent-toolkit.git
+codex plugin add fastly-agent-toolkit@fastly-agent-toolkit
 ```
 
 ### [Swival](https://swival.dev/)
@@ -194,7 +164,23 @@ gemini extensions link .
 
 Swap `{falco,viceroy}` for whatever combination you need. For VCL work, `falco` and `xvcl` are the most useful. For Fastly Compute, grab `fastly-cli` and either `viceroy` or `fastlike`.
 
-</details>
+### Using the `skills` CLI
+
+The [`skills`](https://github.com/vercel-labs/skills) CLI installs skills into the standard `.agents/skills/` directory and automatically symlinks them into agent-specific directories. It supports most agents out of the box.
+
+Install into the current project:
+
+```bash
+bunx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+# or with node:
+npx skills add github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+```
+
+Install globally (available across all projects via `~/.agents/skills/`):
+
+```bash
+bunx skills add -g github:fastly/fastly-agent-toolkit --skill falco --skill viceroy
+```
 
 ## Skill format
 
