@@ -47,6 +47,9 @@ Each skill lives under `skills/` with a `SKILL.md` entrypoint and a `references/
 These skills are intended for coding environments that can read project files and run commands.
 Install the tools for the workflows you use; installing the plugin does not install its developer tools or connect a Fastly account.
 
+<details>
+<summary>Workflow-specific requirements</summary>
+
 | Workflow                                  | Requirements                                                                               |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Fastly CLI and traffic statistics         | Fastly CLI and locally configured authentication; `curl` and `jq` for raw API examples     |
@@ -60,6 +63,8 @@ Install the tools for the workflows you use; installing the plugin does not inst
 Each skill describes its prerequisites and installation options.
 Package installation and source builds may need network access.
 Bundled scripts and examples are resolved from the installed skill directory, while your project files stay relative to your project's working directory.
+
+</details>
 
 Set up Fastly authentication yourself using the CLI's interactive login or local configuration.
 Do not paste API keys into a conversation, include them in project files, or share command output that reveals them.
@@ -114,7 +119,10 @@ mkdir -p ~/.agents/skills
 cp -R ./skills/{falco,viceroy} ~/.agents/skills/
 ```
 
-If your agent doesn't support `.agents/skills/`, use its agent-specific location below.
+If your agent doesn't support `.agents/skills/`, expand the agent-specific instructions below.
+
+<details>
+<summary>Agent-specific installation</summary>
 
 ### [Claude Code](https://code.claude.com/docs/en/overview)
 
@@ -185,6 +193,8 @@ gemini extensions link .
 ```
 
 Swap `{falco,viceroy}` for whatever combination you need. For VCL work, `falco` and `xvcl` are the most useful. For Fastly Compute, grab `fastly-cli` and either `viceroy` or `fastlike`.
+
+</details>
 
 ## Skill format
 
