@@ -14,6 +14,19 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 
 **Client-side encryption for secrets.** For additional security, secrets can be encrypted locally before upload using a client key (X25519 public key from the API) and libsodium sealed boxes.
 
+## Porting JavaScript Servers
+
+- Node.js is build tooling, not the edge runtime; replace dependencies on `node:http`, `node:vm`, child processes, and filesystem access.
+  Check the [JavaScript guide](https://www.fastly.com/documentation/guides/compute/developer-guides/javascript/) and pin the SDK
+- Check [production limits](https://docs.fastly.com/products/compute-resource-limits) and account overrides before choosing an architecture.
+  Currently: 50 ms CPU, 2 minutes wall time, 128 MB heap, 32 backend requests, and 100 MB package size; trials allow 60 seconds and 10 backend requests.
+  Measure deployed CPU with `vCpuTime()` from `fastly:compute`.
+- The default [sandbox lifecycle](https://www.fastly.com/documentation/guides/compute/developer-guides/sandbox-lifecycle/) creates a fresh instance per request.
+  Globals are not service-wide caches or limiters; reused sandboxes must clear caller credentials and request state.
+- Fastly has very limited support for built-in WebCrypto/SubtleCrypto.
+- For services with a fixed origin set, use named backends and [`enforceExplicitBackends()` from `fastly:backend`](https://github.com/fastly/js-compute-runtime/blob/v4.0.0/types/backend.d.ts).
+  Dynamic backend availability depends on service configuration.
+
 ## Package Management
 
 | Action              | Method | Endpoint                                             |
