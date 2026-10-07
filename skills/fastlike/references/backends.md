@@ -17,12 +17,12 @@ Backends are origin servers that your Fastly Compute WASM program proxies reques
 
 ## Common Patterns
 
-**Single origin:**
+Single origin:
 ```bash
 bin/fastlike app.wasm -backend localhost:3000
 ```
 
-**Multiple named backends:**
+Multiple named backends:
 ```bash
 bin/fastlike app.wasm \
   -backend api=localhost:3000 \
@@ -30,7 +30,7 @@ bin/fastlike app.wasm \
   -backend auth=localhost:5001
 ```
 
-**Named + catch-all fallback:**
+Named + catch-all fallback:
 ```bash
 bin/fastlike app.wasm \
   -backend api=api.internal:8080 \
@@ -38,7 +38,7 @@ bin/fastlike app.wasm \
 ```
 Requests to backend "api" go to `api.internal:8080`, all others to `localhost:8000`.
 
-**Microservices setup:**
+Microservices setup:
 ```bash
 bin/fastlike gateway.wasm \
   -backend users=users-service:3001 \

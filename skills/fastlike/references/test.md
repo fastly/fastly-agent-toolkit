@@ -54,8 +54,8 @@ func TestSomething(t *testing.T) {
 
 ## Common Test Issues
 
-**Backend not reachable:** Ensure your test backend is running before running proxy tests.
+Backend not reachable: Ensure your test backend is running before running proxy tests.
 
-**WASM not found:** Check the `-wasm` path is correct and the file exists.
+WASM not found: Check the `-wasm` path is correct and the file exists.
 
-**Handle leaks:** Tests should clean up handles properly. Check for unclosed bodies.
+Handle leaks: Tests should clean up handles properly. Check for unclosed bodies.

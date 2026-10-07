@@ -20,7 +20,7 @@ All values must be strings.
 
 Two formats supported:
 
-**Simple strings:**
+Simple strings:
 ```json
 {
   "user:123": "active",
@@ -28,7 +28,7 @@ Two formats supported:
 }
 ```
 
-**Objects with body and metadata:**
+Objects with body and metadata:
 ```json
 {
   "user:123": {
@@ -84,7 +84,7 @@ Access Control Lists with prefix/action entries:
 
 Actions: `ALLOW` or `BLOCK`. Most specific match wins (longest prefix length). On ties, later entries take precedence.
 
-**Important:** CIDR mask must be in range [1, 32] for IPv4 and [1, 128] for IPv6. A `/0` mask is invalid — to match all IPs, use two entries: `0.0.0.0/1` and `128.0.0.0/1`.
+Important: CIDR mask must be in range [1, 32] for IPv4 and [1, 128] for IPv6. A `/0` mask is invalid — to match all IPs, use two entries: `0.0.0.0/1` and `128.0.0.0/1`.
 
 ## Geolocation File (`-geo FILE`)
 

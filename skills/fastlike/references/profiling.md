@@ -34,7 +34,7 @@ All paths live on the `-profile-ui` listener. Use the JSON endpoints when consum
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `GET /`                        | HTML index of recent traces (newest first). Shows method, URL, status, outcome, wall + hostcall time, span counts. |
 | `GET /r/{req_id}`              | Per-request HTML page with waterfall, span table, deep tables, and a canvas timeline.                              |
-| `GET /r/{req_id}.json`         | **Canonical native JSON trace.** Parse this for programmatic analysis.                                             |
+| `GET /r/{req_id}.json`         | Canonical native JSON trace. Parse this for programmatic analysis.                                                 |
 | `GET /r/{req_id}.chrome.json`  | Chrome Tracing / Perfetto export.                                                                                  |
 | `GET /r/{req_id}.firefox.json` | Firefox profiler Gecko export.                                                                                     |
 | `GET /r/{req_id}.pprof`        | gzip-compressed `profile.proto`. Pipe through `go tool pprof`.                                                     |
@@ -127,7 +127,7 @@ Heap samples are wasm linear memory size at request start, finalize, and hostcal
 The CLI refuses to start the UI in unsafe combinations. The rules are evaluated before either listener binds, so a failure prints before "profiler UI at...".
 
 - Loopback bind (`127.0.0.0/8`, `::1`, `localhost`, unix socket path): no auth required.
-- Non-loopback bind: **requires** either `-profile-auth TOKEN` (bearer auth enforced on every request) **or** explicit `-profile-insecure-ui`. Missing both is a startup error that names the flag to add.
+- Non-loopback bind: requires either `-profile-auth TOKEN` (bearer auth enforced on every request) or explicit `-profile-insecure-ui`. Missing both is a startup error that names the flag to add.
 - `-profile-insecure-ui` is meant for externalised auth (mTLS, authenticating reverse proxy) and prints a prominent startup warning.
 
 The UI listener is never auto-mounted on the wasm `-bind` socket. They are always distinct.
@@ -156,7 +156,7 @@ Fastlike writes `wasm-symbols-{pid}.json` to `-profile-dir` at startup so extern
   "exports": [ {"name": "_start", "kind": "func"} ] }
 ```
 
-To join `perf script` output back into in-process traces, **record with `perf record -k CLOCK_REALTIME`**. Without `-k`, perf uses `CLOCK_MONOTONIC`, which has a different epoch and every sample drops at the time-window gate. The merge is via `fastlike.MergeNativeSamples(store, events, pid, moduleID)` and filters on PID + time window + module ID.
+To join `perf script` output back into in-process traces, record with `perf record -k CLOCK_REALTIME`. Without `-k`, perf uses `CLOCK_MONOTONIC`, which has a different epoch and every sample drops at the time-window gate. The merge is via `fastlike.MergeNativeSamples(store, events, pid, moduleID)` and filters on PID + time window + module ID.
 
 ## Embedder API
 
@@ -187,7 +187,7 @@ for _, tr := range fl.ProfileStore().Recent(10) {
 
 ## Practical Patterns
 
-**Quickly inspect the last request as JSON:**
+Quickly inspect the last request as JSON:
 
 ```bash
 # Get newest req_id from the index, then pull its JSON.
@@ -195,13 +195,13 @@ curl -s http://localhost:6060/ | grep -oE '/r/[0-9]+' | head -1 \
   | xargs -I{} curl -s "http://localhost:6060{}.json" | jq .
 ```
 
-**pprof analysis:**
+pprof analysis:
 
 ```bash
 curl -s http://localhost:6060/r/42.pprof | go tool pprof -http=:8081 -
 ```
 
-**Deep-mode diagnostics for a slow request** — enable `-profile=deep`, then look at:
+Deep-mode diagnostics for a slow request — enable `-profile=deep`, then look at:
 
 - `wall_nanos` vs. `hostcall_nanos` — high host time means slow hostcalls; low host time means slow guest computation.
 - `backend_calls[].ttfb_nanos` against `total_nanos` — high TTFB share means slow upstream; high non-TTFB tail means slow body read.
