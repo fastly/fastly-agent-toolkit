@@ -18,6 +18,8 @@ Client-side encryption for secrets. For additional security, secrets can be encr
 
 - Node.js is build tooling, not the edge runtime; replace dependencies on `node:http`, `node:vm`, child processes, and filesystem access.
   Check the [JavaScript guide](https://www.fastly.com/documentation/guides/compute/developer-guides/javascript/) and pin the SDK
+- The JavaScript SDK does not ship Node or V8 to the edge: it compiles the application together with [StarlingMonkey](https://github.com/bytecodealliance/StarlingMonkey) into a Wasm module.
+  The available subset of Web APIs come from StarlingMonkey, and Fastly adds its own `fastly:*` modules on top, so check both before assuming a Web or Node API exists or that CPU-heavy code will be fast.
 - Check [production limits](https://docs.fastly.com/products/compute-resource-limits) and account overrides before choosing an architecture.
   Currently: 50 ms CPU, 2 minutes wall time, 128 MB heap, 32 backend requests, and 100 MB package size; trials allow 60 seconds and 10 backend requests.
   Measure deployed CPU with `vCpuTime()` from `fastly:compute`.
