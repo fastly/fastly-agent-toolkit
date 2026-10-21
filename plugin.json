@@ -27,6 +27,7 @@
         "websiteURL": "https://github.com/fastly/fastly-agent-toolkit",
         "supportURL": "https://github.com/fastly/fastly-agent-toolkit/issues",
         "privacyPolicyURL": "https://www.fastly.com/privacy",
+        "termsOfServiceURL": "https://www.fastly.com/terms",
         "composerIcon": "./assets/fastly-icon.svg",
         "logo": "./assets/fastly-icon.svg"
       }
