@@ -60,6 +60,9 @@ def validate_manifest(root):
         value = manifest.get(key)
         if not isinstance(value, str) or not value.strip() or any(ord(char) < 32 or char in "/\\" for char in value):
             raise ValueError(f"package {key} cannot be used in a ZIP filename")
+    description = manifest.get("description")
+    if not isinstance(description, str) or not description.strip():
+        raise ValueError("plugin.json must include a non-empty description")
     extensions = manifest.get("extensions")
     if not isinstance(extensions, dict):
         raise ValueError("extensions must be an object")
@@ -116,8 +119,14 @@ def bundle_files(root):
                 raise ValueError(f"{relative}: symbolic links cannot be bundled")
             if entry.is_file():
                 files.append(entry)
-    if not any(path.relative_to(root).match("skills/*/SKILL.md") for path in files):
-        raise ValueError("the bundle must include skills/*/SKILL.md")
+    # https://www.perplexity.ai/help-center/en/articles/2026100802-create-or-upload-a-custom-plugin
+    skill_count = sum(path.relative_to(root).match("skills/*/SKILL.md") for path in files)
+    if not 1 <= skill_count <= 32:
+        raise ValueError("the bundle must include 1 to 32 skills for Perplexity")
+    if len(files) > 1000:
+        raise ValueError("the bundle exceeds Perplexity's limit of 1,000 files")
+    if sum(path.stat().st_size for path in files) > 20_000_000:
+        raise ValueError("the bundle exceeds Perplexity's limit of 20 MB uncompressed")
     return sorted(files)
 
 
@@ -140,7 +149,7 @@ def package(root, manifest, files):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate and package the skills-only OpenAI submission.")
+    parser = argparse.ArgumentParser(description="Validate and package the skills-only plugin for OpenAI and Perplexity.")
     parser.add_argument("--check", action="store_true", help="validate without creating a ZIP")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     args = parser.parse_args()
@@ -149,7 +158,7 @@ def main():
         manifest = validate_manifest(root)
         files = bundle_files(root)
         if args.check:
-            print(f"OpenAI submission metadata and {len(files)} bundled files validated")
+            print(f"Plugin metadata and {len(files)} bundled files validated")
         else:
             print(package(root, manifest, files))
     except (OSError, ValueError, ET.ParseError) as error:

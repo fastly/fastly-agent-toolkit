@@ -11,6 +11,7 @@ A collection of skills for AI coding agents to work with the Fastly platform and
     - [Manual copy](#manual-copy)
     - [Claude Code](#claude-code)
     - [Codex](#codex)
+    - [Perplexity](#perplexity)
     - [Swival](#swival)
     - [Qwen Code](#qwen-code)
     - [Gemini CLI](#gemini-cli)
@@ -120,6 +121,25 @@ Install the bundled skills as a plugin:
 codex plugin marketplace add https://github.com/fastly/fastly-agent-toolkit.git
 codex plugin add fastly-agent-toolkit@fastly-agent-toolkit
 ```
+
+### Perplexity
+
+In Perplexity Computer, open **Plugins → Add custom → Import plugin from GitHub** and paste `https://github.com/fastly/fastly-agent-toolkit`.
+You need a plan that includes Computer and, for organization accounts, permission to import custom plugins.
+
+To upload a ZIP instead, install the [validation dependencies](CONTRIBUTING.md#run-the-repository-checks) and run this from the repository root:
+
+```bash
+make package
+```
+
+Choose **Plugins → Add custom → Upload plugin** and select `tmp/fastly-agent-toolkit-<version>.zip`, using the version from `plugin.json`.
+The generated archive puts `plugin.json` at its root and includes each skill's supporting files.
+The package checks enforce Perplexity's limits of 32 skills, 1,000 files, and 20 MB uncompressed.
+See Perplexity's [custom plugin instructions](https://www.perplexity.ai/help-center/en/articles/2026100802-create-or-upload-a-custom-plugin).
+
+After either installation method, open the plugin on the **Installed** tab and confirm that every skill in [Available skills](#available-skills) is listed.
+This is a skills-only plugin with no MCP connectors; tools and Fastly authentication still need the separate setup described in [Runtime requirements](#runtime-requirements).
 
 ### [Swival](https://swival.dev/)
 

@@ -172,7 +172,7 @@ if [[ -d "skills" ]]; then
     fi
 fi
 
-echo "=== Validating OpenAI submission bundle ==="
+echo "=== Validating plugin bundle ==="
 uv run --no-project python scripts/package.py --check
 
 if [[ $errors -gt 0 ]]; then
