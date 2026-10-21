@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "fastly-agent-toolkit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fastly development tools and platform skills",
   "author": {
     "name": "Fastly"
