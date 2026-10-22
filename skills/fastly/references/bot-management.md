@@ -10,8 +10,8 @@ Bot Management uses server-side fingerprinting, client challenges, and client-si
 
 | Deployment                   | Phase                                                      | Requires NGWAF                   | Use Case                                                                   |
 | ---------------------------- | ---------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| **Pre-cache (ContentGuard)** | Phase 5 (`bot_detection`), before VCL/Compute              | No — any Fastly delivery product | Content scraping detection and classification                              |
-| **Post-cache**               | Phase 7 (`edge_waf_request_inspection`), after VCL/Compute | Yes                              | Full bot management with NGWAF signals, challenges, client-side detections |
+| **Pre-cache (ContentGuard)** | Phase 6 (`pre_cache_bot_inspection`), before VCL/Compute   | No — any Fastly delivery product | Content scraping detection and classification                              |
+| **Post-cache**               | Phase 9 (`edge_waf_request_inspection`), after VCL/Compute | Yes                              | Full bot management with NGWAF signals, challenges, client-side detections |
 
 ### Detection Mechanisms
 
@@ -24,17 +24,17 @@ Bot Management uses server-side fingerprinting, client challenges, and client-si
 
 ### Execution Ordering
 
-**Pre-cache (ContentGuard)** runs in the `bot_detection` phase (phase 5), **before** `edge_app_request_processing` (VCL/Compute):
+**Pre-cache (ContentGuard)** runs in the `pre_cache_bot_inspection` phase (phase 6), **before** `edge_app_request_processing` (VCL/Compute):
 
 ```
-client -> adaptive_threat_engine -> api_discovery -> bot_detection (ContentGuard)
+client -> adaptive_threat_engine -> api_discovery -> pre_cache_bot_inspection (ContentGuard)
        -> edge_app_request_processing (VCL/Compute) -> ...
 ```
 
-**Post-cache** runs in the `edge_waf_request_inspection` phase (phase 7), **after** `edge_app_request_processing`:
+**Post-cache** runs in the `edge_waf_request_inspection` phase (phase 9), **after** `edge_app_request_processing`:
 
 ```
-client -> ... -> edge_app_request_processing (VCL/Compute)
+client -> ... -> edge_app_request_processing (VCL/Compute) -> api_enforcement
        -> edge_waf_request_inspection (Bot Management post-cache, Edge WAF)
        -> external_origin_fetch
 ```
