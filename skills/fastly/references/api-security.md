@@ -34,9 +34,8 @@ Product slug: `api_discovery`. Must be enabled per service before the operations
 Query parameters for list endpoints: `limit` (1-1000, default 100), `page` (0-based). Operations accept `status` filter (`SAVED`, `IGNORED`; defaults to `SAVED`) and `tag_id` filter. Discovered operations accept `domain`, `method`, and `path` filters. Tags accept `limit` and `page` pagination. Bulk delete accepts `operation_ids` array in request body and returns 207 multi-status.
 
 ```bash
-# List discovered operations for a service
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/api-security/v1/services/{service_id}/discovered-operations"
+# Fetches every page; --json prints a bare array, not the API's {data, meta} wrapper
+fastly apisecurity discovered-operations list --service-id {service_id} --json
 ```
 
 Operations have fields: `id`, `method`, `domain`, `path`, `description`, `tag_ids`, `status`, `rps`, `created_at`, `updated_at`, `last_seen_at`. Discovered operations have: `method`, `domain`, `path`, `rps`, `updated_at`, `last_seen_at`.

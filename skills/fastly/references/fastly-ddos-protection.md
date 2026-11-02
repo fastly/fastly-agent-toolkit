@@ -16,6 +16,7 @@ Base: `https://api.fastly.com` | Auth: `Fastly-Key: $FASTLY_API_TOKEN` | Docs: h
 Modes: `log` (observe only, default), `block` (mitigate), `off`
 
 ```bash
+# No CLI command: `fastly products` does not support ddos_protection
 # Enable in blocking mode
 curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" -d '{"mode":"block"}' \
@@ -46,6 +47,7 @@ List params: `cursor`, `limit`, `service_id`, `from`, `to` (RFC 3339)
 Rules params: `include=traffic_stats` for inline stats
 
 ```bash
+# No CLI command for DDoS events or rules
 # Check active attacks (ended_at is null)
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/ddos-protection/v1/events?limit=10" | \

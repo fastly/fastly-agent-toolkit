@@ -31,22 +31,18 @@ All logging providers follow the same CRUD pattern. Replace `{provider}` with th
 Request body encoding: `application/x-www-form-urlencoded` for POST and PUT.
 
 ```bash
-# Create an S3 logging endpoint
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my-s3-logs&bucket_name=my-log-bucket&access_key=YOUR_AWS_ACCESS_KEY&secret_key=YOUR_AWS_SECRET_KEY&format_version=2" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/logging/s3"
+fastly service logging s3 create --service-id "$SERVICE_ID" --version "$VERSION" --name my-s3-logs \
+  --bucket my-log-bucket --access-key YOUR_AWS_ACCESS_KEY --secret-key YOUR_AWS_SECRET_KEY --format-version 2
 
-# Create an HTTPS logging endpoint
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my-https-logs&url=https://logs.example.com/ingest&method=POST&format_version=2&json_format=2" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/logging/https"
+fastly service logging https create --service-id "$SERVICE_ID" --version "$VERSION" --name my-https-logs \
+  --url https://logs.example.com/ingest --method POST --format-version 2 --json-format 2
 
-# List all S3 logging endpoints for a version
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/logging/s3"
+fastly service logging s3 list --service-id "$SERVICE_ID" --version "$VERSION"
 ```
+
+CLI subcommands match the API path, except `pubsub` is `googlepubsub` and `logentries` has no CLI command.
+Flags do not always match API fields: `bucket_name` is `--bucket`, `token` is `--auth-token` (`--key` for New Relic), Kinesis `topic` is `--stream-name`.
+Check `fastly service logging PROVIDER create --help`.
 
 ## Provider Catalog
 

@@ -9,8 +9,7 @@ Audits NGWAF workspaces to verify critical templated rules are configured and en
 
 ## Quick Start
 
-The bundled assessment requires Bash, `curl`, `jq`, network access to `api.fastly.com`, and a locally configured `FASTLY_API_KEY` with NGWAF read access.
-The manual workflow also requires the `fastly` CLI.
+The bundled assessment requires Bash, the `fastly` CLI, `jq`, `curl`, network access to `api.fastly.com`, and a CLI token with NGWAF read access.
 Configure credentials in the user's local environment or CLI configuration.
 Never ask the user to paste an API key into chat or print it in command output.
 
@@ -25,8 +24,8 @@ bash "$NGWAF_SKILL_DIR/scripts/assess_ngwaf_rules.sh"
 
 For manual inspection or partial audits, work through the steps below with the `fastly` CLI.
 
-The CLI ignores `FASTLY_API_KEY`. Its precedence is `--token` > `FASTLY_API_TOKEN` > `fastly.toml` profile > default
-stored token. To reuse the script's credential:
+The CLI, and so the script, ignores `FASTLY_API_KEY`. Its precedence is `--token` > `FASTLY_API_TOKEN` > `fastly.toml`
+profile > default stored token. If only `FASTLY_API_KEY` is set:
 
 ```bash
 export FASTLY_API_TOKEN="$FASTLY_API_KEY"
@@ -43,7 +42,7 @@ export FASTLY_API_TOKEN="$FASTLY_API_KEY"
 ### Step 1: List Workspaces
 
 ```bash
-fastly ngwaf workspace list --json | jq -r '.data[].id'
+fastly ngwaf workspace list --json | jq -r '.[].id'
 ```
 
 If empty, NGWAF is not configured for this account.
@@ -54,8 +53,7 @@ If empty, NGWAF is not configured for this account.
 fastly ngwaf workspace rule list --workspace-id "$WORKSPACE_ID" --json
 ```
 
-Both list commands return `{"data": [...], "meta": {...}}` and cap at 100 items with no flag to raise it. Check
-`.meta.total`; above 100, fall back to `GET /ngwaf/v1/workspaces?limit=200` or `.../rules?limit=200`.
+Both list commands fetch every page and print a bare JSON array.
 
 `rule list` also takes `--enabled` and `--action` to filter server-side.
 
@@ -73,7 +71,7 @@ Check a specific signal:
 
 ```bash
 fastly ngwaf workspace rule list --workspace-id "$WORKSPACE_ID" --json \
-  | jq '[.data[] | select(.actions[].signal == "LOGINDISCOVERY") | {enabled, id}]'
+  | jq '[.[] | select(.actions[].signal == "LOGINDISCOVERY") | {enabled, id}]'
 ```
 
 ### Step 4: Search for Uncovered Login Endpoints
@@ -82,7 +80,7 @@ When `LOGINATTEMPT` is missing or disabled, search recent request logs for login
 No CLI equivalent exists (there is no `fastly ngwaf workspace requests`), so use the API:
 
 ```bash
-curl -s -H "Fastly-Key: $FASTLY_API_KEY" \
+curl -s -H "Fastly-Key: $(fastly auth token)" \
   "https://api.fastly.com/ngwaf/v1/workspaces/$WORKSPACE_ID/requests?limit=100&page=1&q=from%3A-30min%20method%3APOST%20path%3A~%22%2Alogin%2A%22" \
   | jq -r '.data[].path' | sort | uniq -c
 ```
@@ -167,13 +165,14 @@ step 3 can be checked for real traffic by signal name. Query those through `get`
 
 ## Error Handling
 
-| Error                             | Cause                        | Fix                                            |
-| --------------------------------- | ---------------------------- | ---------------------------------------------- |
-| `FASTLY_API_KEY not set`          | Environment variable missing | Configure the key locally, outside chat       |
-| `API call failed with status 403` | Token lacks NGWAF scope      | Verify token has `global:read` permission      |
-| `No workspaces found`             | NGWAF not provisioned        | Enable NGWAF on the account first              |
-| `jq is not installed`             | Missing dependency           | `brew install jq` or `apt-get install -y jq`   |
-| `curl is not installed`           | Missing dependency           | Install `curl` with the system package manager |
+| Error                                        | Cause                   | Fix                                            |
+| -------------------------------------------- | ----------------------- | ---------------------------------------------- |
+| `no API token configured for the fastly CLI` | No CLI token            | Configure one locally, outside chat            |
+| `403 Forbidden` or `status 403`              | Token lacks NGWAF scope | Verify token has `global:read` permission      |
+| `No workspaces found`                        | NGWAF not provisioned   | Enable NGWAF on the account first              |
+| `fastly is not installed`                    | Missing dependency      | Install the Fastly CLI                         |
+| `jq is not installed`                        | Missing dependency      | `brew install jq` or `apt-get install -y jq`   |
+| `curl is not installed`                      | Missing dependency      | Install `curl` with the system package manager |
 
 ## API References
 

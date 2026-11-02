@@ -125,39 +125,20 @@ Entries use CIDR prefixes with `ALLOW` or `BLOCK` actions. Batch update supports
 ## Examples
 
 ```bash
-# Upload a Compute package
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Expect: 100-continue" \
-  -F "package=@./pkg/my-app.tar.gz" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/package"
+# Upload a package to an editable version without activating it
+fastly compute update --service-id $SERVICE_ID --version $VERSION --package ./pkg/my-app.tar.gz
 
-# Create a KV store
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"my-kv-store"}' \
-  "https://api.fastly.com/resources/stores/kv"
+fastly kv-store create --name my-kv-store
 
-# Put an item in a KV store
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/octet-stream" \
-  -d 'my-value' \
-  "https://api.fastly.com/resources/stores/kv/$STORE_ID/keys/my-key"
+# Overwrites an existing key unless --add is set
+fastly kv-store-entry create --store-id $STORE_ID --key my-key --value my-value
 
-# Create a secret store and add a secret
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"my-secret-store"}' \
-  "https://api.fastly.com/resources/stores/secret"
+fastly secret-store create --name my-secret-store
 
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"api-key","secret":"bXktc2VjcmV0LXZhbHVl"}' \
-  "https://api.fastly.com/resources/stores/secret/$STORE_ID/secrets"
+# Takes the raw value, not Base64; the CLI encrypts it with a client key before upload
+printf '%s' "$API_KEY" | fastly secret-store-entry create --store-id $STORE_ID --name api-key --stdin
 
-# Create a config store item
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -d "item_key=feature-flag&item_value=enabled" \
-  "https://api.fastly.com/resources/stores/config/$CONFIG_STORE_ID/item"
+fastly config-store-entry create --store-id $CONFIG_STORE_ID --key feature-flag --value enabled
 ```
 
 ## Edge Data Store Decision Framework

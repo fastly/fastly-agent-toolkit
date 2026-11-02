@@ -89,7 +89,7 @@ Use `fastly config --location` to print its exact path.
 Use `fastly auth token` when you need the active API token in a script:
 
 ```bash
-# Pass the current token to curl without printing it to the terminal
+# For endpoints with no CLI command; the token never reaches the terminal
 curl -H "Fastly-Key: $(fastly auth token)" https://api.fastly.com/current_customer
 ```
 

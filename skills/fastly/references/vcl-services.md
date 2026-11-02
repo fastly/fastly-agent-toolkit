@@ -42,13 +42,9 @@ Upload and manage custom VCL files. Set `main` to `true` to designate the main V
 | Lint VCL (default flags)   | `POST`   | `/vcl_lint`                                                                |
 
 ```bash
-# Upload custom VCL
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  --data-urlencode "name=my_custom_vcl" \
-  --data-urlencode "content=sub vcl_recv { set req.http.X-Custom = \"true\"; }" \
-  --data-urlencode "main=true" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/vcl"
+# --content takes inline VCL or the path of an existing file
+fastly service vcl custom create --service-id "$SERVICE_ID" --version "$VERSION" \
+  --name my_custom_vcl --content main.vcl --main
 ```
 
 ## VCL Snippets
@@ -68,11 +64,9 @@ Blocks of VCL injected into specific subroutine locations without replacing the 
 Snippet `type` determines the subroutine insertion point: `init`, `recv`, `hash`, `hit`, `miss`, `pass`, `fetch`, `error`, `deliver`, `log`, `none`. Set `dynamic` to `"1"` at creation to make it dynamic (updatable without new version). The `priority` field (default `"100"`) controls execution order -- lower numbers run first.
 
 ```bash
-# Create a dynamic snippet in vcl_recv
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=block-bad-bots&dynamic=1&type=recv&priority=10&content=if (req.http.User-Agent ~ \"BadBot\") { error 403 \"Forbidden\"; }" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/snippet"
+fastly service vcl snippet create --service-id "$SERVICE_ID" --version "$VERSION" \
+  --name block-bad-bots --dynamic --type recv --priority 10 \
+  --content 'if (req.http.User-Agent ~ "BadBot") { error 403 "Forbidden"; }'
 ```
 
 ## Conditions
@@ -139,15 +133,11 @@ Key-value data table for VCL services. Items update without version activation.
 Item keys max 256 characters, values max 8000 characters. Batch updates support up to 1000 items with `op` values: `create`, `update`, `delete`, `upsert`.
 
 ```bash
-# Create a dictionary
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -d "name=blocked_ips&write_only=false" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/dictionary"
+fastly service dictionary create --service-id "$SERVICE_ID" --version "$VERSION" --name blocked_ips
 
-# Upsert a dictionary item (no version activation needed)
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -d "item_value=blocked" \
-  "https://api.fastly.com/service/{service_id}/dictionary/{dictionary_id}/item/192.168.1.1"
+# Upsert (PUT); no version activation needed
+fastly service dictionary-entry update --service-id "$SERVICE_ID" \
+  --dictionary-id DICTIONARY_ID --key 192.168.1.1 --value blocked
 ```
 
 ## Apex Redirects

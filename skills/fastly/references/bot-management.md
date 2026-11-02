@@ -69,7 +69,7 @@ Product slug: `bot_management`. See `products.md` for the universal enablement p
 Configuration property: `contentguard` — `"on"` or `"off"`. Controls whether ContentGuard (pre-cache bot detection) is active on the service.
 
 ```bash
-# Enable ContentGuard on a service with Bot Management
+# Enable ContentGuard; `fastly products` can enable bot_management but has no flag for its configuration
 curl -X PATCH -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"contentguard": "on"}' \

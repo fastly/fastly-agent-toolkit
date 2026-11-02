@@ -95,13 +95,6 @@ In the JSON response, look for `Authorizations[].Challenges[]` — each challeng
 
 Also check `Authorizations[].Warnings` for issues like CAA conflicts.
 
-Alternatively, via the REST API:
-```bash
-curl -s -H "Fastly-Key: $TOKEN" \
-  "https://api.fastly.com/tls/subscriptions/SUBSCRIPTION_ID?include=tls_authorizations"
-```
-REST API response uses lowercase fields in `included[].attributes.challenges` (not PascalCase).
-
 ## Custom TLS Certificates
 
 Upload and manage your own certificates.
@@ -331,13 +324,13 @@ These operations can cause HTTPS to stop working for affected domains.
 
 ## Troubleshooting
 
-**Certificate not working**: Ensure domain points to Fastly (CNAME to `m.sni.global.fastly.net` for subdomains, or A records for apex). Get exact records from `fastly tls-config describe --id CONFIG_ID --json` or `GET /tls/configurations/{id}?include=dns_records`.
+**Certificate not working**: Ensure domain points to Fastly (CNAME to `m.sni.global.fastly.net` for subdomains, or A records for apex). Get exact records from `fastly tls-config describe --id CONFIG_ID --include dns_records --json`: each `DNSRecords[].ID` is the A/AAAA address or CNAME target.
 
-**Subscription stuck in `pending`**: DNS challenge records not configured or not propagated. Verify with `dig CNAME _acme-challenge.DOMAIN +short`. The value should match the challenge from the REST API.
+**Subscription stuck in `pending`**: DNS challenge records not configured or not propagated. Verify with `dig CNAME _acme-challenge.DOMAIN +short`. The value should match `Authorizations[].Challenges[].Values` from `tls-subscription describe`.
 
 **Subscription `failed` with CAA warning**: The domain's CAA records restrict which CAs can issue certificates. Check with `dig CAA DOMAIN +short`. If it says `0 issue "letsencrypt.org"`, you must use `--cert-auth lets-encrypt` (not `certainly`). If no CAA records exist, any CA works. Fix: delete the failed subscription, recreate with the correct `--cert-auth` value.
 
-**Authorization state `blocked`**: Check `included[].attributes.warnings` in the REST API response for details. Common causes: CAA record mismatch, domain not resolving.
+**Authorization state `blocked`**: Check `Authorizations[].Warnings` in `tls-subscription describe --include tls_authorizations --json` for details. Common causes: CAA record mismatch, domain not resolving.
 
 **Chain validation error**: Include intermediate certificates with `--intermediates-blob` when using platform TLS.
 

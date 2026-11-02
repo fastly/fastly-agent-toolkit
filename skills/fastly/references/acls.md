@@ -38,11 +38,8 @@ ACL containers are versioned resources -- creating or deleting an ACL requires a
 | Delete ACL | `DELETE` | `/service/{service_id}/version/{version_id}/acl/{acl_name}` |
 
 ```bash
-# Create an ACL on a draft version
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my_blocklist" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/acl"
+# Clones the latest version if it is locked; activate the version afterwards
+fastly service acl create --service-id {service_id} --version latest --autoclone --name my_blocklist
 ```
 
 ## VCL ACL Entries (Not Versioned)
@@ -59,21 +56,14 @@ ACL entries are **not versioned** -- add, remove, or update IP entries without c
 | Batch update | `PATCH`  | `/service/{service_id}/acl/{acl_id}/entries`              |
 
 ```bash
-# Add an entry to an ACL
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"ip":"192.168.0.1","subnet":16}' \
-  "https://api.fastly.com/service/{service_id}/acl/{acl_id}/entry"
+fastly service acl-entry create --service-id {service_id} --acl-id {acl_id} --ip 192.168.0.1 --subnet 16
 
-# Batch update: create, update, and delete entries in one call
-curl -X PATCH -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"entries":[
+# Batch create/update/delete goes through `update --file` (a path or inline JSON)
+fastly service acl-entry update --service-id {service_id} --acl-id {acl_id} --file '{"entries":[
     {"op":"create","ip":"10.0.0.0","subnet":8},
     {"op":"update","id":"{entry_id}","ip":"192.168.1.0","subnet":24},
     {"op":"delete","id":"{entry_id}"}
-  ]}' \
-  "https://api.fastly.com/service/{service_id}/acl/{acl_id}/entries"
+  ]}'
 ```
 
 List entries supports pagination via `page`, `per_page`, `sort`, and `direction` query parameters.
@@ -93,10 +83,8 @@ Compute ACLs are a **completely separate system** from VCL ACLs -- different API
 | Update entries | `PATCH`  | `/resources/acls/{acl_id}/entries`        |
 
 ```bash
-# Look up whether an IP matches a Compute ACL
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/resources/acls/{acl_id}/entry/192.0.2.1"
-# Returns: {"prefix":"192.0.2.0/24","action":"block"} or 204 if no match
+fastly compute acl lookup --acl-id {acl_id} --ip 192.0.2.1 --json
+# Returns: {"prefix":"192.0.2.0/24","action":"BLOCK"}, or null if no entry matches
 ```
 
 Compute ACL entry updates use the same create/update/delete `op` pattern but entries are identified by `prefix` (CIDR) rather than entry ID, and each entry has an `action` of `ALLOW` or `BLOCK`.

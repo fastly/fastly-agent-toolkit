@@ -41,17 +41,14 @@ List filters: `filter[state]`, `filter[tls_domains.id]`, `filter[has_active_orde
 Delete requires no domains in TLS-enabled state. Use `force=true` query param on PATCH or DELETE with active domains (may break TLS).
 
 ```bash
-# Create a Platform TLS subscription
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/vnd.api+json" \
-  -d '{"data":{"type":"tls_subscription","attributes":{"certificate_authority":"certainly"},"relationships":{"tls_domains":{"data":[{"type":"tls_domain","id":"www.example.com"}]},"tls_configuration":{"data":{"type":"tls_configuration","id":"CONFIG_ID"}}}}}' \
-  "https://api.fastly.com/tls/subscriptions"
+# Repeat --domain per domain; create has no --json
+fastly tls-subscription create --domain www.example.com --cert-auth certainly --config CONFIG_ID
 
-# Check subscription status (include authorization challenges)
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/tls/subscriptions/{tls_subscription_id}?include=tls_authorizations"
+# Challenges only appear with --include and --json, as Authorizations[].Challenges[]
+# and Authorizations[].Warnings[] (Go field names, not included[].attributes)
+fastly tls-subscription describe --id SUBSCRIPTION_ID --include tls_authorizations --json
 
-# Retry a failed subscription
+# Retry a failed subscription (API only: tls-subscription update has no state flag)
 curl -X PATCH -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/vnd.api+json" \
   -d '{"data":{"type":"tls_subscription","attributes":{"state":"retry"}}}' \
@@ -95,17 +92,10 @@ PEM-formatted via `key` attribute (write-only, never returned). Response include
 Create links three resources via `relationships`: a `tls_certificate`, a `tls_configuration`, and a `tls_domain`. Filters: `filter[tls_certificate.id]`, `filter[tls_configuration.id]`, `filter[tls_domain.id]`. Include: `tls_certificate`, `tls_configuration`, `tls_domain`.
 
 ```bash
-# Upload a custom cert (key must already exist)
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/vnd.api+json" \
-  -d '{"data":{"type":"tls_certificate","attributes":{"cert_blob":"-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----","name":"My cert"}}}' \
-  "https://api.fastly.com/tls/certificates"
+# The key must already exist (fastly tls-custom private-key create)
+fastly tls-custom certificate create --cert-path cert.pem --name "My cert"
 
-# Activate TLS on a domain with a custom cert
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/vnd.api+json" \
-  -d '{"data":{"type":"tls_activation","relationships":{"tls_certificate":{"data":{"id":"CERT_ID","type":"tls_certificate"}},"tls_configuration":{"data":{"id":"CONFIG_ID","type":"tls_configuration"}},"tls_domain":{"data":{"id":"www.example.com","type":"tls_domain"}}}}}' \
-  "https://api.fastly.com/tls/activations"
+fastly tls-custom activation enable --cert-id CERT_ID --tls-config-id CONFIG_ID --tls-domain www.example.com
 ```
 
 ## TLS Configurations
@@ -130,10 +120,8 @@ Typical configurations available on most accounts (IDs vary per account):
 0-RTT (early data) improves latency but has replay risk for non-idempotent requests. HTTP/3 uses QUIC for better mobile/lossy-network performance. List your account's configs with `GET /tls/configurations`.
 
 ```bash
-# Get config with DNS records for domain setup
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/tls/configurations/{tls_configuration_id}?include=dns_records"
-# Response includes A records (for apex) and CNAME target (for subdomains)
+# DNSRecords[].ID holds the A/AAAA address (apex) or CNAME target (subdomains); RecordType says which
+fastly tls-config describe --id CONFIG_ID --include dns_records --json
 ```
 
 ## TLS Domains
@@ -145,7 +133,7 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 Read-only view of all domains across certificates and subscriptions. Filters: `filter[in_use]`, `filter[tls_certificates.id]`, `filter[tls_subscriptions.id]`. Include: `tls_activations`, `tls_certificates`, `tls_subscriptions`.
 
 ```bash
-# Check domain TLS status
+# API only: fastly tls-custom domain list --include accepts tls_activations alone
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/tls/domains?filter[in_use]=true&include=tls_activations,tls_subscriptions"
 ```

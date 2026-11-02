@@ -24,17 +24,17 @@ Never ask for an API key in chat, print a token, or enable shell tracing on auth
 
 ## References
 
-| Topic          | File                                            | Use when...                                                                              |
-| -------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Authentication | [auth.md](references/auth.md)                   | Login, stored tokens, service auth, CI/CD auth setup                                     |
-| Compute        | [compute.md](references/compute.md)             | Building/deploying edge applications, local dev server                                   |
-| Services       | [services.md](references/services.md)           | Service CRUD, backends, domains, ACLs, dictionaries, VCL, purging, rate limiting         |
-| Logging        | [logging.md](references/logging.md)             | Log streaming to S3, GCS, Datadog, Splunk, Kafka, 25+ providers                          |
-| NGWAF          | [ngwaf.md](references/ngwaf.md)                 | Next-Gen WAF workspaces, IP/country lists, rules, signals, thresholds, alerts            |
-| Notifications  | [notifications.md](references/notifications.md) | Slack/PagerDuty/webhook integrations, audit log event mappings                            |
-| Stats          | [stats.md](references/stats.md)                 | Which `fastly stats` subcommand takes which flag, and where the two flag sets diverge    |
-| Stores         | [stores.md](references/stores.md)               | KV Stores, Config Stores, Secret Stores, resource links                                  |
-| TLS            | [tls.md](references/tls.md)                     | Platform TLS, Let's Encrypt subscriptions, custom certs, mutual TLS                      |
+| Topic          | File                                            | Use when...                                                                           |
+| -------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Authentication | [auth.md](references/auth.md)                   | Login, stored tokens, service auth, CI/CD auth setup                                  |
+| Compute        | [compute.md](references/compute.md)             | Building/deploying edge applications, local dev server                                |
+| Services       | [services.md](references/services.md)           | Service CRUD, backends, domains, ACLs, dictionaries, VCL, purging, rate limiting      |
+| Logging        | [logging.md](references/logging.md)             | Log streaming to S3, GCS, Datadog, Splunk, Kafka, 25+ providers                       |
+| NGWAF          | [ngwaf.md](references/ngwaf.md)                 | Next-Gen WAF workspaces, IP/country lists, rules, signals, thresholds, alerts         |
+| Notifications  | [notifications.md](references/notifications.md) | Slack/PagerDuty/webhook integrations, audit log event mappings                        |
+| Stats          | [stats.md](references/stats.md)                 | Which `fastly stats` subcommand takes which flag, and where the two flag sets diverge |
+| Stores         | [stores.md](references/stores.md)               | KV Stores, Config Stores, Secret Stores, resource links                               |
+| TLS            | [tls.md](references/tls.md)                     | Platform TLS, Let's Encrypt subscriptions, custom certs, mutual TLS                   |
 
 For endpoint choice, unit and window conventions and worked queries, use the **fastly-stats** skill.
 
@@ -46,17 +46,19 @@ fastly <command> <subcommand> [flags]
 
 ### Top-Level Commands
 
-| Category     | Commands                                                                                |
-| ------------ | --------------------------------------------------------------------------------------- |
-| **Compute**  | `compute` - Build and deploy edge applications                                          |
-| **Services** | `service` - Manage CDN services, logging, backends, VCL, ACLs, purging                  |
-| **Security** | `ngwaf` - Web application firewall                                                      |
-| **TLS**      | `tls-subscription`, `tls-custom`, `tls-platform`, `tls-config` - Certificate management |
-| **Storage**  | `kv-store`, `config-store`, `secret-store` - Edge data stores                           |
-| **Auth**     | `auth` - Login, stored tokens, active token output, revocation; `auth-token` (deprecated) |
-| **Info**     | `stats`, `ip-list`, `pops`, `whoami` - Information queries                              |
-| **Notify**   | `integration` - Notification destinations; `audit-log event-mapping` - Event triggers   |
-| **Other**    | `dashboard`, `domain`, `dns`, `apisecurity`, `products`, `object-storage`, `tools`      |
+| Category     | Commands                                                                                        |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| **Compute**  | `compute` - Build and deploy edge applications                                                  |
+| **Services** | `service` - Manage CDN services, logging, backends, VCL, ACLs, purging                          |
+| **Security** | `ngwaf` - Web application firewall                                                              |
+| **TLS**      | `tls-subscription`, `tls-custom`, `tls-platform`, `tls-config` - Certificate management         |
+| **Storage**  | `kv-store`, `config-store`, `secret-store` - Edge data stores                                   |
+| **Auth**     | `auth` - Login, stored tokens, active token output, revocation; `auth-token` (deprecated)       |
+| **Info**     | `stats`, `ip-list`, `pops`, `whoami` - Information queries                                      |
+| **Notify**   | `integration` - Notification destinations; `audit-log event-mapping` - Event triggers           |
+| **Other**    | `dashboard`, `domain`, `dns`, `apisecurity`, `products`, `object-storage`, `tools`              |
+| **Routing**  | `routing-config` - Route URL paths to services; attach with `domain update --routing-config-id` |
+| **AI**       | `ai-runtime-control` - Virtual keys, provider connections, sessions, usage metrics              |
 
 ## Global Flags
 

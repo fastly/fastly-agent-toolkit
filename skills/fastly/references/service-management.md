@@ -39,14 +39,8 @@ Create request body (form-encoded): `name` (required), `type` (`vcl` or `wasm`),
 List supports pagination: `?page=1&per_page=20&sort=created&direction=descend`.
 
 ```bash
-# Create a VCL service
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -d "name=my-service&type=vcl" \
-  "https://api.fastly.com/service"
-
-# Search for a service by name
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/search?name=my-service"
+fastly service create --name my-service --type vcl
+fastly service search --name my-service
 ```
 
 ## Versions API
@@ -68,13 +62,9 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 Environment name for activate/deactivate on environment is currently limited to `staging`.
 
 ```bash
-# Clone the active version to create a new draft
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/3/clone"
-
-# Activate a version (deploy to production)
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/4/activate"
+# --version accepts a number, active, latest or staged
+fastly service version clone --service-id "$SERVICE_ID" --version active
+fastly service version activate --service-id "$SERVICE_ID" --version latest
 ```
 
 ## Service Authorizations
@@ -110,9 +100,7 @@ Domains are versioned resources -- they belong to a specific service version.
 | Validate all domains DNS config | `GET`    | `/service/{service_id}/version/{version_id}/domain/check_all`           |
 
 ```bash
-# List domains on the active version
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/$SERVICE_ID/version/4/domain"
+fastly service domain list --service-id "$SERVICE_ID" --version active
 ```
 
 Domain check returns an array of `[domain_details, current_cname, is_properly_configured]`.

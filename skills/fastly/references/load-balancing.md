@@ -57,17 +57,15 @@ Booleans are form values `1`/`0`, not `true`/`false`. When `use_ssl=1` and you s
 **Pre-flight check**: Before creating any backend, verify the origin's TLS SANs to determine the correct `ssl_cert_hostname`/`ssl_sni_hostname`: `echo | openssl s_client -connect ORIGIN:443 -servername ORIGIN 2>/dev/null | openssl x509 -noout -text | grep -A1 "Subject Alternative Name"`. Also verify the origin responds to the intended Host header: `curl -sI -H "Host: DESIRED_HOST" https://ORIGIN_ADDRESS/`.
 
 ```bash
-# Create a backend (same host for address and override_host)
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my-origin&address=origin.example.com&port=443&use_ssl=1&ssl_cert_hostname=origin.example.com&ssl_sni_hostname=origin.example.com" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/backend"
+# Port 443 makes the API set use_ssl=1. `create --use-ssl` never sends use_ssl (it only defaults the port to 443);
+# for TLS on another port, run `fastly service backend update --use-ssl` after creating.
+fastly service backend create --service-id "$SERVICE_ID" --version "$VERSION" --name my-origin \
+  --address origin.example.com --port 443 \
+  --ssl-cert-hostname origin.example.com --ssl-sni-hostname origin.example.com
 
-# Create a backend (different host header from origin address)
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my-origin&address=origin.example.com&port=443&use_ssl=1&override_host=cdn.example.com&ssl_cert_hostname=origin.example.com&ssl_sni_hostname=origin.example.com" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/backend"
+fastly service backend create --service-id "$SERVICE_ID" --version "$VERSION" --name my-origin \
+  --address origin.example.com --port 443 --override-host cdn.example.com \
+  --ssl-cert-hostname origin.example.com --ssl-sni-hostname origin.example.com
 ```
 
 ## Directors
@@ -85,7 +83,7 @@ Load balancer groups that distribute traffic across multiple backends. Versioned
 Key fields: `name`, `type` (1=random, 3=hash, 4=client), `quorum` (0-100, default 75), `retries` (default 5), `shield`, `capacity`.
 
 ```bash
-# Create a director with round-robin-style random balancing
+# No CLI command for directors
 curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "name=my-director&type=1&quorum=75&retries=3" \
@@ -103,7 +101,7 @@ Associates backends with directors. A backend can belong to multiple directors, 
 | Delete relationship | `DELETE` | `/service/{service_id}/version/{version_id}/director/{director_name}/backend/{backend_name}` |
 
 ```bash
-# Associate a backend with a director
+# No CLI command for director-backend mappings
 curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/service/{service_id}/version/{version_id}/director/my-director/backend/my-origin"
 ```
@@ -153,11 +151,10 @@ HTTP health checks sent to origins. Versioned. Can be shared across backends and
 Key fields: `name`, `host`, `path`, `method`, `expected_response` (status code), `check_interval` (ms, 1000-3600000), `threshold` (successes needed), `window` (recent checks to keep), `timeout` (ms), `initial` (probes assumed OK on config load), `http_version`, `headers` (array of custom headers).
 
 ```bash
-# Create a health check
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=my-healthcheck&host=origin.example.com&path=/health&method=HEAD&expected_response=200&check_interval=15000&threshold=3&window=5&timeout=5000" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/healthcheck"
+# The CLI has no flag for `headers`; set custom headers through the API.
+fastly service healthcheck create --service-id "$SERVICE_ID" --version "$VERSION" --name my-healthcheck \
+  --host origin.example.com --path /health --method HEAD --expected-response 200 \
+  --check-interval 15000 --threshold 3 --window 5 --timeout 5000
 ```
 
 ## Documentation

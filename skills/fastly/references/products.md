@@ -38,20 +38,18 @@ All Fastly products follow the same API pattern. Replace `{product_id}` with the
 | Update config | `PATCH` | `/enabled-products/v1/{product_id}/services/{service_id}/configuration` |
 
 ```bash
-# Enable a product on a service (e.g., brotli_compression)
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/enabled-products/v1/brotli_compression/services/$SERVICE_ID"
+# `fastly products` only knows api_discovery, bot_management, brotli_compression, domain_inspector, fanout,
+# image_optimizer, log_explorer_insights, origin_inspector and websockets.
+fastly products --service-id "$SERVICE_ID" --enable brotli_compression
+# {"<slug>": bool} for those slugs; a failed lookup also reads as false
+fastly products --service-id "$SERVICE_ID" --json
 
-# Check enablement status
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/enabled-products/v1/brotli_compression/services/$SERVICE_ID"
-
-# Get DDoS Protection configuration (products with configuration only)
+# No CLI command for product configuration
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/enabled-products/v1/ddos_protection/services/$SERVICE_ID/configuration"
 ```
 
-Response (enable/status):
+API response (enable/status):
 ```json
 {
   "product": { "id": "brotli_compression", "object": "product" },
@@ -94,6 +92,8 @@ Disable returns `204 No Content` on success.
 **NGWAF** -- Enable requires a `workspace_id` in the request body to link a workspace. Optionally accepts `traffic_ramp` (percentage of traffic to inspect). Use the `/configuration` endpoint to update these after enablement.
 
 ```bash
+# No CLI equivalent: `fastly products` supports neither product
+
 # Enable NGWAF with a workspace
 curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" \

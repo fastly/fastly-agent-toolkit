@@ -52,7 +52,7 @@ Install the tools for the workflows you use; installing the plugin does not inst
 | Workflow                                  | Requirements                                                                               |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Fastly CLI and traffic statistics         | Fastly CLI and locally configured authentication; `curl` and `jq` for raw API examples     |
-| NGWAF assessment script                   | Bash, `curl`, `jq`, and a locally configured `FASTLY_API_KEY` with access to the workspace |
+| NGWAF assessment script                   | Bash, Fastly CLI and locally configured authentication, `jq`, `curl`                       |
 | VCL linting, unit tests, and simulation   | Falco; installation requires Homebrew or Go                                                |
 | XVCL compilation                          | uv with `uvx` and access to the XVCL package; Falco for the local checks                   |
 | Local Compute development                 | Fastlike or Viceroy, plus the build tools and WASM targets required by the application     |

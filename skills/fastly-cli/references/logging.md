@@ -34,6 +34,9 @@ Configure real-time log streaming from Fastly edge to various destinations.
 | OpenStack            | `fastly service logging openstack`        |
 | Cloudfiles           | `fastly service logging cloudfiles`       |
 
+`fastly service logging log-explorer` and `insights` are not providers, and they mis-decode real API responses.
+Query Log Explorer & Insights through the API instead (`fastly` skill, observability reference).
+
 ## Common Operations
 
 All logging providers support these operations:

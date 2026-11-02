@@ -55,13 +55,12 @@ Create payload structure: `data.type` = `"invitation"`, `data.attributes.email`,
 List supports JSON:API pagination: `page[number]`, `page[size]`.
 
 ```bash
-# Get the current account info
+# Full customer record: no CLI command (`fastly whoami -v` only prints the customer ID and name)
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/current_customer"
 
-# List all users on the account
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/customer/$CUSTOMER_ID/users"
+# --customer-id is required (or FASTLY_CUSTOMER_ID); get it from `fastly whoami -v`
+fastly user list --customer-id $CUSTOMER_ID --json
 ```
 
 ## API Tokens (Personal)
@@ -88,9 +87,8 @@ Bulk revoke uses content type `application/vnd.api+json; ext=bulk` with a `data`
 Create error codes: `invalid_grant` (bad credentials), `invalid_request` (missing credentials), `invalid_scope` (bad scope), `account_locked`, `2fa.verify` (missing/expired OTP). Format error on `expires_at` returns 422.
 
 ```bash
-# Get info about the token being used for this request
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/tokens/self"
+# Current token's ID, name, scope, expiry, and services; without -v it only prints the user
+fastly whoami -v
 ```
 
 Token creation (`POST /tokens`) returns the `access_token` in the response body.
@@ -175,7 +173,7 @@ Add/remove services body: `{"services": [{"id": "..."},{"id": "..."}]}`.
 Members can be users or invitations. When adding, specify `object: "user"` or `object: "invitation"` in each member entry: `{"members": [{"id": "...", "object": "user"}]}`.
 
 ```bash
-# List available IAM roles
+# List IAM roles (no CLI command for IAM)
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/iam/v1/roles"
 ```

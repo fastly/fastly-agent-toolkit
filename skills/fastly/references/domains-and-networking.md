@@ -43,15 +43,9 @@ List supports query parameters: `fqdn` (filtered by `fqdn_match`), `fqdn_match` 
 Response fields: `id` (UUID), `fqdn`, `service_id`, `description`, `activated` (read-only, true if domain has at least one TLS activation), `verified` (read-only, true if ownership is proven via TLS certificate), `created_at`, `updated_at`.
 
 ```bash
-# Create a domain and associate it with a service
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"fqdn":"www.example.com","service_id":"SU1Z0isxPaozGVKXdv0eY"}' \
-  "https://api.fastly.com/domain-management/v1/domains"
+fastly domain create --fqdn www.example.com --service-id SU1Z0isxPaozGVKXdv0eY
 
-# List domains filtered by service
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/domain-management/v1/domains?service_id=SU1Z0isxPaozGVKXdv0eY"
+fastly domain list --service-id SU1Z0isxPaozGVKXdv0eY
 ```
 
 ## End-to-End: Custom Domain with TLS
@@ -68,9 +62,8 @@ dig CAA example.com +short
 # If no CAA records -> any CA works
 
 # 2. Pick a TLS configuration (get IDs and DNS records)
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/tls/configurations?include=dns_records"
-# Note the config ID and the CNAME target (e.g., m.sni.global.fastly.net)
+fastly tls-config list --include dns_records --json
+# Note .ID and the CNAME target in .DNSRecords[].ID (e.g., m.sni.global.fastly.net); keys are PascalCase
 ```
 
 ### Steps
@@ -78,39 +71,29 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 1. **Add domain to service version** (versioned domain API):
 
    ```bash
-   # If the active version is locked, clone it first
-   curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     "https://api.fastly.com/service/$SERVICE_ID/version/$ACTIVE_VERSION/clone"
-   # Add domain to the new version
-   curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     -d "name=www.example.com" \
-     "https://api.fastly.com/service/$SERVICE_ID/version/$NEW_VERSION/domain"
+   # The active version is locked, so --autoclone adds the domain to a clone; the output prints its number
+   fastly service domain create --service-id $SERVICE_ID --version active --autoclone --name www.example.com
    ```
 
 2. **Activate the version**:
 
    ```bash
-   curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     "https://api.fastly.com/service/$SERVICE_ID/version/$NEW_VERSION/activate"
+   fastly service version activate --service-id $SERVICE_ID --version $NEW_VERSION
    ```
 
 3. **Create TLS subscription** (choose CA based on CAA records):
 
    ```bash
-   curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     -H "Content-Type: application/vnd.api+json" \
-     -d '{"data":{"type":"tls_subscription","attributes":{"certificate_authority":"lets-encrypt"},"relationships":{"tls_domains":{"data":[{"type":"tls_domain","id":"www.example.com"}]},"tls_configuration":{"data":{"type":"tls_configuration","id":"CONFIG_ID"}}}}}' \
-     "https://api.fastly.com/tls/subscriptions"
+   fastly tls-subscription create --domain www.example.com --cert-auth lets-encrypt --config CONFIG_ID
    ```
 
-4. **Get DNS challenge records** (must use `?include=tls_authorizations`):
+4. **Get DNS challenge records** (must use `--include tls_authorizations` with `--json`):
 
    ```bash
-   curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     "https://api.fastly.com/tls/subscriptions/$SUBSCRIPTION_ID?include=tls_authorizations"
+   fastly tls-subscription describe --id $SUBSCRIPTION_ID --include tls_authorizations --json
    ```
 
-   Look in `included[].attributes.challenges` for the records to create. Also check `included[].attributes.warnings` for issues (e.g., CAA conflicts).
+   Look in `Authorizations[].Challenges` (`RecordName`, `RecordType`, `Values`) for the records to create. Also check `Authorizations[].Warnings` for issues (e.g., CAA conflicts).
 
 5. **Configure DNS** (at your DNS provider):
 
@@ -121,9 +104,8 @@ curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
 6. **Wait for certificate issuance** (typically 1-5 minutes after DNS propagates):
 
    ```bash
-   # Poll until state is "issued"
-   curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-     "https://api.fastly.com/tls/subscriptions/$SUBSCRIPTION_ID"
+   # Poll until State is "issued"
+   fastly tls-subscription describe --id $SUBSCRIPTION_ID
    # States: pending -> processing -> issued
    ```
 
@@ -147,7 +129,7 @@ Response format: `application/vnd.api+json` (JSON:API). Each record includes `id
 Pagination via `page[number]` and `page[size]` (default 100). Response includes `links` (self, first, prev, next, last) and `meta` (per_page, current_page, record_count, total_pages).
 
 ```bash
-# List domain ownership records
+# List domain ownership records (no CLI command)
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/domain-ownerships"
 ```

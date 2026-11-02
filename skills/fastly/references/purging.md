@@ -47,14 +47,8 @@ Two methods:
 # Direct PURGE (unauthenticated by default)
 curl -X PURGE http://www.example.com/images/logo.png
 
-# API purge (authenticated)
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/purge/www.example.com/images/logo.png"
-
-# Soft purge via API
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Fastly-Soft-Purge: 1" \
-  "https://api.fastly.com/purge/www.example.com/images/logo.png"
+fastly service purge --url "https://www.example.com/images/logo.png"
+fastly service purge --url "https://www.example.com/images/logo.png" --soft
 ```
 
 ## Surrogate Key Purge
@@ -62,48 +56,27 @@ curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
 Purge all objects tagged with a specific surrogate key. Uses `api.fastly.com`.
 
 ```bash
-# Hard purge by surrogate key
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/{service_id}/purge/product-123"
-
-# Soft purge by surrogate key
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Fastly-Soft-Purge: 1" \
-  "https://api.fastly.com/service/{service_id}/purge/product-123"
+fastly service purge --service-id "$SERVICE_ID" --key product-123
+fastly service purge --service-id "$SERVICE_ID" --key product-123 --soft
 ```
 
 ### Batch Surrogate Key Purge
 
 Purge multiple keys in one request. Maximum **256 keys** per batch.
 
-Two ways to specify keys -- JSON body or header:
-
 ```bash
-# Option 1: JSON body with surrogate_keys array
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"surrogate_keys":["key_1","key_2","key_3"]}' \
-  "https://api.fastly.com/service/{service_id}/purge"
-
-# Option 2: Space-separated keys in Surrogate-Key header
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Surrogate-Key: key_1 key_2 key_3" \
-  "https://api.fastly.com/service/{service_id}/purge"
+# --key takes a single key; --file takes one key per line and sends them in one request
+fastly service purge --service-id "$SERVICE_ID" --file <(printf '%s\n' key_1 key_2 key_3)
 ```
 
-Response maps each key to a purge ID:
-
-```json
-{"key_1": "108-1391560174-974124", "key_2": "108-1391560174-974125", "key_3": "108-1391560174-974126"}
-```
+Prints a `KEY`/`ID` table with one purge ID per key; there is no `--json`.
 
 ## Purge All
 
 Instantly invalidates all cached content for a service. **Always a hard purge.**
 
 ```bash
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/{service_id}/purge_all"
+fastly service purge --service-id "$SERVICE_ID" --all
 ```
 
 Purge-all takes up to 2 minutes to complete. With shielding enabled, edge and shield POPs may be purged in the wrong order, causing stale content to be re-cached. This can be mitigated by comparing `req.vcl.generation` (VCL) or `FASTLY_CACHE_GENERATION` (Compute) between edge and shield. See `https://www.fastly.com/documentation/solutions/examples/prevent-race-conditions-with-purge-all-and-shielding`.
@@ -113,6 +86,7 @@ Purge-all takes up to 2 minutes to complete. With shielding enabled, edge and sh
 Verify purge propagation across POPs. Rate limited to 200 requests/hour.
 
 ```bash
+# No CLI command for edge_check
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/content/edge_check?url=https://www.example.com/path/to/object"
 ```

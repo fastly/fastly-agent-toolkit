@@ -30,6 +30,8 @@ Enable, disable, and configure NGWAF on individual services. Requires a `workspa
 | List enabled services | `GET`    | `/enabled-products/v1/ngwaf/services`                            |
 
 ```bash
+# No CLI command for NGWAF enablement (`fastly products` has no ngwaf)
+
 # Enable NGWAF on a service (links to a workspace)
 curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" \
@@ -76,9 +78,7 @@ No other mode values exist. Do not try `monitor`, `disabled`, `detection`, etc.
 | Get top attacks  | `GET`    | `/ngwaf/v1/workspaces/{workspace_id}/top-attacks` |
 
 ```bash
-# List all workspaces
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/ngwaf/v1/workspaces?limit=100"
+fastly ngwaf workspace list --json   # bare array, all pages
 ```
 
 Workspace modes: `off`, `log`, `block`. The `attack_signal_thresholds` object controls how many attack signals per IP trigger flagging (`one_minute`, `ten_minutes`, `one_hour`, or `immediate`). The `default_blocking_response_code` accepts `301`, `302`, or `400-599`.
@@ -139,7 +139,7 @@ Events are actions NGWAF takes due to threshold-based blocking, templated rules,
 List events requires a `from` parameter (RFC 3339 datetime). Filter by `signal`, `ip`, or `status` (`active`/`expired`).
 
 ```bash
-# List recent events in a workspace
+# No CLI command for events
 curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
   "https://api.fastly.com/ngwaf/v1/workspaces/$WORKSPACE_ID/events?from=2025-01-01T00:00:00Z&limit=100"
 ```

@@ -20,9 +20,9 @@ Version 1 is unlocked — add domain, backend, and snippets all on `--version 1`
 
 Snippet/custom VCL commands are under `fastly service vcl` (e.g. `fastly service vcl snippet create`, `fastly service vcl custom create`), NOT `fastly vcl snippet create`.
 
-## `--content` is inline
+## `--content` and missing files
 
-The `--content` flag on snippet/custom VCL commands takes inline VCL code, not a file path. To load from a file: `--content "$(cat file.vcl)"`.
+On snippet/custom VCL commands, `--content` reads the file if the path exists, otherwise uploads the value as inline VCL. A mistyped path becomes the VCL body.
 
 On `fastly service vcl snippet describe`, `--content` means "print only the raw VCL body". It cannot be combined with `--json` or `--verbose`.
 

@@ -13,7 +13,7 @@ Publish messages to Fanout channels for WebSocket, SSE, and long-poll delivery. 
 Body contains `items` array; each item has `channel` and `formats` (`ws-message`, `http-stream`, `http-response`).
 
 ```bash
-# Publish a WebSocket message to a Fanout channel
+# No CLI command for Fanout publishing
 curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"items":[{"channel":"mychannel","formats":{"ws-message":{"content":"hello world"}}}]}' \
@@ -29,8 +29,8 @@ Get Fastly's IPv4 and IPv6 ranges for firewall allowlisting. No authentication r
 | List Fastly public IPs | `GET`  | `/public-ip-list` |
 
 ```bash
-# Get Fastly's public IP ranges (no auth required)
-curl -s "https://api.fastly.com/public-ip-list" | jq .
+fastly ip-list   # text only, and it still requires a token
+curl -s "https://api.fastly.com/public-ip-list" | jq .   # JSON, no token
 ```
 
 Returns `addresses` (IPv4) and `ipv6_addresses` (IPv6) arrays.
@@ -44,9 +44,7 @@ List all Fastly Points of Presence with location, region, coordinates, and shiel
 | List all POPs | `GET`  | `/datacenters` |
 
 ```bash
-# List all Fastly POPs
-curl -s -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/datacenters" | jq '.[].code'
+fastly pops   # text table only: NAME CODE GROUP SHIELD COORDINATES
 ```
 
 Each POP includes `code` (three-letter), `name`, `region`, `coordinates`, `shield` (shield code if eligible), and billing/stats regions.
@@ -62,7 +60,7 @@ Enable or disable HTTP/3 (QUIC) support on a per-service, per-version basis.
 | Disable HTTP/3    | `DELETE` | `/service/{service_id}/version/{version_id}/http3` |
 
 ```bash
-# Enable HTTP/3 for a service version
+# No CLI command for HTTP/3
 curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d 'feature_revision=1' \

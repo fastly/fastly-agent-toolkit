@@ -136,6 +136,7 @@ The defense is to assert `meta` echoes the filter you sent; the numbers themselv
 you.
 
 ```bash
+# fastly stats historical cannot send datacenter=
 curl -sS -H "Fastly-Key: $(fastly auth token)" \
   "https://api.fastly.com/stats/service/$SID?from=$FROM&to=$TO&by=day&datacenter=DEN" \
   | jq 'if .meta.datacenter == "DEN" then .data else error("filter dropped: \(.meta)") end'
@@ -162,6 +163,7 @@ Per-POP history exists, but `by=minute` is retained roughly one day and real-tim
 seconds, so capture the baseline before you change anything: it is the only irreversible step.
 
 ```bash
+# fastly pops has no JSON output; fastly stats historical cannot send datacenter=
 KEY="Fastly-Key: $(fastly auth token)"
 CODES=$(curl -sS -H "$KEY" https://api.fastly.com/datacenters | jq -r '.[].code' | paste -sd, -)
 NOW=$(date -u +%s)

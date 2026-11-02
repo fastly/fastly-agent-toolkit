@@ -70,13 +70,6 @@ Use the modern `fastly service version activate` subcommand. The older `fastly s
 
 To modify a live service: clone the active version, make changes on the new version, validate, then activate. Many CLI commands accept `--autoclone` to do this automatically.
 
-Via the REST API, clone with:
-
-```bash
-curl -s -X PUT "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/clone" \
-  -H "Fastly-Key: $FASTLY_API_TOKEN"
-```
-
 ## Backends (Origins)
 
 ```bash
@@ -238,21 +231,6 @@ fastly service domain delete \
 fastly service domain validate --version=VERSION --service-id SERVICE_ID
 ```
 
-### REST API (Fallback)
-
-Only needed if `fastly service domain create` is unavailable:
-
-```bash
-curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/domain" \
-  -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"my-project.global.ssl.fastly.net"}'
-```
-
-To get `$FASTLY_API_TOKEN` for REST calls, use `FASTLY_API_TOKEN=$(fastly auth token)` or use the existing `FASTLY_API_TOKEN` environment variable directly.
-For a specific stored token, use `FASTLY_API_TOKEN=$(fastly auth token --token TOKEN_NAME)`.
-Keep token values out of command output and shell traces.
-
 ## Healthchecks
 
 ```bash
@@ -387,28 +365,11 @@ fastly service vcl snippet create \
 fastly service vcl condition list --service-id SERVICE_ID --version 1
 ```
 
-**IMPORTANT — `--content` takes inline VCL, not a file path.** Passing a file path like `--content /tmp/snippet.vcl` sets the snippet content to the literal string "/tmp/snippet.vcl". To load from a file, use shell substitution: `--content "$(cat /tmp/snippet.vcl)"`.
+`--content` reads the file if the value is an existing path, otherwise uploads the value as inline VCL. A mistyped path is uploaded as the literal string, so check the file exists first.
 
 Use `fastly service vcl snippet describe --content` to print only the raw snippet body for either versioned snippets (`--name`) or dynamic snippets (`--dynamic --snippet-id`). `--content` is mutually exclusive with `--json` and `--verbose`.
 
 The `--dynamic` flag creates a dynamic snippet that can be updated without activating a new version. The `-p`/`--priority` flag controls the execution order of snippets (lower values run first).
-
-### REST API
-
-When creating snippets via the REST API, the `dynamic` field is **required**. Use `0` for regular (version-locked) snippets, `1` for dynamic snippets that can be updated without activating a new version.
-
-```bash
-curl -s -X POST "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/snippet" \
-  -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "cache-30min",
-    "type": "fetch",
-    "dynamic": 0,
-    "priority": 100,
-    "content": "set beresp.ttl = 1800s;\nset beresp.grace = 300s;"
-  }'
-```
 
 ## Service Alerts
 
@@ -474,11 +435,11 @@ fastly service version validate --service-id SERVICE_ID --version VERSION
 
 Returns validation status on success, or a list of errors explaining what's missing (e.g., no domain, no backend).
 
-Alternatively, via the REST API:
+The CLI prints only the API's `msg` field. For the `errors`, `warnings` and `messages` arrays, call the API:
 
 ```bash
 curl -s "https://api.fastly.com/service/$SERVICE_ID/version/$VERSION/validate" \
-  -H "Fastly-Key: $FASTLY_API_TOKEN"
+  -H "Fastly-Key: $(fastly auth token)"
 ```
 
 ## Common Workflows

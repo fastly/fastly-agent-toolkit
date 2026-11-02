@@ -1,15 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
-for dependency in curl jq; do
+for dependency in fastly jq curl; do
   if ! command -v "$dependency" &> /dev/null; then
     echo "Error: '$dependency' is not installed but is required for this script." >&2
     exit 1
   fi
 done
 
-if [ -z "${FASTLY_API_KEY:-}" ]; then
-  echo "Error: FASTLY_API_KEY is not set. Configure it locally before running this script." >&2
+# Without a token, fastly commands prompt for one on stdin instead of failing.
+if ! fastly auth token > /dev/null 2>&1; then
+  echo "Error: no API token configured for the fastly CLI. Set FASTLY_API_TOKEN or run 'fastly auth login' locally." >&2
   exit 1
 fi
 
@@ -21,7 +22,7 @@ fastly_api_call() {
   local http_code
   local body
 
-  response=$(curl -s -w "\n%{http_code}" -H "Fastly-Key: ${FASTLY_API_KEY}" "$url")
+  response=$(curl -sS -w "\n%{http_code}" -H "Fastly-Key: $(fastly auth token)" "$url")
   http_code=$(echo "$response" | tail -n1)
   body=$(echo "$response" | sed '$d')
 
@@ -41,7 +42,7 @@ check_signal() {
   local rule_status
   local recommendation
 
-  rule_status=$(echo "$rules_data" | jq -r ".data[] | select(.actions[].signal == \"$signal\") | if .enabled then \"enabled\" else \"disabled\" end")
+  rule_status=$(echo "$rules_data" | jq -r ".[] | select(.actions[].signal == \"$signal\") | if .enabled then \"enabled\" else \"disabled\" end")
 
   if [ -z "$rule_status" ]; then
     recommendation="Configure and enable this rule"
@@ -57,9 +58,7 @@ check_signal() {
 }
 
 # 1. Get the list of NGWAF workspaces.
-# Note: Limited to 200 workspaces. For accounts with more, pagination should be followed.
-workspaces_json=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces?limit=200")
-workspaces=$(echo "$workspaces_json" | jq -r '.data[].id')
+workspaces=$(fastly ngwaf workspace list --json | jq -r '.[].id')
 
 if [ -z "$workspaces" ]; then
   echo "No workspaces found or failed to fetch workspaces."
@@ -70,9 +69,7 @@ fi
 for workspace in $workspaces; do
   echo "### Workspace: $workspace"
 
-  # List rules for the workspace.
-  # Note: Limited to 200 rules. For workspaces with more, pagination should be followed.
-  rules_data=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/rules?limit=200")
+  rules_data=$(fastly ngwaf workspace rule list --workspace-id "$workspace" --json)
 
   echo "  [LOGIN Rules]"
   for signal in "LOGINDISCOVERY" "LOGINATTEMPT" "LOGINSUCCESS" "LOGINFAILURE"; do
@@ -90,9 +87,10 @@ for workspace in $workspaces; do
   done
 
   # If LOGINATTEMPT is not enabled (missing or disabled), search for login-related requests.
-  loginattempt_enabled=$(echo "$rules_data" | jq -r '[.data[] | select(.actions[].signal == "LOGINATTEMPT") | select(.enabled == true)] | length')
+  loginattempt_enabled=$(echo "$rules_data" | jq -r '[.[] | select(.actions[].signal == "LOGINATTEMPT") | select(.enabled == true)] | length')
   if [ "$loginattempt_enabled" -eq 0 ]; then
     echo "  -> LOGINATTEMPT is not enabled. Searching recent request logs for potential login paths..."
+    # No CLI command searches requests, so this goes through the API.
     # Decoded query: from:-30min method:POST path:~"*login*"
     login_requests_json=$(fastly_api_call "https://api.fastly.com/ngwaf/v1/workspaces/$workspace/requests?limit=100&page=1&q=from%3A-30min%20method%3APOST%20path%3A~%22%2Alogin%2A%22")
     login_requests=$(echo "$login_requests_json" | jq -r '.data[] | .path' | sort | uniq -c)

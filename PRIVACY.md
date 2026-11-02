@@ -15,7 +15,7 @@ Review those settings before working with private project or account data.
 
 Configure Fastly credentials yourself through interactive CLI login, the CLI's local configuration, or environment variables.
 
-The NGWAF helper reads `FASTLY_API_KEY` from its environment and uses it to authenticate requests to Fastly.
+The NGWAF helper uses the Fastly CLI's configured credentials, and passes the same token to its one direct API request.
 
 API examples use locally configured credentials in the same way.
 Never paste credentials into chat, commit them, or include them in public examples or reports.

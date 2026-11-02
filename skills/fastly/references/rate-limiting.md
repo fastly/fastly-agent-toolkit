@@ -58,29 +58,19 @@ Requires NGWAF subscription (Signal Sciences Cloud WAF or Next-Gen WAF) and a pa
 | `logger_type`          | string  | Logging endpoint type for `log_only` action (e.g., `s3`, `splunk`, `datadog`, `https`)             |
 
 ```bash
-# Create a rate limiter (POST form-encoded)
-curl -X POST -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=api-rate-limit&http_methods[]=POST&http_methods[]=PUT&http_methods[]=PATCH&http_methods[]=DELETE&rps_limit=100&window_size=10&client_key[]=req.http.Fastly-Client-IP&penalty_box_duration=30&action=response&response[status]=429&response[content_type]=application/json&response[content]=%7B%22error%22%3A%22Too%20many%20requests%22%7D" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/rate-limiters"
+# List-valued fields take comma-separated values
+fastly service rate-limit create --service-id "$SERVICE_ID" --version "$VERSION" \
+  --name api-rate-limit --http-methods POST,PUT,PATCH,DELETE \
+  --rps-limit 100 --window-size 10 --client-key req.http.Fastly-Client-IP \
+  --penalty-box-dur 30 --action response --response-status 429 \
+  --response-content-type application/json --response-content '{"error":"Too many requests"}'
 
-# List all rate limiters for a service version
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/service/{service_id}/version/{version_id}/rate-limiters"
+# --json prints Go field names: the limiter ID is .RateLimiterID, not .id
+fastly service rate-limit list --service-id "$SERVICE_ID" --version "$VERSION" --json
 
-# Get a specific rate limiter
-curl -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/rate-limiters/{rate_limiter_id}"
-
-# Update a rate limiter (change RPS limit and window)
-curl -X PUT -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "rps_limit=500&window_size=60" \
-  "https://api.fastly.com/rate-limiters/{rate_limiter_id}"
-
-# Delete a rate limiter
-curl -X DELETE -H "Fastly-Key: $FASTLY_API_TOKEN" \
-  "https://api.fastly.com/rate-limiters/{rate_limiter_id}"
+fastly service rate-limit describe --id RATE_LIMITER_ID
+fastly service rate-limit update --id RATE_LIMITER_ID --rps-limit 500 --window-size 60
+fastly service rate-limit delete --id RATE_LIMITER_ID
 ```
 
 ## Documentation
