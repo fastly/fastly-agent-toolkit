@@ -79,7 +79,7 @@ Afterward, judge the quality of the final result rather than only whether the ag
 
 ## Evaluate it before opening a pull request
 
-Hands-on testing is a good start, but every new skill should also be evaluated with a tool such as [Calibra](https://calibra.swival.dev) before it can be merged, as the existing skills have been. Internally, evaluations are maintained in the [fastly-agent-toolkit-evals](https://fastly/fastly-agent-toolkit-evals) repository
+Hands-on testing is a good start, but every new skill should also be evaluated with a tool such as [Calibra](https://calibra.swival.dev) before it can be merged, as the existing skills have been. Internally, evaluations are maintained in the [fastly-agent-toolkit-evals](https://github.com/fastly/fastly-agent-toolkit-evals) repository
 
 Compare representative tasks with and without the skill to confirm that its description selects it when useful, improves the result, and does not create regressions or confusion elsewhere.
 
