@@ -109,27 +109,35 @@ The stream of VCL subroutine invocations. Each event has shape:
 
 Query events with `.where(...)` filters, index with `[n]`, aggregate with `.count()`.
 
-| Expression                           | Notes                                        |
-| ------------------------------------ | -------------------------------------------- |
-| `events.where(fnName=recv).count()`  | How many times `vcl_recv` ran                |
-| `events.where(fnName=fetch)[0].ttl`  | The TTL set in the first `vcl_fetch`         |
-| `events.where(fnName=recv)[0].url`   | `req.url` at the end of the first `vcl_recv` |
-| `events.where(fnName=error).count()` | Did `vcl_error` run                          |
-| `events.where(fnName=hit).count()`   | Cache hit path taken                         |
+| Expression                           | Notes                                                                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `events.where(fnName=recv).count()`  | How many times `vcl_recv` ran                                                                                                                                      |
+| `events.where(fnName=fetch)[0].ttl`  | The TTL set in the first `vcl_fetch`, in microseconds (30s = `30000000`). Converted as a float, so 1.001s is `1000999.9999999999`: use ranges for millisecond TTLs |
+| `events.where(fnName=recv)[0].url`   | `req.url` at the end of the first `vcl_recv`                                                                                                                       |
+| `events.where(fnName=error).count()` | Did `vcl_error` run                                                                                                                                                |
+| `events.where(fnName=hit).count()`   | Cache hit path taken                                                                                                                                               |
 
 Common `fnName` values: `init`, `recv`, `hash`, `hit`, `miss`, `pass`, `fetch`, `error`, `deliver`, `log`.
 
 Within events you can read a fixed set of attributes as they were when the subroutine returned: `url`, `method`, `return`, `status`, `ttl`. Arbitrary VCL variables (`req.http.*`, `beresp.*`, etc.) are **not** exposed — only these snapshot fields. To verify a header value, use `clientFetch.resp includes "header-name:"` on the final response instead.
 
+If your `vcl_fetch` code doesn't `return`, Fastly's default fetch code runs after it. When the response has no `Expires`, `Surrogate-Control: max-age`, or `Cache-Control: max-age`/`s-maxage`, it sets `beresp.ttl = 3600s`, so `ttl` reports `3600000000` whatever your VCL set. `events.where(fnName=fetch)[0].ranBoilerplate is true` shows that the default code changed the outcome.
+
+Put `return(...)`, `error ...;` and `restart;` at the start of their own line. Fiddle only records event attributes for those statements there; after an inline `if (x) { return(deliver); }` the event's attributes are missing.
+
 ## Operators
 
-| Operator    | Example                                            | Notes                                                                                                           |
-| ----------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `is`        | `clientFetch.status is 200`                        | Exact equality                                                                                                  |
-| `isAtLeast` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600` | Numeric >=                                                                                                      |
-| `includes`  | `clientFetch.bodyPreview includes "BadBot"`        | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)). |
+| Operator     | Example                                                   | Notes                                                                                                                                            |
+| ------------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `is`         | `clientFetch.status is 200`                               | Exact equality                                                                                                                                   |
+| `isAtLeast`  | `events.where(fnName=fetch)[0].ttl isAtLeast 3600000000`  | Numeric >=                                                                                                                                       |
+| `isAtMost`   | `events.where(fnName=fetch)[0].ttl isAtMost 3600000000`   | Numeric <=                                                                                                                                       |
+| `isMoreThan` | `clientFetch.status isMoreThan 199`                       | Numeric >. `isAbove` is an alias                                                                                                                 |
+| `isLessThan` | `events.where(fnName=fetch)[0].ttl isLessThan 3600000000` | Numeric <                                                                                                                                        |
+| `matches`    | `events.where(fnName=recv)[0].url matches /^\/api\//`     | JavaScript regex: `/re/flags`, or an unquoted pattern (case-insensitive, multiline). Quotes become part of the pattern, so `"..."` never matches |
+| `includes`   | `clientFetch.bodyPreview includes "BadBot"`               | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)).                                  |
 
-Additional operators (observed in wild but not exercised in verification): `isAtMost`, `isLessThan`, `isGreaterThan`, `matches` (regex). Test in a throwaway fiddle before relying on them.
+`isGreaterThan` is not an operator. Fiddle rejects it with an `invalid-test` insight and drops every assertion in that request (later requests still run); use `isMoreThan`.
 
 ## Timing
 
@@ -153,16 +161,27 @@ events.where(fnName=error).count() is 1
 clientFetch.bodyPreview includes "<expected body>"
 ```
 
-**Cache MISS then HIT** (requires two requests with same `cacheID`):
+**Cache MISS then HIT** (two requests with the same `cacheID`). `tests` has no comment syntax: a `#` line makes the whole request `invalid-test`:
 
-```text
-# First request
-originFetches.count() is 1
-events.where(fnName=fetch)[0].ttl isAtLeast 3600
-
-# Second request
-originFetches.count() is 0
-events.where(fnName=hit).count() is 1
+```json
+{
+  "requests": [
+    {
+      "path": "/",
+      "tests": [
+        "originFetches.count() is 1",
+        "events.where(fnName=fetch)[0].ttl isAtLeast 3600000000"
+      ]
+    },
+    {
+      "path": "/",
+      "tests": [
+        "originFetches.count() is 0",
+        "events.where(fnName=hit).count() is 1"
+      ]
+    }
+  ]
+}
 ```
 
 **Query string sorted in recv**:
@@ -211,4 +230,5 @@ Values are passed through unchanged, so `"US"` stays uppercase. Two ways to asse
 - Prefer `events.where(fnName=X)[0].<field>` over indirect effects when you want to pin down exactly which VCL phase ran.
 - Use `originFetches.count()` aggressively — it's the cleanest signal for "cache / synthetic worked" or "the pass happened".
 - Avoid asserting on `clientFetch.resp` containing timestamps or node IDs; they change per execution.
-- `includes` is substring, not glob, and case-sensitive. For regex semantics, test in the Fiddle UI first to confirm `matches` behavior in your version of the DSL.
+- `includes` is substring, not glob, and case-sensitive. For regex semantics use `matches` (see [Operators](#operators)).
+- A failing assertion stops the run: later requests are not sent. Put exploratory or expected-to-fail assertions in the last request.
