@@ -17,9 +17,11 @@
 #                cache; pass a fixed value (e.g. --cache-id 1) to share.
 #   --max-wait   180 seconds, applied per attempt (cold publishes routinely
 #                take 60-120s; warm --id re-executes finish in ~2-5s)
-#   --retries    2 — re-execute on transient stream-closed/server-timeout
-#                without re-publishing. Total attempts = retries + 1.
-#   --ua         fastly-fiddle-skill/1.5
+#   --retries    2 — re-execute without re-publishing when the stream drops
+#                or the session ends before any result (e.g. slow edge
+#                sync). Not after a finished run: a re-execute reuses the
+#                cacheID and would see cache HITs. Total attempts = retries + 1.
+#   --ua         fastly-fiddle-skill/1.6
 #
 # Inputs:
 #   <fiddle.json>   Fiddle spec (origins, vcl, requests with optional tests[]).
@@ -56,9 +58,18 @@
 #                    "tests": [...] }, ... ],
 #     "summary": { "total": N, "passed": N, "failed": N } }
 #
+#   A row whose assertions the server rejected (e.g. an unknown operator)
+#   also carries `invalid_tests: ["<server message>", ...]` and the exit
+#   code is 2. The server drops that request's assertions but runs later
+#   requests.
+#
+#   The server stops at the first request with a failing assertion; later
+#   requests never run. end_reason is then "stopped-on-failure".
+#
 #   `seq` is the row's index in `results[]`, NOT the spec's `requests[i]`
-#   index. Rows are ordered lexicographically by the raw HTTP request line
-#   (a side effect of jq's sorted object iteration over our request-keyed
+#   index. Rows are ordered lexicographically by the raw HTTP request
+#   without its host line, then by occurrence among identical requests (a
+#   side effect of jq's sorted object iteration over our request-keyed
 #   merge state). That ordering is stable across re-executes of the same
 #   fiddle but does not match either declaration order or completion order.
 #   Each result row carries the raw HTTP request line in `req` so consumers
@@ -75,15 +86,16 @@
 # Exit codes:
 #   0  all assertions passed (or the fiddle had no assertions)
 #   1  usage / IO / HTTP error
-#   2  fiddle invalid (lint failure) — see .lintStatus on stderr
-#   3  one or more assertions failed
+#   2  fiddle invalid (lint failure) — see .lintStatus on stderr — or an
+#      assertion the server rejected (`invalid-test`; see .invalid_tests)
+#   3  one or more assertions failed (later requests may not have run)
 #   4  timed out before all expected assertions reported, even after retries
 #
 # Requires: curl (>=7.76 for --fail-with-body), jq.
 
 set -euo pipefail
 
-UA='fastly-fiddle-skill/1.5'
+UA='fastly-fiddle-skill/1.6'
 MAX_WAIT=180
 RETRIES=2
 QUIET=0
@@ -263,9 +275,10 @@ COUNT_TESTS_JQ='
 # the SSE stream closes early (common — see retry loop below) we may have
 # verdicts for a subset of requests. Re-executing the same fiddle returns a
 # different subset (Fiddle's clientFetches keys are completion-order, not
-# declaration-order). We key by the raw request line — stable per spec
-# request, distinct between requests with different headers/methods/paths —
-# and merge tests by testExpr, preferring entries that already have a `pass`
+# declaration-order). We key by the raw request minus its `host:` line (the
+# host differs per request and per attempt) plus an occurrence index among
+# identical requests, which is stable because requests run sequentially.
+# Tests merge by testExpr, preferring entries that already have a `pass`
 # verdict over bare placeholders.
 # shellcheck disable=SC2016 # jq program; $-vars are jq syntax, not shell
 MERGE_JQ='
@@ -291,19 +304,28 @@ def content_type_of(cf):
 # Prefer non-null over null when merging body fields across attempts.
 def pick(a; b): if b != null then b elif a != null then a else null end;
 
-(.clientFetches // {}) as $cur
+[(.clientFetches // {}) | to_entries[]] as $entries
+| [$entries[] | (.value.req // ("__nil_" + (.key|tostring)))
+    | split("\n") | map(select(test("^host:"; "i") | not)) | join("\n")] as $bases
 | ($prev[0] // {}) as $acc
-| reduce ($cur | to_entries[]) as $e (
+| reduce range(0; $entries | length) as $i (
     $acc;
-    ($e.value.req // ("__nil_" + ($e.key|tostring))) as $key
-    | (.[$key] // {req: ($e.value.req // null), tests: [],
+    ($entries[$i].value) as $v
+    | ($bases[$i] + "#"
+       + ([$bases[0:$i][] | select(. == $bases[$i])] | length | tostring)) as $key
+    | (.[$key] // {req: ($v.req // null), tests: [],
                    status: null, content_type: null, body_preview: null}) as $existing
     | .[$key] = {
-        req: ($e.value.req // $existing.req),
-        tests: merge_tests($existing.tests; $e.value.tests),
-        status:       pick($existing.status;       ($e.value.status // null)),
-        content_type: pick($existing.content_type; content_type_of($e.value)),
-        body_preview: pick($existing.body_preview; ($e.value.bodyPreview // null))
+        req: ($v.req // $existing.req),
+        tests: merge_tests($existing.tests; $v.tests),
+        status:       pick($existing.status;       ($v.status // null)),
+        content_type: pick($existing.content_type; content_type_of($v)),
+        body_preview: pick($existing.body_preview; ($v.bodyPreview // null)),
+        # The server drops every assertion of a request containing one it
+        # cannot parse, and reports why only as an insight.
+        invalid_tests: ((($existing.invalid_tests // [])
+          + [($v.insights // [])[] | select(.key == "invalid-test") | .data.msg // empty])
+          | unique)
       }
   )
 '
@@ -434,7 +456,7 @@ stream_attempt() {
 
   : >"$PAYLOAD_FILE"
   END_REASON=""
-  local waiting=0 evt="" data_buf=""
+  local waiting=0 evt="" data_buf="" got_update=0
   local start now next_tick deadline
   start=$(date +%s)
   deadline=$(( start + MAX_WAIT ))
@@ -452,6 +474,7 @@ stream_attempt() {
           local data=${data_buf%$'\n'}
           printf '%s\n' "$data" >"$PAYLOAD_FILE"
           SAW_RESULT=1
+          got_update=1
           # Merge into accumulator. If the merge fails (malformed payload),
           # leave the previous merged state intact rather than corrupting it.
           if jq --slurpfile prev "$MERGED_FILE" "$MERGE_JQ" "$PAYLOAD_FILE" \
@@ -472,11 +495,26 @@ stream_attempt() {
           elif (( EXPECTED_TOTAL == 0 )); then
             # No assertions to wait on — first updateResult is enough.
             END_REASON="no-assertions"
+          elif jq -e '[.[] | .tests[]? | select(.pass == false)] | length > 0' \
+                  "$MERGED_FILE" >/dev/null 2>&1; then
+            # Verdicts are final, and the server sends no further requests
+            # after a failure, so nothing more will arrive.
+            END_REASON="stopped-on-failure"
           fi
         fi
         ;;
-      timeout|done)
-        END_REASON="server-$evt"
+      timeout)
+        # The server's normal end of a session (after inactivity). With no
+        # result in this attempt it means edge sync or the run never started.
+        if (( got_update )); then
+          END_REASON="server-end"
+        else
+          END_REASON="server-timeout"
+        fi
+        ;;
+      abort)
+        warn "server aborted the session: ${data_buf%$'\n'}"
+        END_REASON="server-abort"
         ;;
     esac
     evt=""
@@ -517,7 +555,7 @@ stream_attempt() {
       '')
         dispatch_event
         case $END_REASON in
-          complete|no-assertions|server-timeout|server-done) break ;;
+          complete|no-assertions|stopped-on-failure|server-end|server-timeout|server-abort) break ;;
         esac
         ;;
     esac
@@ -542,7 +580,9 @@ stream_attempt() {
 # re-execute path is ~2-5s, and merging across attempts means we can recover
 # a complete result set even when each individual attempt drops a different
 # subset of requests. We don't retry on client-timeout (bumping --max-wait
-# is the only fix) or `complete`/`no-assertions` (we're done).
+# is the only fix), on a finished run (`complete`, `no-assertions`,
+# `stopped-on-failure`, `server-end`: a re-execute would reuse the cacheID
+# and see HITs), or on `server-abort`.
 while :; do
   ATTEMPTS=$(( ATTEMPTS + 1 ))
   stream_attempt "$CACHE_ID"
@@ -556,7 +596,7 @@ while :; do
     break
   fi
   case $END_REASON in
-    stream-closed|server-timeout|server-done|no-session)
+    stream-closed|server-timeout|no-session)
       log "  ↻ retrying (attempt $((ATTEMPTS+1)) of $((RETRIES+1)); reason: $END_REASON)"
       continue
       ;;
@@ -580,11 +620,17 @@ fi
 case $END_REASON in
   complete|no-assertions)
     RETRY_HINT="" ;;
+  stopped-on-failure)
+    RETRY_HINT="the server stops at the first request with a failing assertion; later requests did not run" ;;
+  server-end)
+    RETRY_HINT="the session ended with assertions unreported; check the fiddle for fetch errors" ;;
+  server-abort)
+    RETRY_HINT="see the abort message above" ;;
   client-timeout)
     RETRY_HINT="hit --max-wait ($MAX_WAIT s) on the final attempt; try $0 --id $FID --max-wait $((MAX_WAIT*2))" ;;
   server-timeout)
     RETRY_HINT="server emitted timeout after $((RETRIES+1)) attempt(s); re-execute later: $0 --id $FID" ;;
-  stream-closed|server-done)
+  stream-closed)
     RETRY_HINT="stream closed early on all $((RETRIES+1)) attempt(s); raise --retries or re-execute later: $0 --id $FID --retries 5" ;;
   no-session)
     RETRY_HINT="/execute returned no sessionID after $((RETRIES+1)) attempt(s); re-execute later: $0 --id $FID" ;;
@@ -610,6 +656,13 @@ if (( SAW_RESULT == 0 )); then
   exit 4
 fi
 
+HAS_INVALID=0
+while IFS= read -r msg; do
+  warn "invalid-test: $msg"
+  HAS_INVALID=1
+done < <(jq -r '[.[] | .invalid_tests[]?] | unique[]' "$MERGED_FILE")
+(( HAS_INVALID )) && RETRY_HINT="fix the rejected assertion(s); the server dropped every assertion in those requests"
+
 INCOMPLETE=0
 if [[ $COMPLETE != true ]]; then
   warn "incomplete: $VERDICTS/$EXPECTED_TOTAL assertions reported across $ATTEMPTS attempt(s) (reason: $END_REASON)"
@@ -633,6 +686,8 @@ SUMMARY=$(jq --arg url "$URL" --arg fid "$FID" \
   ((. // {}) | [values[]]) as $arr
   | [ range(0; $arr|length) as $i
       | { seq: $i, req: $arr[$i].req, tests: ($arr[$i].tests // []) }
+        + (if ($arr[$i].invalid_tests // []) != [] then
+             { invalid_tests: $arr[$i].invalid_tests } else {} end)
         + (if $show_bodies == 1 then {
              status:       $arr[$i].status,
              content_type: $arr[$i].content_type,
@@ -664,8 +719,10 @@ if (( DEBUG )); then
   jq . "$PAYLOAD_FILE" >&2 || cat "$PAYLOAD_FILE" >&2
 fi
 
-(( INCOMPLETE )) && exit 4
+(( HAS_INVALID )) && exit 2
 
+# A failure is final; missing verdicts after one are expected, so 3 wins over 4.
 FAILED=$(echo "$SUMMARY" | jq -r '.summary.failed')
 (( FAILED > 0 )) && exit 3
+(( INCOMPLETE )) && exit 4
 exit 0

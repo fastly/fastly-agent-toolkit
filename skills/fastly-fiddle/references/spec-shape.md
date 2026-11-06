@@ -177,14 +177,14 @@ Each entry in `requests[]`:
 
 ### Fields you usually set
 
-| Field     | Default | Notes                                                                                                     |
-| --------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| `method`  | `"GET"` | HTTP method.                                                                                              |
-| `path`    | —       | Path + query. The Host header is derived from the fiddle's execHost.                                      |
-| `headers` | `""`    | Raw HTTP headers, one per line (`"Header-Name: value\nOther: x"`).                                        |
-| `body`    | `""`    | Request body as string.                                                                                   |
-| `tests`   | `""`    | Assertion list. Send as array on input; stored as newline-joined string. See the `test-dsl.md` reference. |
-| `delay`   | `0`     | Milliseconds to wait after the previous request. Use for cache TTL / rate-limit tests.                    |
+| Field     | Default | Notes                                                                                                                                                                                 |
+| --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `method`  | `"GET"` | HTTP method.                                                                                                                                                                          |
+| `path`    | —       | Path + query. The Host header is derived from the fiddle's execHost.                                                                                                                  |
+| `headers` | `""`    | Raw HTTP headers, one per line (`"Header-Name: value\nOther: x"`).                                                                                                                    |
+| `body`    | `""`    | Request body as string.                                                                                                                                                               |
+| `tests`   | `""`    | Assertion list. Send as array on input; stored as newline-joined string. See the `test-dsl.md` reference.                                                                             |
+| `delay`   | `0`     | Seconds (a JSON number, 0–10, decimals allowed) to wait before sending this request, counted from the end of the previous request's assertions. Use for cache TTL / rate-limit tests. |
 
 ### Fields you rarely touch (but should know)
 

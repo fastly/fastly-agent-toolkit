@@ -41,7 +41,7 @@ The two tools have **different assertion DSLs**. You cannot reuse test files bet
 | Substring          | `assert.contains(s, "x")`                            | `clientFetch.bodyPreview includes "x"`                                  |
 | Subroutine called  | `assert.subroutine_called("my_helper")`              | `events.where(fnName=my_helper).count() is 1`                           |
 | Origin fetch count | n/a (no real fetch)                                  | `originFetches.count() is 0`                                            |
-| TTL set in fetch   | `assert.equal(beresp.ttl, 3600s)` in `@scope: fetch` | `events.where(fnName=fetch)[0].ttl isAtLeast 3600`                      |
+| TTL set in fetch   | `assert.equal(beresp.ttl, 3600s)` in `@scope: fetch` | `events.where(fnName=fetch)[0].ttl is 3600000000` (microseconds)        |
 | State / return     | `assert.state(lookup)`                               | `events.where(fnName=recv)[0].return is "lookup"`                       |
 | Error raised       | `assert.error(404)`                                  | `clientFetch.status is 404` + `events.where(fnName=error).count() is 1` |
 
