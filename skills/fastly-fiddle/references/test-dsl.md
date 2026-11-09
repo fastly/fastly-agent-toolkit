@@ -2,7 +2,7 @@
 
 Each request in a fiddle carries a `tests` list. Each line is a single assertion in Fiddle's domain-specific language. The server evaluates them after the request completes and reports `pass` / `actual` / `expected` per assertion.
 
-The DSL is not formally documented by Fastly; these are the patterns observed in `fastly/demo-fiddle-ci` and by direct testing.
+Fastly documents the DSL at <https://www.fastly.com/documentation/reference/tools/fiddle/testing/>, but that page has errors (e.g. its `greaterThan` example is rejected). This file records behaviour verified against live Fiddle.
 
 ## Shape of results
 
@@ -109,13 +109,13 @@ The stream of VCL subroutine invocations. Each event has shape:
 
 Query events with `.where(...)` filters, index with `[n]`, aggregate with `.count()`.
 
-| Expression                           | Notes                                                                                                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `events.where(fnName=recv).count()`  | How many times `vcl_recv` ran                                                                                                                                      |
-| `events.where(fnName=fetch)[0].ttl`  | The TTL set in the first `vcl_fetch`, in microseconds (30s = `30000000`). Converted as a float, so 1.001s is `1000999.9999999999`: use ranges for millisecond TTLs |
-| `events.where(fnName=recv)[0].url`   | `req.url` at the end of the first `vcl_recv`                                                                                                                       |
-| `events.where(fnName=error).count()` | Did `vcl_error` run                                                                                                                                                |
-| `events.where(fnName=hit).count()`   | Cache hit path taken                                                                                                                                               |
+| Expression                           | Notes                                                                                                                                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `events.where(fnName=recv).count()`  | How many times `vcl_recv` ran                                                                                                                                                                                         |
+| `events.where(fnName=fetch)[0].ttl`  | The TTL set in the first `vcl_fetch`, in microseconds (30s = `30000000`). `1001ms` reads back as `1000999.9999999999` and `1.001s` as `1000000`: assert millisecond TTLs with `isAtLeast`/`isAtMost` ranges, not `is` |
+| `events.where(fnName=recv)[0].url`   | `req.url` at the end of the first `vcl_recv`                                                                                                                                                                          |
+| `events.where(fnName=error).count()` | Did `vcl_error` run                                                                                                                                                                                                   |
+| `events.where(fnName=hit).count()`   | Cache hit path taken                                                                                                                                                                                                  |
 
 Common `fnName` values: `init`, `recv`, `hash`, `hit`, `miss`, `pass`, `fetch`, `error`, `deliver`, `log`.
 
@@ -133,11 +133,18 @@ Put `return(...)`, `error ...;` and `restart;` at the start of their own line. F
 | `isAtLeast`  | `events.where(fnName=fetch)[0].ttl isAtLeast 3600000000`  | Numeric >=                                                                                                                                       |
 | `isAtMost`   | `events.where(fnName=fetch)[0].ttl isAtMost 3600000000`   | Numeric <=                                                                                                                                       |
 | `isMoreThan` | `clientFetch.status isMoreThan 199`                       | Numeric >. `isAbove` is an alias                                                                                                                 |
-| `isLessThan` | `events.where(fnName=fetch)[0].ttl isLessThan 3600000000` | Numeric <                                                                                                                                        |
+| `isLessThan` | `events.where(fnName=fetch)[0].ttl isLessThan 3600000000` | Numeric <. `isBelow` is an alias                                                                                                                 |
 | `matches`    | `events.where(fnName=recv)[0].url matches /^\/api\//`     | JavaScript regex: `/re/flags`, or an unquoted pattern (case-insensitive, multiline). Quotes become part of the pattern, so `"..."` never matches |
-| `includes`   | `clientFetch.bodyPreview includes "BadBot"`               | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)).                                  |
+| `includes`   | `clientFetch.bodyPreview includes "BadBot"`               | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)). `contains` is an alias           |
+| `startsWith` | `events.where(fnName=recv)[0].url startsWith "/api/"`     | String prefix                                                                                                                                    |
+| `endsWith`   | `clientFetch.bodyPreview endsWith "}"`                    | String suffix                                                                                                                                    |
+| `oneOf`      | `clientFetch.status oneOf [301,302,307,308]`              | Equal to any value in a JSON array. `isOneOf` is an alias                                                                                        |
+| `isTrue`     | `clientFetch.complete isTrue`                             | No reference value                                                                                                                               |
+| `isJSON`     | `clientFetch.bodyPreview isJSON`                          | Target parses as JSON. No reference value                                                                                                        |
 
-`isGreaterThan` is not an operator. Fiddle rejects it with an `invalid-test` insight and drops every assertion in that request (later requests still run); use `isMoreThan`.
+Negate operators with a `not` prefix: `notIncludes`, `notMatches`, `notOneOf` (or `isNotOneOf`), `isNotJSON`, `isNotTrue`, `isNotAtLeast`.
+
+`isGreaterThan`, `greaterThan` and `isNot` are not operators; for "not equal" use `isNotOneOf [x]`. Fiddle rejects unknown operators with an `invalid-test` insight and drops every assertion in that request (later requests still run).
 
 ## Timing
 
@@ -161,7 +168,7 @@ events.where(fnName=error).count() is 1
 clientFetch.bodyPreview includes "<expected body>"
 ```
 
-**Cache MISS then HIT** (two requests with the same `cacheID`). `tests` has no comment syntax: a `#` line makes the whole request `invalid-test`:
+**Cache MISS then HIT** (two requests with the same `cacheID`). `tests` has no comment syntax: a `#` comment line or a trailing `# ...` makes the whole request `invalid-test`:
 
 ```json
 {
@@ -216,12 +223,13 @@ events.where(fnName=deliver)[0].status is 404
 set obj.http.X-Country-Code = "US";
 ```
 
-pairs with
+matches the h2 frame with
 
 ```text
-clientFetch.resp includes "x-country-code: US"     # ✅ matches the h2 frame
-clientFetch.resp includes "X-Country-Code: US"     # ❌ never matches under h2
+clientFetch.resp includes "x-country-code: US"
 ```
+
+while `clientFetch.resp includes "X-Country-Code: US"` never matches under h2.
 
 Values are passed through unchanged, so `"US"` stays uppercase. Two ways to assert in mixed-case form if you need to: set `"connType": "h1"` on the request (HTTP/1.1 preserves header casing), or normalize on the assertion side and write all header-name assertions in lowercase. The latter is what every example in this file does.
 
