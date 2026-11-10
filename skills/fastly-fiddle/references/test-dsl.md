@@ -142,9 +142,9 @@ Put `return(...)`, `error ...;` and `restart;` at the start of their own line. F
 | `isTrue`     | `clientFetch.complete isTrue`                             | No reference value                                                                                                                               |
 | `isJSON`     | `clientFetch.bodyPreview isJSON`                          | Target parses as JSON. No reference value                                                                                                        |
 
-Negate operators with a `not` prefix: `notIncludes`, `notMatches`, `notOneOf` (or `isNotOneOf`), `isNotJSON`, `isNotTrue`, `isNotAtLeast`.
+Negate operators with a `not` prefix: `isNot` (or `not`) for "not equal", `notIncludes`, `notMatches`, `notOneOf` (or `isNotOneOf`), `isNotJSON`, `isNotTrue`, `isNotAtLeast`.
 
-`isGreaterThan`, `greaterThan` and `isNot` are not operators; for "not equal" use `isNotOneOf [x]`. Fiddle rejects unknown operators with an `invalid-test` insight and drops every assertion in that request (later requests still run).
+`isGreaterThan` and `greaterThan` are not operators. Fiddle rejects unknown operators with an `invalid-test` insight and drops every assertion in that request (later requests still run).
 
 ## Timing
 
