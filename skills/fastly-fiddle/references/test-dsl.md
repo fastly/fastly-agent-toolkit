@@ -132,17 +132,17 @@ Put `return(...)`, `error ...;` and `restart;` at the start of their own line. F
 | `is`         | `clientFetch.status is 200`                               | Exact equality                                                                                                                                   |
 | `isAtLeast`  | `events.where(fnName=fetch)[0].ttl isAtLeast 3600000000`  | Numeric >=                                                                                                                                       |
 | `isAtMost`   | `events.where(fnName=fetch)[0].ttl isAtMost 3600000000`   | Numeric <=                                                                                                                                       |
-| `isMoreThan` | `clientFetch.status isMoreThan 199`                       | Numeric >. `isAbove` is an alias                                                                                                                 |
-| `isLessThan` | `events.where(fnName=fetch)[0].ttl isLessThan 3600000000` | Numeric <. `isBelow` is an alias                                                                                                                 |
+| `isMoreThan` | `clientFetch.status isMoreThan 199`                       | Numeric >                                                                                                                                        |
+| `isLessThan` | `events.where(fnName=fetch)[0].ttl isLessThan 3600000000` | Numeric <                                                                                                                                        |
 | `matches`    | `events.where(fnName=recv)[0].url matches /^\/api\//`     | JavaScript regex: `/re/flags`, or an unquoted pattern (case-insensitive, multiline). Quotes become part of the pattern, so `"..."` never matches |
-| `includes`   | `clientFetch.bodyPreview includes "BadBot"`               | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2)). `contains` is an alias           |
+| `includes`   | `clientFetch.bodyPreview includes "BadBot"`               | Substring / header-line containment. Case-sensitive (see [Header case under HTTP/2](#header-case-under-http2))                                   |
 | `startsWith` | `events.where(fnName=recv)[0].url startsWith "/api/"`     | String prefix                                                                                                                                    |
 | `endsWith`   | `clientFetch.bodyPreview endsWith "}"`                    | String suffix                                                                                                                                    |
-| `oneOf`      | `clientFetch.status oneOf [301,302,307,308]`              | Equal to any value in a JSON array. `isOneOf` is an alias                                                                                        |
+| `oneOf`      | `clientFetch.status oneOf [301,302,307,308]`              | Equal to any value in a JSON array                                                                                                               |
 | `isTrue`     | `clientFetch.complete isTrue`                             | No reference value                                                                                                                               |
 | `isJSON`     | `clientFetch.bodyPreview isJSON`                          | Target parses as JSON. No reference value                                                                                                        |
 
-Negate operators with a `not` prefix: `isNot` (or `not`) for "not equal", `notIncludes`, `notMatches`, `notOneOf` (or `isNotOneOf`), `isNotJSON`, `isNotTrue`, `isNotAtLeast`.
+Negate operators with a `not` prefix: `isNot` for "not equal", `notIncludes`, `notMatches`, `notOneOf`, `isNotJSON`.
 
 `isGreaterThan` and `greaterThan` are not operators. Fiddle rejects unknown operators with an `invalid-test` insight and drops every assertion in that request (later requests still run).
 
